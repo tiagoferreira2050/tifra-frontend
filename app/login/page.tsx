@@ -25,7 +25,7 @@ export default function LoginPage() {
         // tenta logar
         user = await signInOrSignUp(email, password)
 
-        // ⭐️ LOGS SEGUROS (sem erro no Vercel)
+        // ⭐️ LOGS SEGUROS (sem risco no Vercel)
         console.log("🧩 Usuário logado →", user)
         console.log("🧩 user.id →", user?.id)
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
         return
       }
 
-      // Se o login falhou e user for null — previne crash
+      // Se o login falhou
       if (!user?.id) {
         alert("Erro inesperado: usuário inválido.")
         setLoading(false)
@@ -102,4 +102,11 @@ export default function LoginPage() {
 
         <button
           onClick={() => window.location.href = "/signup"}
-          className="w-full text-center text-blue-600 mt-2 underli
+          className="w-full text-center text-blue-600 mt-2 underline"
+        >
+          Criar conta
+        </button>
+      </div>
+    </div>
+  )
+}
