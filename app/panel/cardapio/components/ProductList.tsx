@@ -116,45 +116,48 @@ export default function ProductList({
                   updateProducts(products.filter((p: any) => p.id !== prod.id))
                 }
 
-                // ⭐⭐⭐ CORREÇÃO: BUSCA DO DB + MERGE + NORMALIZAÇÃO DOS COMPLEMENTS ⭐⭐⭐
+                // ⭐⭐⭐ CORREÇÃO: TIPAGEM DO fullProducts ⭐⭐⭐
                 onEdit={async (p: any) => {
                   try {
-                    const fullProducts = await dbLoadAll("products");
+                    // 🔥 CORREÇÃO AQUI
+                    const fullProducts = (await dbLoadAll("products")) as any[];
 
-                    // produto vindo do db (pode estar desatualizado ou sem complements)
+                    // produto vindo do db
                     const dbProd =
                       fullProducts.find((prod: any) => prod.id === p.id) || null;
 
-                    // Faz merge: prefere campos do dbProd, mas usa p como fallback (principalmente complements)
-                    // Isso evita perder complements que existam em memória
+                    // merge
                     let merged = {
                       ...(dbProd || {}),
                       ...(p || {}),
                     };
 
-                    // Garantir que merged tenha complements: prefer dbProd.complements se existir e tiver length,
-                    // senão usa p.complements. (Se ambos ausentes, fica undefined --> modal lidará)
-                    const dbHasComplements = Array.isArray(dbProd?.complements) && dbProd.complements.length > 0;
-                    const pHasComplements = Array.isArray(p?.complements) && p.complements.length > 0;
+                    const dbHasComplements =
+                      Array.isArray(dbProd?.complements) &&
+                      dbProd.complements.length > 0;
+                    const pHasComplements =
+                      Array.isArray(p?.complements) &&
+                      p.complements.length > 0;
 
                     if (dbHasComplements) {
                       merged.complements = dbProd.complements;
                     } else if (pHasComplements) {
                       merged.complements = p.complements;
                     } else {
-                      merged.complements = dbProd?.complements || p?.complements || [];
+                      merged.complements =
+                        dbProd?.complements || p?.complements || [];
                     }
 
-                    // Normaliza qualquer formato de complement salvo para:
-                    // { complementId, active, order }
                     if (Array.isArray(merged.complements)) {
                       merged = {
                         ...merged,
-                        complements: merged.complements.map((c: any, index: number) => ({
-                          complementId: c.complementId || c.id || c, // aceita string id também
-                          active: c.active ?? true,
-                          order: c.order ?? index,
-                        })),
+                        complements: merged.complements.map(
+                          (c: any, index: number) => ({
+                            complementId: c.complementId || c.id || c,
+                            active: c.active ?? true,
+                            order: c.order ?? index,
+                          })
+                        ),
                       };
                     }
 
@@ -163,15 +166,17 @@ export default function ProductList({
                   } catch (err) {
                     console.error("Erro ao carregar produto completo:", err);
 
-                    // fallback seguro: usa p (produto da lista) e tenta normalizar complements
                     const fallback = { ...p };
                     if (Array.isArray(fallback.complements)) {
-                      fallback.complements = fallback.complements.map((c: any, idx: number) => ({
-                        complementId: c.complementId || c.id || c,
-                        active: c.active ?? true,
-                        order: c.order ?? idx,
-                      }));
+                      fallback.complements = fallback.complements.map(
+                        (c: any, idx: number) => ({
+                          complementId: c.complementId || c.id || c,
+                          active: c.active ?? true,
+                          order: c.order ?? idx,
+                        })
+                      );
                     }
+
                     setEditingProduct(fallback);
                     setEditOpen(true);
                   }
@@ -189,13 +194,13 @@ export default function ProductList({
       </div>
 
       <EditProductModal
-  open={editOpen}
-  onClose={() => setEditOpen(false)}
-  product={editingProduct}
-  categories={categories}
-  onSave={handleSaveEditedProduct}
-  globalComplements={complements}
-/>
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        product={editingProduct}
+        categories={categories}
+        onSave={handleSaveEditedProduct}
+        globalComplements={complements}
+      />
     </>
   );
 }
