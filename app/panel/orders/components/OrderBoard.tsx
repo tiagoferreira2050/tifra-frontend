@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getMockOrders } from "../services/orderService"; // 🔥 removido Order daqui
+import { getMockOrders } from "../services/orderService";
 import OrderColumn from "./OrderColumn";
 
-/* 🔥 Tipo local — garante build e não exige exportação do orderService */
+/* 🔥 Tipo local — compatível com MOCK + pedidos reais */
 type Order = {
   id: string;
   customer: string;
@@ -16,8 +16,8 @@ type Order = {
   createdAt: string;
   status: string;
   items: any[];
-  paymentMethod: string;
-  deliveryFee: number;
+  paymentMethod?: string;   // 🔥 agora opcional
+  deliveryFee?: number;     // 🔥 opcional
 };
 
 export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
@@ -39,7 +39,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  /* NORMALIZA TEXTO PARA BUSCA – SEGURO */
+  /* NORMALIZA TEXTO PARA BUSCA */
   function normalize(text: any) {
     if (!text) return "";
     return String(text)
@@ -59,7 +59,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
     );
   });
 
-  /* AÇÕES (mantidas iguais) */
+  /* AÇÕES */
   function toggleSelect(id: string) {
     setMultiSelected(prev => ({ ...prev, [id]: !prev[id] }));
   }
