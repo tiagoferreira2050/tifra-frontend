@@ -23,7 +23,6 @@ export default function ModalSelecionarComplementos({
 
   if (!open || !product) return null;
 
-  // COMPLEMENTOS JÁ VÊM DIRETAMENTE DO DRAWER
   const groups = product.complementItems ?? [];
 
   // =====================================================
@@ -53,7 +52,8 @@ export default function ModalSelecionarComplementos({
       if (arr.includes(option.id)) {
         return {
           ...prev,
-          [groupId]: arr.filter((id) => id !== option.id),
+          // 🔥 **CORREÇÃO AQUI**
+          [groupId]: arr.filter((id: string) => id !== option.id),
         };
       }
 
