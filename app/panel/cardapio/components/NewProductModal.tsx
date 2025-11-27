@@ -33,7 +33,10 @@ export default function NewProductModal({
   const [serves, setServes] = useState("");
 
   const [highlight, setHighlight] = useState("");
-  const [image, setImage] = useState(null);
+
+  // 🔥 ÚNICA ALTERAÇÃO NECESSÁRIA
+  const [image, setImage] = useState<string | null>(null);
+
   const [classifications, setClassifications] = useState([] as string[]);
 
   // ============================================================
@@ -98,15 +101,16 @@ export default function NewProductModal({
   // ============================================================
   // IMAGEM
   // ============================================================
- function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const url = URL.createObjectURL(file);
-  setImage(url);
-}
+    const url = URL.createObjectURL(file);
+    setImage(url);
+  }
+
   // ============================================================
-  // SALVAR PRODUTO — 100% CORRIGIDO
+  // SALVAR PRODUTO
   // ============================================================
   function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -118,7 +122,6 @@ export default function NewProductModal({
 
     const numericDiscountPrice = hasDiscount ? toNumber(discountPrice) : null;
 
-    // 🔥 Transformar IDs em objetos completos
     const fullComplements = selectedComplements
       .map((c: any) =>
         globalComplementsState.find(
@@ -155,9 +158,6 @@ export default function NewProductModal({
     onClose();
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
