@@ -98,11 +98,13 @@ export default function NewProductModal({
   // ============================================================
   // IMAGEM
   // ============================================================
-  function handleImageUpload(e: any) {
-    const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
-  }
+ function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
+  const url = URL.createObjectURL(file);
+  setImage(url);
+}
   // ============================================================
   // SALVAR PRODUTO — 100% CORRIGIDO
   // ============================================================
