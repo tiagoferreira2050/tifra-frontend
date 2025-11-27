@@ -4,20 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { getMockOrders } from "../services/orderService";
 import OrderColumn from "./OrderColumn";
 
-/* 🔥 Tipo totalmente compatível com orderTypes e mocks */
+/* 🔥 Tipo 100% seguro e compatível com tudo */
 type Order = {
   id: string;
   customer: string;
-  phone?: string;          // opcional
-  deliveryType: string;
-  address?: string;        // 🔥 opcional
-  shortAddress?: string;   // 🔥 opcional
-  total: number;
-  createdAt: string;
   status: string;
-  items: any[];
-  paymentMethod: string;
-  deliveryFee?: number;    // opcional
+  total: number;
+
+  phone?: string;
+  deliveryType?: string;
+  address?: string;
+  shortAddress?: string;
+  createdAt: string;
+  items?: any[];          // opcional
+  paymentMethod?: string;
+  deliveryFee?: number;
 };
 
 export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
@@ -28,10 +29,10 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
   // Junta pedidos mock + pedidos criados no sistema
   const combinedOrders = [...externalOrders, ...internalOrders];
 
-  // Estado usado para ações
+  // Estado
   const [orders, setOrders] = useState<Order[]>(combinedOrders);
 
-  /* UPDATE quando novos pedidos vierem do Drawer */
+  // Atualiza quando novos pedidos chegam
   useEffect(() => {
     setOrders([...externalOrders, ...internalOrders]);
   }, [externalOrders, internalOrders]);
@@ -39,7 +40,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  /* NORMALIZA TEXTO PARA BUSCA */
+  /* Normalização */
   function normalize(text: any) {
     if (!text) return "";
     return String(text)
@@ -48,7 +49,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  /* FILTRO REAL */
+  /* Filtro */
   const filteredOrders = orders.filter((o) => {
     const term = normalize(searchTerm);
 
@@ -59,7 +60,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
     );
   });
 
-  /* AÇÕES */
+  /* Ações */
   function toggleSelect(id: string) {
     setMultiSelected(prev => ({ ...prev, [id]: !prev[id] }));
   }
@@ -86,7 +87,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
     );
   }
 
-  /* SOMA FINALIZADOS */
+  /* Soma concluídos */
   const sumFinished = filteredOrders
     .filter(o => o.status === "finished")
     .reduce((acc, o) => acc + o.total, 0);
