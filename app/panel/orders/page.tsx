@@ -25,9 +25,8 @@ type Order = {
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]); // 🔥 tipado corretamente
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Recebe pedido criado no Drawer
   function handleCreateOrder(newOrder: Order) {
     setOrders(prev => [newOrder, ...prev]);
   }
@@ -52,12 +51,10 @@ export default function OrdersPage() {
         {/* BOTÕES DO HEADER */}
         <div className="flex items-center gap-2">
 
-          {/* PAUSAR LOJA */}
           <button className="flex items-center gap-1 border border-gray-300 px-3 py-1.5 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition">
             🛑 Pausar loja
           </button>
 
-          {/* BOTÃO NOVO PEDIDO */}
           <button 
             onClick={() => setOpenNovoPedido(true)}
             className="flex items-center gap-1 bg-red-600 px-4 py-1.5 rounded-md text-sm text-white hover:bg-red-700 transition shadow-sm"
@@ -72,7 +69,7 @@ export default function OrdersPage() {
       {/* QUADROS DE PEDIDOS */}
       <OrderBoard 
         searchTerm={searchTerm}
-        externalOrders={orders as any}    {/* ✅ prevenção contra never[] */}
+        externalOrders={orders as any}
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
