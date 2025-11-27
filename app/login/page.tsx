@@ -19,18 +19,18 @@ export default function LoginPage() {
         return
       }
 
-      let user;
+      let user: any = null
 
       try {
         // tenta logar
         user = await signInOrSignUp(email, password)
 
-        // ⭐️ AQUI VAI O LOG ─ DEPOIS DO LOGIN
+        // ⭐️ LOGS SEGUROS (sem erro no Vercel)
         console.log("🧩 Usuário logado →", user)
-        console.log("🧩 user.id →", user.id)
+        console.log("🧩 user.id →", user?.id)
 
       } catch (err: any) {
-        const msg = err.message.toLowerCase()
+        const msg = err.message?.toLowerCase() || ""
 
         if (msg.includes("invalid login credentials")) {
           alert("Senha incorreta ❌")
@@ -40,6 +40,13 @@ export default function LoginPage() {
           alert("Erro ao entrar: " + err.message)
         }
 
+        setLoading(false)
+        return
+      }
+
+      // Se o login falhou e user for null — previne crash
+      if (!user?.id) {
+        alert("Erro inesperado: usuário inválido.")
         setLoading(false)
         return
       }
@@ -95,11 +102,4 @@ export default function LoginPage() {
 
         <button
           onClick={() => window.location.href = "/signup"}
-          className="w-full text-center text-blue-600 mt-2 underline"
-        >
-          Criar conta
-        </button>
-      </div>
-    </div>
-  )
-}
+          className="w-full text-center text-blue-600 mt-2 underli
