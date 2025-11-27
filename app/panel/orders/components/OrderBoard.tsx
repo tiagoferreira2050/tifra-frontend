@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getMockOrders } from "../services/orderService";
+import { getMockOrders } from "../services/orderService"; 
 import OrderColumn from "./OrderColumn";
 
-/* 🔥 Tipo local — compatível com MOCK + pedidos reais */
+/* 🔥 Tipo local — 100% compatível com orderTypes e com getMockOrders */
 type Order = {
   id: string;
   customer: string;
-  phone: string;
+  phone?: string;              // 🔥 agora opcional
   deliveryType: string;
   address: string;
   shortAddress: string;
@@ -16,8 +16,8 @@ type Order = {
   createdAt: string;
   status: string;
   items: any[];
-  paymentMethod?: string;   // 🔥 agora opcional
-  deliveryFee?: number;     // 🔥 opcional
+  paymentMethod: string;
+  deliveryFee?: number;        // opcional
 };
 
 export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
@@ -28,7 +28,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
   // Junta pedidos mock + pedidos criados no sistema
   const combinedOrders = [...externalOrders, ...internalOrders];
 
-  // Estado usado para ações (aceitar, rejeitar, etc)
+  // Estado usado para ações
   const [orders, setOrders] = useState<Order[]>(combinedOrders);
 
   /* UPDATE quando novos pedidos vierem do Drawer */
@@ -55,7 +55,7 @@ export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
     return (
       normalize(o.customer).includes(term) ||
       normalize(o.id).includes(term) ||
-      normalize(o.phone).includes(term)
+      normalize(o.phone || "").includes(term)   // 🔥 phone agora opcional
     );
   });
 
