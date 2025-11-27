@@ -1,8 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getMockOrders, Order } from "../services/orderService";
+import { getMockOrders } from "../services/orderService"; // 🔥 removido Order daqui
 import OrderColumn from "./OrderColumn";
+
+/* 🔥 Tipo local — garante build e não exige exportação do orderService */
+type Order = {
+  id: string;
+  customer: string;
+  phone: string;
+  deliveryType: string;
+  address: string;
+  shortAddress: string;
+  total: number;
+  createdAt: string;
+  status: string;
+  items: any[];
+  paymentMethod: string;
+  deliveryFee: number;
+};
 
 export default function OrderBoard({ searchTerm = "", externalOrders = [] }) {
 
