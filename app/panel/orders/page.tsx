@@ -25,10 +25,10 @@ type Order = {
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]); // 🔥 agora tipado corretamente
+  const [orders, setOrders] = useState<Order[]>([]); // 🔥 tipado corretamente
 
   // Recebe pedido criado no Drawer
-  function handleCreateOrder(newOrder: Order) {   // 🔥 tipagem correta
+  function handleCreateOrder(newOrder: Order) {
     setOrders(prev => [newOrder, ...prev]);
   }
 
@@ -72,7 +72,7 @@ export default function OrdersPage() {
       {/* QUADROS DE PEDIDOS */}
       <OrderBoard 
         searchTerm={searchTerm}
-        externalOrders={orders}
+        externalOrders={orders as any}    {/* ✅ prevenção contra never[] */}
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
