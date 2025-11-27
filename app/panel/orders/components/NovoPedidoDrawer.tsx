@@ -40,7 +40,8 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
     async function loadProducts() {
       try {
-        const categories: any[] = await dbLoadAll("categories");
+        // 🔥 CORREÇÃO — tipagem da chamada do DB
+        const categories = (await dbLoadAll("categories")) as any[];
         if (!mounted || !categories) return;
 
         const all = categories.flatMap((c: any) =>
@@ -137,6 +138,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
       mounted = false;
     };
   }, [cep]);
+
   // 🔥 Criar pedido
   function handleCreate() {
     if (!customer.trim()) {
@@ -203,8 +205,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   // ────────────────────────────────────────────────
   return (
     <div
-      className={`
-        fixed top-0 right-0 h-full bg-white shadow-xl border-l 
+      className={`fixed top-0 right-0 h-full bg-white shadow-xl border-l 
         transition-all duration-300 z-50
         ${open ? "w-[70%] opacity-100" : "w-0 opacity-0 pointer-events-none"}
       `}
@@ -237,7 +238,6 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
                 onClick={() => {
                   console.log("PROD SELECIONADO >>>", prod);
 
-                  // 🔥 CAPTURA COMPLEMENTOS DE QUALQUER FORMA POSSÍVEL
                   const complementItems =
                     prod.complementGroups ??
                     prod.complements ??
@@ -291,6 +291,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
             )}
           </div>
         </div>
+
         {/* DIREITA */}
         <div className="p-4 overflow-y-auto pb-24">
           {/* TIPO DE ENTREGA */}
