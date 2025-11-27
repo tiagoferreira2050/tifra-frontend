@@ -35,18 +35,17 @@ export default function CardapioPage() {
   const [newProductOpen, setNewProductOpen] = useState(false);
 
   // ======================================================
-  // 1) CARREGAR BANCO AO ABRIR O PAINEL  ✅ CORRIGIDO
+  // 1) CARREGAR BANCO AO ABRIR O PAINEL
   // ======================================================
   useEffect(() => {
     async function loadData() {
       const loadedCategories: any = await dbLoadAll("categories");
       const loadedComplements: any = await dbLoadAll("complements");
-      const loadedProducts: any = await dbLoadAll("products"); // 🔥 CARREGAMOS OS PRODUTOS
+      const loadedProducts: any = await dbLoadAll("products");
 
       let finalCategories = [];
 
       if (loadedCategories.length === 0) {
-        // categorias padrão
         finalCategories = [
           {
             id: "1",
@@ -68,7 +67,6 @@ export default function CardapioPage() {
           },
         ];
       } else {
-        // 🔥 INJETAR PRODUTOS CARREGADOS NA CATEGORIA CORRETA
         finalCategories = loadedCategories.map((cat: any) => ({
           ...cat,
           products: loadedProducts.filter((p: any) => p.categoryId === cat.id),
@@ -168,7 +166,11 @@ export default function CardapioPage() {
             categories={categories}
             setCategories={setCategories}
             selectedCategoryId={selectedCategoryId}
-            onSelectCategory={(id: string) => setSelectedCategoryId(id)}
+
+            // 🔥 ÚNICA CORREÇÃO NECESSÁRIA
+            onSelectCategory={(id: string | null) =>
+              setSelectedCategoryId(id || "")
+            }
           />
         </div>
 
