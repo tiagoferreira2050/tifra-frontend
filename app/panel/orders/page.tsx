@@ -5,14 +5,30 @@ import NovoPedidoDrawer from "./components/NovoPedidoDrawer";
 import OrderBoard from "./components/OrderBoard";
 import { Plus } from "lucide-react";
 
-export default function OrdersPage() {
+/* 🔥 Mesmo tipo seguro usado nos outros arquivos de pedidos */
+type Order = {
+  id: string;
+  customer: string;
+  status: string;
+  total: number;
 
+  phone?: string;
+  deliveryType?: string;
+  address?: string;
+  shortAddress?: string;
+  createdAt: string;
+  items?: any[];
+  paymentMethod?: string;
+  deliveryFee?: number;
+};
+
+export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState([]); // agora armazenamos pedidos criados
+  const [orders, setOrders] = useState<Order[]>([]); // 🔥 agora tipado corretamente
 
   // Recebe pedido criado no Drawer
-  function handleCreateOrder(newOrder) {
+  function handleCreateOrder(newOrder: Order) {   // 🔥 tipagem correta
     setOrders(prev => [newOrder, ...prev]);
   }
 
@@ -56,14 +72,14 @@ export default function OrdersPage() {
       {/* QUADROS DE PEDIDOS */}
       <OrderBoard 
         searchTerm={searchTerm}
-        externalOrders={orders} // envia pedidos novos para o board
+        externalOrders={orders}
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
       <NovoPedidoDrawer 
         open={openNovoPedido}
         onClose={() => setOpenNovoPedido(false)}
-        onCreate={handleCreateOrder} // recebe o pedido criado
+        onCreate={handleCreateOrder}
       />
 
     </div>
