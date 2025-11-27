@@ -2,7 +2,23 @@
 
 import React from 'react';
 import OrderCard from './OrderCard';
-import { Order } from '../services/orderService';
+
+/* 🔥 Mesmo tipo seguro usado no OrderBoard e OrderCard */
+type Order = {
+  id: string;
+  customer: string;
+  status: string;
+  total: number;
+
+  phone?: string;
+  deliveryType?: string;
+  address?: string;
+  shortAddress?: string;
+  createdAt: string;
+  items?: any[];
+  paymentMethod?: string;
+  deliveryFee?: number;
+};
 
 interface Props {
   title: string;

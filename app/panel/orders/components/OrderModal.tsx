@@ -1,10 +1,23 @@
 'use client';
 
 import React from "react";
-import { Order } from "../services/orderService";
 
-export default function OrderModal({ order, onClose }: {
-  order: Order | null;
+/* 🔥 Tipo local exclusivo para este modal (usa as chaves que ele realmente precisa) */
+type OrderModalType = {
+  code: string;
+  customerName: string;
+  phone?: string;
+  fullAddress?: string;
+  paymentMethod?: string;
+  total: number;
+  items?: { qty: number; name: string }[];
+};
+
+export default function OrderModal({
+  order,
+  onClose
+}: {
+  order: OrderModalType | null;
   onClose: () => void;
 }) {
 
@@ -17,16 +30,16 @@ export default function OrderModal({ order, onClose }: {
 
         <p><b>Código:</b> {order.code}</p>
         <p><b>Cliente:</b> {order.customerName}</p>
-        <p><b>Telefone:</b> {order.phone}</p>
-        <p><b>Endereço:</b> {order.fullAddress}</p>
-        <p><b>Pagamento:</b> {order.paymentMethod}</p>
+        <p><b>Telefone:</b> {order.phone || "-"}</p>
+        <p><b>Endereço:</b> {order.fullAddress || "-"}</p>
+        <p><b>Pagamento:</b> {order.paymentMethod || "-"}</p>
         <p><b>Total:</b> R$ {order.total.toFixed(2)}</p>
 
         <h3 className="font-semibold mt-3">Itens:</h3>
         <ul className="list-disc ml-4">
           {order.items?.map((item, i) => (
             <li key={i}>{item.qty}x {item.name}</li>
-          ))}
+          )) ?? <li>Nenhum item</li>}
         </ul>
 
         <button 
