@@ -4,36 +4,20 @@ import { useState } from "react";
 import NovoPedidoDrawer from "./components/NovoPedidoDrawer";
 import OrderBoard from "./components/OrderBoard";
 import { Plus } from "lucide-react";
-
-/* 🔥 Mesmo tipo seguro usado nos outros arquivos de pedidos */
-type Order = {
-  id: string;
-  customer: string;
-  status: string;
-  total: number;
-
-  phone?: string;
-  deliveryType?: string;
-  address?: string;
-  shortAddress?: string;
-  createdAt: string;
-  items?: any[];
-  paymentMethod?: string;
-  deliveryFee?: number;
-};
+import { Order } from "./services/orderTypes"; // <- tipo centralizado
 
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]); // agora usa o tipo oficial
 
   function handleCreateOrder(newOrder: Order) {
-    setOrders(prev => [newOrder, ...prev]);
+    setOrders((prev) => [newOrder, ...prev]);
   }
 
   return (
     <div className="p-4 w-full h-full">
-
+      
       {/* HEADER PROFISSIONAL – ESTILO BRENDI */}
       <div className="w-full flex items-center justify-between bg-white border-b px-3 py-2 rounded-md shadow-sm mb-4">
 
@@ -67,18 +51,17 @@ export default function OrdersPage() {
       </div>
 
       {/* QUADROS DE PEDIDOS */}
-      <OrderBoard 
+      <OrderBoard
         searchTerm={searchTerm}
-        externalOrders={orders as any}
+        externalOrders={orders}
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
-      <NovoPedidoDrawer 
+      <NovoPedidoDrawer
         open={openNovoPedido}
         onClose={() => setOpenNovoPedido(false)}
         onCreate={handleCreateOrder}
       />
-
     </div>
   );
 }
