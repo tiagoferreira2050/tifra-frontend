@@ -1,15 +1,39 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const user = req.cookies.get("tifra_user")?.value;
+  const token = req.cookies.get("sb-access-token"); // Supabase session token
+  
+  const url = req.nextUrl.clone();
 
-  if (!user && req.nextUrl.pathname.startsWith("/panel")) {
-    return NextResponse.redirect(new URL("/signup", req.url));
+  // 1) Se o usuário NÃO estiver logado
+  if (!token) {
+    // Se ele tentar acessar / (raiz do app)
+    if (url.pathname === "/") {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // Bloquear páginas protegidas
+    if (url.pathname.startsWith("/panel")) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // 2) Se o usuário ESTIVER logado e acessar "/" → vai para o painel
+  if (token && url.pathname === "/") {
+    url.pathname = "/panel";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/panel/:path*"],
+  matcher: [
+    "/",        // Detecta acesso à raiz do app
+    "/panel/:path*", 
+    "/login",
+  ],
 };
