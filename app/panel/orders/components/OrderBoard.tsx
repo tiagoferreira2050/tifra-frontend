@@ -2,17 +2,36 @@
 
 import React, { useState, useEffect } from "react";
 import { getMockOrders } from "../services/orderService";
-import { Order } from "../services/orderTypes";
 import OrderColumn from "./OrderColumn";
 
-function OrderBoard({
+/* Tipo Order local — compatível com OrderCard/OrderColumn etc. */
+type Order = {
+  id: string;
+  customer: string;
+  status: string;
+  total: number;
+
+  phone?: string;
+  deliveryType?: string;
+  address?: string;
+  shortAddress?: string;
+  createdAt: string;
+  items?: any[];
+  paymentMethod?: string;
+  deliveryFee?: number;
+};
+
+export default function OrderBoard({
   searchTerm = "",
   externalOrders = [],
 }: {
   searchTerm?: string;
   externalOrders?: Order[];
 }) {
-  const [internalOrders] = useState<Order[]>(() => getMockOrders());
+  // <-- Correção mínima: cast do mock para any antes de usar como Order[]
+  const [internalOrders] = useState<Order[]>(
+    () => (getMockOrders() as any) || []
+  );
 
   const combinedOrders: Order[] = [...(externalOrders || []), ...internalOrders];
 
@@ -22,10 +41,7 @@ function OrderBoard({
     setOrders([...(externalOrders || []), ...internalOrders]);
   }, [externalOrders, internalOrders]);
 
-  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
-    {}
-  );
-
+  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   function normalize(text: any) {
@@ -38,7 +54,6 @@ function OrderBoard({
 
   const filteredOrders = orders.filter((o) => {
     const term = normalize(searchTerm);
-
     return (
       normalize(o.customer).includes(term) ||
       normalize(o.id).includes(term) ||
@@ -52,9 +67,7 @@ function OrderBoard({
 
   function accept(id: string) {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "preparing" } : o
-      )
+      prev.map((o) => (o.id === id ? { ...o, status: "preparing" } : o))
     );
   }
 
@@ -64,17 +77,13 @@ function OrderBoard({
 
   function dispatchOrder(id: string) {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "delivering" } : o
-      )
+      prev.map((o) => (o.id === id ? { ...o, status: "delivering" } : o))
     );
   }
 
   function finishOrder(id: string) {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "finished" } : o
-      )
+      prev.map((o) => (o.id === id ? { ...o, status: "finished" } : o))
     );
   }
 
@@ -131,5 +140,3 @@ function OrderBoard({
     </div>
   );
 }
-
-export default OrderBoard;
