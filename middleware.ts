@@ -1,30 +1,26 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("sb-access-token"); // Supabase session token
+  const token = req.cookies.get("tifra-token"); // ajuste para o nome do seu cookie
+
+  const isLogged = !!token;
+  const isLoginPage = req.nextUrl.pathname.startsWith('/login');
+  const isRoot = req.nextUrl.pathname === '/';
   
-  const url = req.nextUrl.clone();
-
-  // 1) Se o usuário NÃO estiver logado
-  if (!token) {
-    // Se ele tentar acessar / (raiz do app)
-    if (url.pathname === "/") {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
-
-    // Bloquear páginas protegidas
-    if (url.pathname.startsWith("/panel")) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
+  // 1) Se NÃO estiver logado e tentar acessar root → mandar pro login
+  if (!isLogged && isRoot) {
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  // 2) Se o usuário ESTIVER logado e acessar "/" → vai para o painel
-  if (token && url.pathname === "/") {
-    url.pathname = "/panel";
-    return NextResponse.redirect(url);
+  // 2) Se NÃO estiver logado e tentar acessar alguma rota protegida
+  if (!isLogged && !isLoginPage) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  // 3) Se estiver logado e tentar acessar /login -> mandar pro painel
+  if (isLogged && isLoginPage) {
+    return NextResponse.redirect(new URL('/panel', req.url));
   }
 
   return NextResponse.next();
@@ -32,8 +28,10 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",        // Detecta acesso à raiz do app
-    "/panel/:path*", 
-    "/login",
+    '/',
+    '/login',
+    '/panel/:path*',
+    '/orders/:path*',
+    '/products/:path*'
   ],
 };
