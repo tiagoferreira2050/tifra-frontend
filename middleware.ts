@@ -1,37 +1,28 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get("tifra-token"); // ajuste para o nome do seu cookie
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get("tifra_token")?.value; // seu cookie de login
 
-  const isLogged = !!token;
-  const isLoginPage = req.nextUrl.pathname.startsWith('/login');
-  const isRoot = req.nextUrl.pathname === '/';
-  
-  // 1) Se NÃO estiver logado e tentar acessar root → mandar pro login
-  if (!isLogged && isRoot) {
-    return NextResponse.redirect(new URL('/login', req.url));
+  const isAppDomain = request.nextUrl.hostname === "app.tifra.com.br";
+
+  // Só aplica regras no subdomínio do app
+  if (isAppDomain) {
+    const url = request.nextUrl;
+
+    // Se NÃO estiver logado e tentar acessar qualquer página que não seja login/signup
+    if (!token && url.pathname !== "/login" && url.pathname !== "/signup") {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // Se estiver logado e tentar acessar login diretamente → manda para painel
+    if (token && url.pathname === "/login") {
+      url.pathname = "/panel";
+      return NextResponse.redirect(url);
+    }
   }
 
-  // 2) Se NÃO estiver logado e tentar acessar alguma rota protegida
-  if (!isLogged && !isLoginPage) {
-    return NextResponse.redirect(new URL('/login', req.url));
-  }
-
-  // 3) Se estiver logado e tentar acessar /login -> mandar pro painel
-  if (isLogged && isLoginPage) {
-    return NextResponse.redirect(new URL('/panel', req.url));
-  }
-
+  // continua normal
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: [
-    '/',
-    '/login',
-    '/panel/:path*',
-    '/orders/:path*',
-    '/products/:path*'
-  ],
-};
