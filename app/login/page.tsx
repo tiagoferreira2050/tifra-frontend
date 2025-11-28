@@ -1,4 +1,5 @@
 "use client"
+export const dynamic = "force-dynamic"
 
 import { useState } from "react"
 import { signInOrSignUp } from "@/lib/auth"
@@ -22,10 +23,8 @@ export default function LoginPage() {
       let user: any = null
 
       try {
-        // tenta logar
         user = await signInOrSignUp(email, password)
 
-        // ⭐️ LOGS SEGUROS (sem risco no Vercel)
         console.log("🧩 Usuário logado →", user)
         console.log("🧩 user.id →", user?.id)
 
@@ -44,24 +43,19 @@ export default function LoginPage() {
         return
       }
 
-      // Se o login falhou
       if (!user?.id) {
         alert("Erro inesperado: usuário inválido.")
         setLoading(false)
         return
       }
 
-      // cria loja caso não exista
       const store = await ensureStoreExists(user.id)
 
-      // salva no navegador
       localStorage.setItem("tifra_user", JSON.stringify(user))
       localStorage.setItem("tifra_store", JSON.stringify(store))
 
-      // salva cookie para o middleware
       document.cookie = `tifra_user=${user.id}; path=/; max-age=31536000`
 
-      // redireciona
       window.location.href = "/panel"
 
     } catch (err: any) {
