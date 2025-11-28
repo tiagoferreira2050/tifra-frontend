@@ -20,13 +20,23 @@ import {
 
 import { useRouter } from "next/navigation";
 
+type OpenSections = {
+  relatorios: boolean;
+  atendimento: boolean;
+  cupons: boolean;
+  fidelizacao: boolean;
+  trafego: boolean;
+  admin: boolean;
+  financeiro: boolean;
+  integracoes: boolean;
+  tutoriais: boolean;
+};
+
 export default function Sidebar() {
-
   const router = useRouter();
-
   const [collapsed, setCollapsed] = useState(false);
 
-  const [open, setOpen] = useState({
+  const [open, setOpen] = useState<OpenSections>({
     relatorios: false,
     atendimento: false,
     cupons: false,
@@ -38,7 +48,7 @@ export default function Sidebar() {
     tutoriais: false,
   });
 
-  function toggle(section: string) {
+  function toggle(section: keyof OpenSections) {
     setOpen(prev => ({ ...prev, [section]: !prev[section] }));
   }
 
@@ -46,7 +56,7 @@ export default function Sidebar() {
     <aside className={`${collapsed ? "w-20" : "w-64"} 
       bg-white border-r h-screen p-4 flex flex-col gap-3 transition-all duration-300`}>
 
-      {/* TOPO */}
+      {/* TOP */}
       <div className="flex items-center justify-between mb-4 px-2">
         {!collapsed && <span className="font-bold text-xl text-red-600">TIFRA</span>}
         
@@ -54,17 +64,12 @@ export default function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className="p-2 hover:bg-gray-100 rounded-md"
         >
-          {collapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <ChevronLeft className="w-5 h-5" />
-          )}
+          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* ====== MENU ====== */}
+      {/* MENU */}
 
-      {/* Início */}
       <SidebarItem
         icon={<Home size={18} />}
         label="Início"
@@ -73,7 +78,6 @@ export default function Sidebar() {
         onClick={() => router.push('/panel/dashboard')}
       />
 
-      {/* Gestor de Pedidos */}
       <SidebarItem
         icon={<Headphones size={18} />}
         label="Gestor de pedidos"
@@ -82,7 +86,6 @@ export default function Sidebar() {
         onClick={() => router.push('/panel/orders')}
       />
 
-      {/* Clientes */}
       <SidebarItem
         icon={<Users size={18} />}
         label="Clientes"
@@ -91,7 +94,6 @@ export default function Sidebar() {
         onClick={() => router.push('/clientes')}
       />
 
-      {/* Relatórios */}
       <SidebarItem
         icon={<BarChart2 size={18} />}
         label="Relatórios"
@@ -100,7 +102,6 @@ export default function Sidebar() {
         onClick={() => toggle("relatorios")}
       />
 
-      {/* Cardápio — AGORA LINK DIRETO */}
       <SidebarItem
         icon={<CreditCard size={18} />}
         label="Cardápio"
@@ -109,7 +110,6 @@ export default function Sidebar() {
         onClick={() => router.push('/panel/cardapio')}
       />
 
-      {/* Cupons */}
       <SidebarItem
         icon={<Tag size={18} />}
         label="Cupons"
@@ -118,7 +118,6 @@ export default function Sidebar() {
         onClick={() => toggle("cupons")}
       />
 
-      {/* Fidelização */}
       <SidebarItem
         icon={<Star size={18} />}
         label="Disparos e Fidelização"
@@ -127,7 +126,6 @@ export default function Sidebar() {
         onClick={() => toggle("fidelizacao")}
       />
 
-      {/* Tráfego Pago */}
       <SidebarItem
         icon={<Wallet size={18} />}
         label="Tráfego Pago"
@@ -136,7 +134,6 @@ export default function Sidebar() {
         onClick={() => toggle("trafego")}
       />
 
-      {/* Administrar Loja */}
       <SidebarItem
         icon={<Settings size={18} />}
         label="Administrar Loja"
@@ -145,7 +142,6 @@ export default function Sidebar() {
         onClick={() => toggle("admin")}
       />
 
-      {/* Financeiro */}
       <SidebarItem
         icon={<CreditCard size={18} />}
         label="Financeiro"
@@ -154,7 +150,6 @@ export default function Sidebar() {
         onClick={() => toggle("financeiro")}
       />
 
-      {/* Integrações */}
       <SidebarItem
         icon={<Settings size={18} />}
         label="Integrações"
@@ -163,7 +158,6 @@ export default function Sidebar() {
         onClick={() => toggle("integracoes")}
       />
 
-      {/* Tutoriais */}
       <SidebarItem
         icon={<HelpCircle size={18} />}
         label="Tutoriais / Crescer 🚀🔥"
@@ -172,7 +166,6 @@ export default function Sidebar() {
         onClick={() => toggle("tutoriais")}
       />
 
-      {/* RODAPÉ */}
       <div className="mt-auto pt-4 border-t">
         <SidebarItem
           icon={<LogOut size={18} />}
@@ -185,17 +178,22 @@ export default function Sidebar() {
   );
 }
 
-
-/* ----------------- COMPONENTE DO ITEM ----------------- */
-
+/* COMPONENTE DO ITEM */
 function SidebarItem({
   icon,
   label,
   collapsed,
-  open,
-  onClick,
-  noDropdown
-}: any) {
+  open = false,
+  onClick = () => {},
+  noDropdown = false
+}: {
+  icon: React.ReactNode; // <-- 🔥 CORREÇÃO DO ERRO
+  label: string;
+  collapsed: boolean;
+  open?: boolean;
+  onClick?: () => void;
+  noDropdown?: boolean;
+}) {
   return (
     <div>
       <button
@@ -208,13 +206,14 @@ function SidebarItem({
         </div>
 
         {!collapsed && !noDropdown && (
-          open ?
-            <ChevronDown size={18} className="text-gray-600" /> :
+          open ? (
+            <ChevronDown size={18} className="text-gray-600" />
+          ) : (
             <ChevronRight size={18} className="text-gray-600" />
+          )
         )}
       </button>
 
-      {/* SUB ITENS (somente se tiver dropdown) */}
       {!collapsed && open && !noDropdown && (
         <div className="ml-8 mt-1 text-sm text-gray-500">
           <p>Opção 1</p>
