@@ -4,12 +4,12 @@ import { useState } from "react";
 import NovoPedidoDrawer from "./components/NovoPedidoDrawer";
 import OrderBoard from "./components/OrderBoard";
 import { Plus } from "lucide-react";
-import { Order } from "./services/orderTypes"; // <- tipo centralizado
+import { Order } from "./services/orderTypes"; // 🔥 usa o tipo oficial
 
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]); // agora usa o tipo oficial
+  const [orders, setOrders] = useState<Order[]>([]); // agora 100% compatível
 
   function handleCreateOrder(newOrder: Order) {
     setOrders((prev) => [newOrder, ...prev]);
@@ -46,14 +46,13 @@ export default function OrdersPage() {
             <Plus size={16} />
             Novo pedido
           </button>
-
         </div>
       </div>
 
       {/* QUADROS DE PEDIDOS */}
       <OrderBoard
         searchTerm={searchTerm}
-        externalOrders={orders}
+        externalOrders={orders}  // 🔥 agora os tipos batem
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
