@@ -21,15 +21,44 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  stores    Store[]   // relação 1:N
+  stores    Store[]
 }
 
 model Store {
-  id         String   @id @default(uuid())
-  userId     String
-  name       String
-  subdomain  String   @unique
-  createdAt  DateTime @default(now())
+  id          String      @id @default(uuid())
+  userId      String
+  name        String
+  subdomain   String      @unique
+  address     String?
+  logoUrl     String?
+  coverImage  String?
+  createdAt   DateTime    @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
+  categories  Category[]
+  products    Product[]
+  user        User        @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  storeId   String
+  name      String
+  order     Int       @default(0)
+
+  store     Store     @relation(fields: [storeId], references: [id])
+  products  Product[]
+}
+
+model Product {
+  id           String       @id @default(uuid())
+  storeId      String
+  categoryId   String?
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  order        Int           @default(0)
+
+  store        Store         @relation(fields: [storeId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
 }

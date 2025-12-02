@@ -1,29 +1,39 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const url = req.nextUrl.clone();
   const host = req.headers.get("host") || "";
-  
-  // Remove porta caso esteja em ambiente local (ex: localhost:3000)
-  const cleanHost = host.split(":")[0];
+  const url = req.nextUrl.clone();
 
-  // Subdomínio é tudo antes do primeiro ponto
-  const parts = cleanHost.split(".");
-  const subdomain = parts.length > 2 ? parts[0] : null;
+  // 1. Host principal (tifra.com.br) → abre a landing ou homepage
+  if (host === "tifra.com.br") {
+    return NextResponse.next();
+  }
 
-  // Ignorar domínios principais
-  const mainDomains = ["tifra", "www", "app"];
-
-  if (subdomain && !mainDomains.includes(subdomain)) {
-    // Injeta subdomínio nos searchParams
-    url.searchParams.set("store", subdomain);
+  // 2. Painel / admin / app → redirecionar para /panel
+  if (host.startsWith("panel.")) {
+    url.pathname = "/panel";
     return NextResponse.rewrite(url);
   }
 
-  return NextResponse.next();
+  // 3. QUALQUER OUTRO subdomínio = loja
+  const subdomain = host.replace(".tifra.com.br", "");
+
+  // Se for sem subdomínio, só segue
+  if (!subdomain || subdomain === "www") return NextResponse.next();
+
+  // Reescreve rota interna para carregar a página da loja
+  url.pathname = `/_store/${subdomain}`;
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ["/((?!_next|.*\\..*).*)"],
+  matcher: [
+    /*
+     * Aplica middleware a todas rotas menos:
+     * /_next, /api, /static, /public etc
+     */
+    "/((?!_next|api|static|.*\\.).*)",
+  ],
 };
