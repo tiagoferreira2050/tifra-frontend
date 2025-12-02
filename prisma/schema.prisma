@@ -1,3 +1,6 @@
+// ----------------------
+//  DATABASE CONNECTION
+// ----------------------
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -7,10 +10,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ----------------------
+//        MODELS
+// ----------------------
+
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  stores    Store[]   // relação 1:N
+}
+
+model Store {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  subdomain  String   @unique
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
 }

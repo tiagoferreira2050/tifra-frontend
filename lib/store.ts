@@ -1,45 +1,40 @@
-import { supabase } from "@/lib/supabaseClient";
+import prisma from "@/lib/prisma";
+
+function generateSubdomain(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^\w]+/g, "")
+    .replace(/\s+/g, "");
+}
 
 export async function ensureStoreExists(userId: string) {
-  if (!userId) {
-    throw new Error("ID do usuário inválido.");
+  if (!userId) throw new Error("ID do usuário inválido.");
+
+  // Verifica se já existe loja
+  let store = await prisma.store.findFirst({
+    where: { userId },
+  });
+
+  if (store) return store;
+
+  const defaultName = "Minha Loja";
+  let sub = generateSubdomain(defaultName);
+
+  const exists = await prisma.store.findUnique({
+    where: { subdomain: sub },
+  });
+
+  if (exists) {
+    sub = `${sub}-${Math.floor(Math.random() * 9999)}`;
   }
 
-  console.log("🔍 ensureStoreExists() → userId:", userId);
+  store = await prisma.store.create({
+    data: {
+      userId,
+      name: defaultName,
+      subdomain: sub,
+    },
+  });
 
-  // 1. verificar se a loja já existe
-  const { data: existingStore, error: selectError } = await supabase
-    .from("stores")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (selectError) {
-    console.error("Erro ao buscar loja:", selectError);
-    throw new Error("Erro ao verificar loja.");
-  }
-
-  if (existingStore) {
-    console.log("✔ Loja já existe:", existingStore);
-    return existingStore;
-  }
-
-  // 2. criar loja nova
-  const { data: newStore, error: insertError } = await supabase
-    .from("stores")
-    .insert({
-      user_id: userId,
-      name: "Minha Loja",
-      created_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (insertError) {
-    console.error("❌ Erro ao criar loja:", insertError);
-    throw new Error("Erro ao criar loja: " + insertError.message);
-  }
-
-  console.log("🏪 Loja criada:", newStore);
-  return newStore;
+  return store;
 }
