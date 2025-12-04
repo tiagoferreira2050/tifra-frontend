@@ -13,24 +13,27 @@ export async function POST(req: Request) {
       storeId,
     } = body;
 
-    if (!name || !description || !categoryId || !priceInCents || !storeId) {
+    if (!name || !priceInCents || !categoryId || !storeId) {
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
         { status: 400 }
       );
     }
 
+    const price = priceInCents / 100;
+
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        price: priceInCents,
+        price,
         categoryId,
         storeId,
       },
     });
 
     return NextResponse.json(product, { status: 201 });
+
   } catch (error) {
     console.error("Erro ao criar produto:", error);
     return NextResponse.json(

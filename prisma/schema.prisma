@@ -19,7 +19,7 @@ model Store {
 
   user       User       @relation(fields: [userId], references: [id])
   categories Category[]
-  products   Product[]  // ⬅️ relação reversa
+  products   Product[]
 
   @@index([subdomain])
 }
@@ -39,7 +39,7 @@ model Category {
 model Product {
   id          String     @id @default(uuid())
   categoryId  String
-  storeId     String      // ⬅️ adicionado
+  storeId     String
   name        String
   price       Float
   description String?
@@ -47,10 +47,10 @@ model Product {
   createdAt   DateTime   @default(now())
 
   category    Category   @relation(fields: [categoryId], references: [id])
-  store       Store      @relation(fields: [storeId], references: [id]) // ⬅️ added relation
+  store       Store      @relation(fields: [storeId], references: [id])
 
   @@index([categoryId])
-  @@index([storeId]) // ⬅️ added index
+  @@index([storeId])
 }
 
 model User {
