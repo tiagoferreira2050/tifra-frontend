@@ -38,62 +38,23 @@ export default function CardapioPage() {
   // 1) CARREGAR BANCO AO ABRIR O PAINEL
   // ======================================================
   useEffect(() => {
-    async function loadData() {
-      const loadedCategories: any = await dbLoadAll("categories");
-      const loadedComplements: any = await dbLoadAll("complements");
-      const loadedProducts: any = await dbLoadAll("products");
+  async function loadData() {
+    try {
+      const res = await fetch("/api/categories");
+      const data = await res.json();
 
-      let finalCategories = [];
-
-      if (loadedCategories.length === 0) {
-        finalCategories = [
-          {
-            id: "1",
-            name: "Açaí do Seu Jeito - Seu açaí Perfeito",
-            active: true,
-            products: [],
-          },
-          {
-            id: "2",
-            name: "Ofertas em Combos - Duplo e Família",
-            active: true,
-            products: [],
-          },
-          {
-            id: "3",
-            name: "Exclusivos do Açaí Brasil!",
-            active: true,
-            products: [],
-          },
-        ];
-      } else {
-        finalCategories = loadedCategories.map((cat: any) => ({
-          ...cat,
-          products: loadedProducts.filter((p: any) => p.categoryId === cat.id),
-        }));
-      }
-
-      setCategories(finalCategories);
-      setSelectedCategoryId(finalCategories[0]?.id ?? "1");
-      setComplements(loadedComplements);
+      setCategories(data || []);
+      setSelectedCategoryId(data[0]?.id || null);
+      setComplements([]); // vazio por enquanto
+    } catch (error) {
+      console.error("Erro ao carregar categorias:", error);
     }
+  }
 
-    loadData();
-  }, []);
+  loadData();
+}, []);
 
-  // ======================================================
-  // 2) SALVAR AUTOMATICAMENTE QUANDO CATEGORIAS MUDAM
-  // ======================================================
-  useEffect(() => {
-    categories.forEach((cat) => dbSave("categories", cat));
-  }, [categories]);
-
-  // ======================================================
-  // 3) SALVAR AUTOMATICAMENTE QUANDO COMPLEMENTOS MUDAM
-  // ======================================================
-  useEffect(() => {
-    complements.forEach((c) => dbSave("complements", c));
-  }, [complements]);
+  
 
   // ======================================================
   // 4) SALVAR NOVO PRODUTO

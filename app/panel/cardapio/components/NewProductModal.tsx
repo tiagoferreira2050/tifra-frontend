@@ -102,18 +102,18 @@ export default function NewProductModal({
 
     try {
       const res = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          priceInCents: Math.round(numericPrice * 100),
-          categoryId,
-          storeId: "c8d9f792-cabd-4095-ba4a-c8095bab84e5",
-        }),
-      });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    name,
+    description,
+    priceInCents: Math.round(numericPrice * 100),
+    categoryId,
+    storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73", // 👈 ATUALIZADO
+  }),
+});
 
       if (!res.ok) {
         const data = await res.json();
