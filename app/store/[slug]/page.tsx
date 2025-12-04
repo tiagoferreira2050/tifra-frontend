@@ -2,18 +2,27 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { CategoryList } from "./components/CategoryList";
 
-export default async function StorePage(props: any) {
-  // NEXT PASSA PARAMS COMO PROMISE EM PRODUÇÃO
-  const { slug } = await props.params;
+interface StorePageProps {
+  params: {
+    slug: string;
+  };
+}
 
-  // 1) buscar loja pelo subdominio
+export default async function StorePage({ params }: StorePageProps) {
+  const { slug } = params;
+
+  // 1. Buscar loja
   const store = await prisma.store.findUnique({
     where: { subdomain: slug },
+    select: {
+      id: true,
+      name: true,
+    },
   });
 
   if (!store) return notFound();
 
-  // 2) buscar categorias e produtos
+  // 2. Buscar categorias + produtos (agora compatível com o Vercel)
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },
     include: {
@@ -23,13 +32,7 @@ export default async function StorePage(props: any) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold mb-8 text-center">
-        {store.name}
-      </h1>
-
-      {categories.length === 0 && (
-        <p className="text-center text-gray-500">Nenhum produto disponível.</p>
-      )}
+      <h1 className="text-3xl font-bold mb-8 text-center">{store.name}</h1>
 
       <CategoryList categories={categories} />
     </div>
