@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { CategoryList } from "./components/CategoryList";
 
-// Tipagem oficial de params no Next.js 13+
 interface StorePageProps {
   params: {
     slug: string;
@@ -12,8 +11,8 @@ interface StorePageProps {
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  // Consulta com include validado para build
-  const store = await prisma.store.findUnique({
+  // findFirst funciona igual findUnique, mas não quebra tipagem no build
+  const store = await prisma.store.findFirst({
     where: { subdomain: slug },
     include: {
       categories: {
@@ -22,7 +21,7 @@ export default async function StorePage({ params }: StorePageProps) {
         },
       },
     },
-  } satisfies Parameters<typeof prisma.store.findUnique>[0]); // <- Corrige erro de tipagem no build
+  });
 
   if (!store) return notFound();
 
