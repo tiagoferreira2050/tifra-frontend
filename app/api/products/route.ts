@@ -34,11 +34,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(product, { status: 201 });
 
-  } catch (error) {
-    console.error("Erro ao criar produto:", error);
-    return NextResponse.json(
-      { error: "Erro interno ao criar produto" },
-      { status: 500 }
-    );
-  }
+  } catch (error: any) {
+  console.error("Erro ao criar produto no Prisma:", error);
+
+  return NextResponse.json(
+    { error: error.message || "Erro interno ao criar produto" },
+    { status: 500 }
+  );
+}
 }
