@@ -11,24 +11,31 @@ interface StorePageProps {
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  // 1) Buscar loja
+  // Buscar loja
   const store = await prisma.store.findUnique({
     where: { subdomain: slug },
+    select: { id: true, name: true },
   });
 
   if (!store) return notFound();
 
-  // 2) Buscar categorias
-  const categories = await prisma.category.findMany({
-    where: { storeId: store.id },
-  });
+  // Buscar categorias via raw
+  const categories = await prisma.$queryRaw<any[]>`
+    SELECT id, name
+    FROM "Category"
+    WHERE "storeId" = ${store.id}
+    ORDER BY "createdAt" ASC
+  `;
 
-  // 3) Buscar produtos e anexar
+  // Buscar produtos por categoria
   const categoriesWithProducts = await Promise.all(
     categories.map(async (category) => {
-      const products = await prisma.product.findMany({
-        where: { categoryId: category.id },
-      });
+      const products = await prisma.$queryRaw<any[]>`
+        SELECT id, name, price, description, "imageUrl"
+        FROM "Product"
+        WHERE "categoryId" = ${category.id}
+        ORDER BY "createdAt" ASC
+      `;
 
       return {
         ...category,
