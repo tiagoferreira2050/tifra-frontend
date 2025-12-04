@@ -19,7 +19,6 @@ import {
 
 import { useState } from "react";
 
-// 🔥 IndexedDB
 import { dbSave, dbDelete } from "../storage/db";
 
 export default function CategoryManager({
@@ -46,7 +45,6 @@ export default function CategoryManager({
       )
     );
 
-    // salvar mudança no banco
     const updated = categories.find((c) => c.id === id);
     if (updated) dbSave("categories", updated);
   }
@@ -61,7 +59,6 @@ export default function CategoryManager({
         const newIndex = prev.findIndex((i) => i.id === over.id);
         const next = arrayMove(prev, oldIndex, newIndex);
 
-        // salvar todas no db
         next.forEach((cat) => dbSave("categories", cat));
 
         return next;
@@ -75,27 +72,57 @@ export default function CategoryManager({
     setModalOpen(true);
   }
 
-  function handleCreate() {
-    const newCat = {
-      id: String(Date.now()),
-      name: "",
-      active: true,
-      products: [],
-    };
+  // ========================================================
+  // 🔥 NOVA FUNÇÃO handleCreate (salva no backend)
+  // ========================================================
+  async function handleCreate() {
+    const name = prompt("Nome da categoria:");
+    if (!name) return;
 
-    setEditingCategory(newCat);
-    setIsNew(true);
-    setModalOpen(true);
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Erro ao criar backend:", data);
+        alert("Erro ao criar categoria!");
+        return;
+      }
+
+      const newCat = {
+        id: data.id,
+        name: data.name,
+        active: true,
+        products: [],
+      };
+
+      setCategories((prev: any[]) => {
+        const next = [...prev, newCat];
+        onSelectCategory(newCat.id);
+        return next;
+      });
+
+      dbSave("categories", newCat);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao criar categoria (servidor)");
+    }
   }
 
+  // ========================================================
+  // Salvar edição da modal (funciona)
+  // ========================================================
   function handleSave(updated: any) {
     if (isNew) {
       setCategories((prev: any[]) => {
         const next = [...prev, updated];
 
-        // salvar nova no banco
         dbSave("categories", updated);
-
         onSelectCategory(updated.id);
         return next;
       });
@@ -106,17 +133,18 @@ export default function CategoryManager({
         )
       );
 
-      // salvar edição no banco
       dbSave("categories", updated);
     }
 
     setModalOpen(false);
   }
 
+  // ========================================================
+  // DELETE
+  // ========================================================
   function handleDelete(id: string) {
     setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
 
-    // 🔥 DELETA DO BANCO DE VERDADE
     dbDelete("categories", id);
 
     if (selectedCategoryId === id) {
@@ -124,6 +152,9 @@ export default function CategoryManager({
     }
   }
 
+  // ========================================================
+  // DUPLICATE
+  // ========================================================
   function handleDuplicate(cat: any) {
     const newCat = {
       ...cat,
@@ -135,7 +166,6 @@ export default function CategoryManager({
     setCategories((prev: any[]) => {
       const next = [...prev, newCat];
 
-      // salvar no banco
       dbSave("categories", newCat);
 
       onSelectCategory(newCat.id);
@@ -143,17 +173,23 @@ export default function CategoryManager({
     });
   }
 
+  // ========================================================
+  // SALVAR ORDEM (local)
+  // ========================================================
   function saveOrder() {
     try {
       const simple = categories.map((c) => ({ id: c.id, name: c.name }));
       localStorage.setItem("categories_order", JSON.stringify(simple));
-      alert("Ordem salva localmente (localStorage). Substitua por sua API se necessário.");
+      alert("Ordem salva localmente. Depois podemos mandar para API.");
     } catch (err) {
       console.error("Erro ao salvar ordem:", err);
-      alert("Erro ao salvar ordem. Veja o console.");
+      alert("Erro ao salvar ordem.");
     }
   }
 
+  // ========================================================
+  // UI
+  // ========================================================
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
