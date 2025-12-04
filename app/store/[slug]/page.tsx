@@ -11,7 +11,12 @@ interface StorePageProps {
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  // 1. Buscar loja
+  // Proteger contra slug inválido
+  if (!slug || typeof slug !== "string") {
+    return notFound();
+  }
+
+  // Buscar loja pelo subdomínio
   const store = await prisma.store.findUnique({
     where: { subdomain: slug },
     select: {
@@ -22,7 +27,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   if (!store) return notFound();
 
-  // 2. Buscar categorias + produtos (agora compatível com o Vercel)
+  // Buscar categorias + produtos da loja
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },
     include: {
