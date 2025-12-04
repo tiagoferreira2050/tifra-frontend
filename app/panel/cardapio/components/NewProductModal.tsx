@@ -90,7 +90,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // SALVAR PRODUTO
+  // SALVAR PRODUTO (API)
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -100,11 +100,8 @@ export default function NewProductModal({
     const numericPrice = toNumber(price);
     if (numericPrice <= 0) return alert("Preço inválido");
 
-    // ---------------------------
-    // 1) SALVAR NO BANCO
-    // ---------------------------
     try {
-      await fetch("/api/products", {
+      const res = await fetch("/api/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,50 +114,22 @@ export default function NewProductModal({
           storeId: "c8d9f792-cabd-4095-ba4a-c8095bab84e5",
         }),
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Erro ao salvar: ${data.error || res.status}`);
+        return;
+      }
+
+      alert("Produto salvo com sucesso!");
+
+      // Fecha modal
+      onClose();
+
     } catch (error) {
       console.error("Erro ao salvar produto no banco:", error);
+      alert("Erro ao conectar ao servidor");
     }
-
-    // ---------------------------
-    // 2) SALVAR LOCAL (ORIGINAL)
-    // ---------------------------
-
-    const numericDiscountPrice = hasDiscount ? toNumber(discountPrice) : null;
-
-    const fullComplements = selectedComplements
-      .map((c: any) =>
-        globalComplementsState.find(
-          (gc: any) => gc.id === c.complementId || gc.id === c.id
-        )
-      )
-      .filter(Boolean);
-
-    const newProduct = {
-      id: "prod-" + Date.now(),
-      name,
-      description,
-      categoryId,
-      pdv,
-      price: numericPrice,
-      portion: portionValue
-        ? { value: portionValue, unit: portionUnit }
-        : null,
-      serves,
-      highlight,
-      image,
-      discount: hasDiscount
-        ? {
-            percent: Number(discountPercent),
-            price: numericDiscountPrice,
-          }
-        : null,
-      classifications,
-      complements: fullComplements,
-      active: true,
-    };
-
-    onSave(categoryId, newProduct);
-    onClose();
   }
 
   // ============================================================
@@ -205,9 +174,7 @@ export default function NewProductModal({
             ))}
           </select>
         ) : (
-          <p className="text-red-500 mb-4">
-            Nenhuma categoria encontrada
-          </p>
+          <p className="text-red-500 mb-4">Nenhuma categoria encontrada</p>
         )}
 
         {/* COMPLEMENTOS */}
@@ -305,11 +272,7 @@ export default function NewProductModal({
           ) : (
             <p className="text-gray-400">Arraste ou clique para enviar</p>
           )}
-          <input
-            type="file"
-            className="mt-2"
-            onChange={handleImageUpload}
-          />
+          <input type="file" className="mt-2" onChange={handleImageUpload} />
         </div>
 
         {/* DESTAQUE */}
