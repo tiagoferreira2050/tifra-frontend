@@ -233,10 +233,4 @@ export default function CategoryManager({
       <EditCategoryModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        category={editingCategory}
-        onSave={handleSave}
-        isNew={isNew}
-      />
-    </div>
-  );
-}
+        
