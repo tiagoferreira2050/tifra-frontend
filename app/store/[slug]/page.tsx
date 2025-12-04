@@ -11,14 +11,14 @@ interface StorePageProps {
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  // 1) Busca a loja pelo subdomínio
-  const store = await prisma.store.findFirst({
+  // 1) Buscar loja pelo subdomínio
+  const store = await prisma.store.findUnique({
     where: { subdomain: slug },
   });
 
   if (!store) return notFound();
 
-  // 2) Busca as categorias + produtos dessa loja
+  // 2) Buscar categorias e produtos
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },
     include: {
