@@ -76,43 +76,40 @@ export default function CategoryManager({
   // 🔥 NOVA FUNÇÃO handleCreate (salva no backend)
   // ========================================================
   async function handleCreate() {
-    const name = prompt("Nome da categoria:");
-    if (!name) return;
+  const name = prompt("Nome da categoria:");
+  if (!name) return;
 
-    try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
+  try {
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        storeId: process.env.NEXT_PUBLIC_STORE_ID,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        console.error("Erro ao criar backend:", data);
-        alert("Erro ao criar categoria!");
-        return;
-      }
-
-      const newCat = {
-        id: data.id,
-        name: data.name,
-        active: true,
-        products: [],
-      };
-
-      setCategories((prev: any[]) => {
-        const next = [...prev, newCat];
-        onSelectCategory(newCat.id);
-        return next;
-      });
-
-      dbSave("categories", newCat);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao criar categoria (servidor)");
+    if (!res.ok) {
+      alert("Erro ao criar categoria!");
+      return;
     }
+
+    const newCat = {
+      id: data.id,
+      name: data.name,
+      active: true,
+      products: [],
+    };
+
+    setCategories((prev) => [...prev, newCat]);
+    onSelectCategory(newCat.id);
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao criar categoria (servidor)");
   }
+}
 
   // ========================================================
   // Salvar edição da modal (funciona)
