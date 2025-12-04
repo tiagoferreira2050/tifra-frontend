@@ -33,7 +33,6 @@ export default function NewProductModal({
 
   const [highlight, setHighlight] = useState("");
 
-  // 🔥 ÚNICA ALTERAÇÃO NECESSÁRIA
   const [image, setImage] = useState<string | null>(null);
 
   const [classifications, setClassifications] = useState([] as string[]);
@@ -68,24 +67,6 @@ export default function NewProductModal({
     return isNaN(num) ? 0 : num;
   }
 
-  useEffect(() => {
-    if (!hasDiscount) return;
-    const base = toNumber(price);
-    const pct = Number(discountPercent);
-    if (!pct || base <= 0) return;
-    const final = base - (base * pct) / 100;
-    setDiscountPrice(final.toFixed(2).replace(".", ","));
-  }, [discountPercent, price]);
-
-  useEffect(() => {
-    if (!hasDiscount) return;
-    const base = toNumber(price);
-    const desc = toNumber(discountPrice);
-    if (desc <= 0 || desc >= base) return;
-    const pct = Math.round(100 - (desc / base) * 100);
-    setDiscountPercent(String(pct));
-  }, [discountPrice]);
-
   // ============================================================
   // CLASSIFICAÇÕES
   // ============================================================
@@ -111,13 +92,38 @@ export default function NewProductModal({
   // ============================================================
   // SALVAR PRODUTO
   // ============================================================
-  function handleSave() {
+  async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
     if (!description.trim()) return alert("Descrição obrigatória");
     if (!categoryId) return alert("Selecione uma categoria");
 
     const numericPrice = toNumber(price);
     if (numericPrice <= 0) return alert("Preço inválido");
+
+    // ---------------------------
+    // 1) SALVAR NO BANCO
+    // ---------------------------
+    try {
+      await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          priceInCents: Math.round(numericPrice * 100),
+          categoryId,
+          storeId: "c8d9f792-cabd-4095-ba4a-c8095bab84e5",
+        }),
+      });
+    } catch (error) {
+      console.error("Erro ao salvar produto no banco:", error);
+    }
+
+    // ---------------------------
+    // 2) SALVAR LOCAL (ORIGINAL)
+    // ---------------------------
 
     const numericDiscountPrice = hasDiscount ? toNumber(discountPrice) : null;
 
@@ -157,6 +163,9 @@ export default function NewProductModal({
     onClose();
   }
 
+  // ============================================================
+  // UI
+  // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
@@ -183,7 +192,6 @@ export default function NewProductModal({
         {/* CATEGORIA */}
         <label className="block font-medium mb-1">Categoria *</label>
 
-        {/* 🔥 FIX: Evitar crash quando categories for undefined */}
         {Array.isArray(categories) && categories.length > 0 ? (
           <select
             className="w-full border rounded-md p-2 mb-4"
@@ -257,7 +265,6 @@ export default function NewProductModal({
             />
           </div>
         )}
-
 
         {/* PORÇÃO */}
         <label className="block font-medium mb-1">Tamanho da porção (opcional)</label>
