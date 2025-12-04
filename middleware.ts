@@ -5,35 +5,40 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const host = req.headers.get("host") || "";
 
-  const cleanHost = host.split(":")[0];
-  const mainDomain = "tifra.com.br";
-
-  // Painel
-  if (cleanHost.startsWith(`app.`)) {
+  // Ignorar arquivos estáticos e API
+  if (
+    url.pathname.startsWith("/_next") ||
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/static") ||
+    url.pathname.includes(".")
+  ) {
     return NextResponse.next();
   }
 
-  // Domínio principal
+  const cleanHost = host.split(":")[0];
+  const mainDomain = "tifra.com.br";
+
+  // Ignorar painel
+  if (cleanHost.startsWith("app.")) {
+    return NextResponse.next();
+  }
+
+  // Ignorar domínio raiz
   if (cleanHost === mainDomain || cleanHost === `www.${mainDomain}`) {
     return NextResponse.next();
   }
 
-  // Extrai subdomínio
-  const subdomain = cleanHost.replace(`.${mainDomain}`, "");
+  // Obter subdomínio
+  const subdomain = cleanHost.split(".")[0];
 
-  // Se não houver subdomínio, segue normalmente
-  if (!subdomain) {
-    return NextResponse.next();
-  }
-
-  // Reescreve para rota interna
+  // rewrite
   url.pathname = `/store/${subdomain}`;
+
   return NextResponse.rewrite(url);
 }
 
-// IGNORAR arquivos estáticos e APIs
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg).*)",
+    "/:path*"
   ],
 };
