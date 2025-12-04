@@ -11,25 +11,26 @@ interface StorePageProps {
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  // findFirst funciona igual findUnique, mas não quebra tipagem no build
+  // 1) Busca a loja pelo subdomínio
   const store = await prisma.store.findFirst({
     where: { subdomain: slug },
-    include: {
-      categories: {
-        include: {
-          products: true,
-        },
-      },
-    },
   });
 
   if (!store) return notFound();
+
+  // 2) Busca as categorias + produtos dessa loja
+  const categories = await prisma.category.findMany({
+    where: { storeId: store.id },
+    include: {
+      products: true,
+    },
+  });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <h1 className="text-3xl font-bold mb-8 text-center">{store.name}</h1>
 
-      <CategoryList categories={store.categories} />
+      <CategoryList categories={categories} />
     </div>
   );
 }
