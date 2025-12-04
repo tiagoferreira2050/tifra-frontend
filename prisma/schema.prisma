@@ -15,35 +15,42 @@ model Store {
   address    String?
   logoUrl    String?
   coverImage String?
-
   createdAt  DateTime   @default(now())
 
   user       User       @relation(fields: [userId], references: [id])
   categories Category[]
+  products   Product[]  // ⬅️ relação reversa
+
+  @@index([subdomain])
 }
 
 model Category {
   id        String     @id @default(uuid())
   storeId   String
   name      String
-
   createdAt DateTime   @default(now())
 
   store     Store      @relation(fields: [storeId], references: [id])
   products  Product[]
+
+  @@index([storeId])
 }
 
 model Product {
   id          String     @id @default(uuid())
   categoryId  String
+  storeId     String      // ⬅️ adicionado
   name        String
   price       Float
   description String?
   imageUrl    String?
-
   createdAt   DateTime   @default(now())
 
   category    Category   @relation(fields: [categoryId], references: [id])
+  store       Store      @relation(fields: [storeId], references: [id]) // ⬅️ added relation
+
+  @@index([categoryId])
+  @@index([storeId]) // ⬅️ added index
 }
 
 model User {
@@ -51,7 +58,6 @@ model User {
   email     String   @unique
   name      String?
   password  String
-
   createdAt DateTime @default(now())
 
   stores    Store[]
