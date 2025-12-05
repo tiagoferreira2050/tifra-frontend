@@ -38,17 +38,25 @@ export default function CategoryManager({
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [isNew, setIsNew] = useState(false);
 
+  // ========================================================
+  // TOGGLE ACTIVE
+  // ========================================================
   function toggleActive(id: string) {
-    setCategories((prev: any) =>
-      prev.map((c: any) =>
+    setCategories((prev: any[]) => {
+      const next = prev.map((c: any) =>
         c.id === id ? { ...c, active: !c.active } : c
-      )
-    );
+      );
 
-    const updated = categories.find((c) => c.id === id);
-    if (updated) dbSave("categories", updated);
+      const updated = next.find((c: any) => c.id === id);
+      if (updated) dbSave("categories", updated);
+
+      return next;
+    });
   }
 
+  // ========================================================
+  // DRAG AND DROP ORDER
+  // ========================================================
   function onDragEnd(event: any) {
     const { active, over } = event;
     if (!over) return;
@@ -60,12 +68,14 @@ export default function CategoryManager({
         const next = arrayMove(prev, oldIndex, newIndex);
 
         next.forEach((cat) => dbSave("categories", cat));
-
         return next;
       });
     }
   }
 
+  // ========================================================
+  // EDIT
+  // ========================================================
   function handleEdit(category: any) {
     setEditingCategory(category);
     setIsNew(false);
@@ -73,52 +83,51 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // 🔥 NOVA FUNÇÃO handleCreate (salva no backend)
+  // CREATE (BACKEND)
   // ========================================================
   async function handleCreate() {
-  const name = prompt("Nome da categoria:");
-  if (!name) return;
+    const name = prompt("Nome da categoria:");
+    if (!name) return;
 
-  try {
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        storeId: process.env.NEXT_PUBLIC_STORE_ID,
-      }),
-    });
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert("Erro ao criar categoria!");
-      return;
+      if (!res.ok) {
+        console.error("Erro ao criar backend:", data);
+        alert("Erro ao criar categoria!");
+        return;
+      }
+
+      const newCat = {
+        id: data.id,
+        name: data.name,
+        active: true,
+        products: [],
+      };
+
+      setCategories((prev: any[]) => [...prev, newCat]);
+
+      onSelectCategory(newCat.id);
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao criar categoria (servidor)");
     }
-
-    const newCat = {
-      id: data.id,
-      name: data.name,
-      active: true,
-      products: [],
-    };
-
-    setCategories((prev) => [...prev, newCat]);
-    onSelectCategory(newCat.id);
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao criar categoria (servidor)");
   }
-}
 
   // ========================================================
-  // Salvar edição da modal (funciona)
+  // SAVE (EDIT MODAL)
   // ========================================================
   function handleSave(updated: any) {
     if (isNew) {
       setCategories((prev: any[]) => {
         const next = [...prev, updated];
-
         dbSave("categories", updated);
         onSelectCategory(updated.id);
         return next;
@@ -164,14 +173,14 @@ export default function CategoryManager({
       const next = [...prev, newCat];
 
       dbSave("categories", newCat);
-
       onSelectCategory(newCat.id);
+
       return next;
     });
   }
 
   // ========================================================
-  // SALVAR ORDEM (local)
+  // SAVE ORDER (LOCAL)
   // ========================================================
   function saveOrder() {
     try {
