@@ -39,6 +39,46 @@ export default function CategoryManager({
   const [isNew, setIsNew] = useState(false);
 
   // ========================================================
+  // CREATE
+  // ========================================================
+  async function handleCreate() {
+    const name = prompt("Nome da categoria:");
+    if (!name) return;
+
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          storeId: process.env.NEXT_PUBLIC_STORE_ID,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("Erro ao criar categoria!");
+        return;
+      }
+
+      const newCat = {
+        id: data.id,
+        name: data.name,
+        active: true,
+        products: [],
+      };
+
+      setCategories((prev: any[]) => [...prev, newCat]);
+      onSelectCategory(newCat.id);
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao criar categoria (servidor)");
+    }
+  }
+
+  // ========================================================
   // TOGGLE ACTIVE
   // ========================================================
   function toggleActive(id: string) {
@@ -74,7 +114,7 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // EDIT
+  // EDIT (ABRIR MODAL)
   // ========================================================
   function handleEdit(category: any) {
     setEditingCategory(category);
@@ -83,82 +123,63 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // CREATE (BACKEND)
+  // SAVE (PUT)
   // ========================================================
-  async function handleCreate() {
-    const name = prompt("Nome da categoria:");
-    if (!name) return;
-
-    const storeId = process.env.NEXT_PUBLIC_STORE_ID;
-
+  async function handleSave(updated: any) {
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
+      const res = await fetch(`/api/categories/${updated.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          storeId,
+          name: updated.name,
+          active: updated.active,
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        console.error("Erro ao criar backend:", data);
-        alert("Erro ao criar categoria!");
+        alert("Erro ao atualizar categoria!");
         return;
       }
 
-      const newCat = {
-        id: data.id,
-        name: data.name,
-        active: true,
-        products: [],
-      };
+      const data = await res.json();
 
-      setCategories((prev: any[]) => [...prev, newCat]);
-      onSelectCategory(newCat.id);
+      setCategories((prev: any[]) =>
+        prev.map((c: any) => (c.id === data.id ? data : c))
+      );
+
+      setModalOpen(false);
 
     } catch (err) {
       console.error(err);
-      alert("Erro ao criar categoria (servidor)");
+      alert("Erro ao atualizar categoria (servidor)");
     }
-  }
-
-  // ========================================================
-  // SAVE (EDIT MODAL)
-  // ========================================================
-  function handleSave(updated: any) {
-    if (isNew) {
-      setCategories((prev: any[]) => {
-        const next = [...prev, updated];
-        dbSave("categories", updated);
-        onSelectCategory(updated.id);
-        return next;
-      });
-    } else {
-      setCategories((prev: any[]) =>
-        prev.map((c: any) =>
-          c.id === updated.id ? updated : c
-        )
-      );
-
-      dbSave("categories", updated);
-    }
-
-    setModalOpen(false);
   }
 
   // ========================================================
   // DELETE
   // ========================================================
-  function handleDelete(id: string) {
-    setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
+  async function handleDelete(id: string) {
+    if (!confirm("Excluir essa categoria?")) return;
 
-    dbDelete("categories", id);
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
 
-    if (selectedCategoryId === id) {
-      onSelectCategory(null);
+      if (!res.ok) {
+        alert("Erro ao excluir categoria!");
+        return;
+      }
+
+      setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
+
+      if (selectedCategoryId === id) {
+        onSelectCategory(null);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao excluir categoria (servidor)");
     }
   }
 
@@ -169,18 +190,14 @@ export default function CategoryManager({
     const newCat = {
       ...cat,
       id: String(Date.now()),
-      name: cat.name + " (Cópia)",
+      name: cat.name + " (cópia)",
       products: cat.products ? [...cat.products] : [],
     };
 
-    setCategories((prev: any[]) => {
-      const next = [...prev, newCat];
+    setCategories((prev: any[]) => [...prev, newCat]);
+    onSelectCategory(newCat.id);
 
-      dbSave("categories", newCat);
-      onSelectCategory(newCat.id);
-
-      return next;
-    });
+    dbSave("categories", newCat);
   }
 
   // ========================================================
@@ -192,7 +209,7 @@ export default function CategoryManager({
       localStorage.setItem("categories_order", JSON.stringify(simple));
       alert("Ordem salva localmente. Depois podemos mandar para API.");
     } catch (err) {
-      console.error("Erro ao salvar ordem:", err);
+      console.error(err);
       alert("Erro ao salvar ordem.");
     }
   }

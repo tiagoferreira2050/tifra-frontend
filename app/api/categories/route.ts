@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// ===================================================
+// GET - LISTAR
+// ===================================================
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
@@ -17,29 +20,22 @@ export async function GET() {
   }
 }
 
+// ===================================================
+// POST - CRIAR
+// ===================================================
 export async function POST(req: Request) {
   try {
     const { name, storeId } = await req.json();
 
-    if (!name) {
+    if (!name || !storeId) {
       return NextResponse.json(
-        { error: "Nome obrigatório" },
-        { status: 400 }
-      );
-    }
-
-    if (!storeId) {
-      return NextResponse.json(
-        { error: "storeId obrigatório" },
+        { error: "Nome e storeId obrigatórios" },
         { status: 400 }
       );
     }
 
     const category = await prisma.category.create({
-      data: {
-        name,
-        storeId,
-      },
+      data: { name, storeId },
     });
 
     return NextResponse.json(category, { status: 201 });
