@@ -6,10 +6,10 @@ import { prisma } from "@/lib/prisma";
 // ===================================================
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // 👈 CORREÇÃO
 
     if (!id) {
       return NextResponse.json(
@@ -65,10 +65,10 @@ export async function PATCH(
 // ===================================================
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // 👈 CORREÇÃO
 
     if (!id) {
       return NextResponse.json(
@@ -100,10 +100,10 @@ export async function PUT(
 // ===================================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // 👈 CORREÇÃO
 
     if (!id) {
       return NextResponse.json(
