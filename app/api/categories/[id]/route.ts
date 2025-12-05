@@ -1,15 +1,15 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
 // PATCH - UPDATE PARCIAL
 // ===================================================
 export async function PATCH(
-  req: NextRequest,
-  context: any
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
@@ -45,11 +45,11 @@ export async function PATCH(
 // PUT - UPDATE NAME / ACTIVE
 // ===================================================
 export async function PUT(
-  req: NextRequest,
-  context: any
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
@@ -80,11 +80,11 @@ export async function PUT(
 // DELETE
 // ===================================================
 export async function DELETE(
-  req: NextRequest,
-  context: any
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
