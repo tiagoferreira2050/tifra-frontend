@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // ===================================================
 export async function PATCH(
   req: NextRequest,
-  context: any // 👈 compatível com Next 16
+  context: any
 ) {
   try {
     const { id } = context.params;
@@ -18,11 +18,16 @@ export async function PATCH(
       );
     }
 
-    const data = await req.json();
+    // 🔥 captura somente campos válidos
+    const { name, active, order } = await req.json();
 
     const updated = await prisma.category.update({
       where: { id },
-      data, // 👈 apenas os campos enviados
+      data: {
+        ...(name !== undefined && { name }),
+        ...(active !== undefined && { active }),
+        ...(order !== undefined && { order }),
+      },
     });
 
     return NextResponse.json(updated);
@@ -41,7 +46,7 @@ export async function PATCH(
 // ===================================================
 export async function PUT(
   req: NextRequest,
-  context: any // 👈 compatível com Next 16
+  context: any
 ) {
   try {
     const { id } = context.params;
@@ -76,7 +81,7 @@ export async function PUT(
 // ===================================================
 export async function DELETE(
   req: NextRequest,
-  context: any // 👈 compatível com Next 16
+  context: any
 ) {
   try {
     const { id } = context.params;
@@ -88,12 +93,10 @@ export async function DELETE(
       );
     }
 
-    // verifica se existe
     const exists = await prisma.category.findUnique({
       where: { id },
     });
 
-    // se não existir, simplesmente retornar sucesso
     if (!exists) {
       return NextResponse.json({ success: true });
     }
