@@ -31,6 +31,9 @@ export default function CategoryManager({
   selectedCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
 }) {
+
+  const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
+
   const sensors = useSensors(useSensor(PointerSensor));
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -50,7 +53,7 @@ export default function CategoryManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          storeId: process.env.NEXT_PUBLIC_STORE_ID,
+          storeId: STORE_ID,
         }),
       });
 
@@ -78,7 +81,49 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // TOGGLE ACTIVE  (CORREÇÃO: USAR NOVO ESTADO)
+  // EDIT (ABRIR MODAL)
+  // ========================================================
+  function handleEdit(category: any) {
+    setEditingCategory(category);
+    setIsNew(false);
+    setModalOpen(true);
+  }
+
+  // ========================================================
+  // EDITAR & SALVAR (NOME)
+  // ========================================================
+  async function handleSaveCategory(updated: any) {
+    try {
+      // 1. SALVA NO BACKEND
+      await fetch(`/api/categories/${updated.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: updated.name }),
+      });
+
+      // 2. ATUALIZA NO FRONTEND
+      setCategories((prev: any[]) =>
+        prev.map((c: any) =>
+          c.id === updated.id ? { ...c, name: updated.name } : c
+        )
+      );
+
+      // 🔥 Mantém modal alinhado com o valor atual
+      setEditingCategory(updated);
+
+      
+
+      // 3. FECHA MODAL
+      setModalOpen(false);
+
+    } catch (err) {
+      console.error("Erro ao salvar categoria:", err);
+      alert("Erro ao salvar categoria");
+    }
+  }
+
+  // ========================================================
+  // TOGGLE ACTIVE
   // ========================================================
   async function toggleActive(id: string) {
     setCategories((prev: any[]) => {
@@ -113,15 +158,6 @@ export default function CategoryManager({
         return arrayMove(prev, oldIndex, newIndex);
       });
     }
-  }
-
-  // ========================================================
-  // EDIT (ABRIR MODAL)
-  // ========================================================
-  function handleEdit(category: any) {
-    setEditingCategory(category);
-    setIsNew(false);
-    setModalOpen(true);
   }
 
   // ========================================================
@@ -245,7 +281,7 @@ export default function CategoryManager({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         category={editingCategory}
-        onSave={() => {}}
+        onSave={handleSaveCategory}
         isNew={isNew}
       />
     </div>

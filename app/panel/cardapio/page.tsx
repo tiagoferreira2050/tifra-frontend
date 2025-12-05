@@ -42,7 +42,7 @@ export default function CardapioPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch("/api/categories", { cache: "no-store" });
         const data = await res.json();
 
         if (!Array.isArray(data)) {
@@ -55,7 +55,7 @@ export default function CardapioPage() {
        const formatted = data.map((cat: any) => ({
   id: cat.id,
   name: cat.name,
-  active: true, // default
+  active: cat.active ?? true,
   products: Array.isArray(cat.products) ? cat.products : [], // 👈 usa os produtos vindos do backend
 }));
 
