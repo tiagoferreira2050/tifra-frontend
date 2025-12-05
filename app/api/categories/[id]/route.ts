@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // ===================================================
 export async function PATCH(
   req: NextRequest,
-  context: any
+  context: any // 👈 compatível com Next 16
 ) {
   try {
     const { id } = context.params;
@@ -22,7 +22,7 @@ export async function PATCH(
 
     const updated = await prisma.category.update({
       where: { id },
-      data,
+      data, // 👈 apenas os campos enviados
     });
 
     return NextResponse.json(updated);
@@ -41,7 +41,7 @@ export async function PATCH(
 // ===================================================
 export async function PUT(
   req: NextRequest,
-  context: any
+  context: any // 👈 compatível com Next 16
 ) {
   try {
     const { id } = context.params;
@@ -76,7 +76,7 @@ export async function PUT(
 // ===================================================
 export async function DELETE(
   req: NextRequest,
-  context: any
+  context: any // 👈 compatível com Next 16
 ) {
   try {
     const { id } = context.params;
