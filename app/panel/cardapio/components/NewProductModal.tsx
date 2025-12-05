@@ -123,16 +123,15 @@ export default function NewProductModal({
 
       alert("Produto salvo com sucesso!");
 
-// 1. Buscar categorias atualizadas do backend
-const catRes = await fetch("/api/categories");
-const updatedCategories = await catRes.json();
+// pega o produto criado
+const product = await res.json();
 
-// 2. Informar o componente pai para atualizar o estado
+// atualiza estado no pai
 if (onSave) {
-  onSave(updatedCategories);
+  onSave(categoryId, product);
 }
 
-// 3. Fechar modal
+// fecha modal
 onClose();
 
 
