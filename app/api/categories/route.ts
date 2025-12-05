@@ -8,6 +8,11 @@ export async function GET() {
   try {
     const categories = await prisma.category.findMany({
       orderBy: { createdAt: "asc" },
+      include: {
+        products: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
 
     return NextResponse.json(categories);
