@@ -2,23 +2,23 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
-// PATCH - ATUALIZAR STATUS (active) OU NAME
+// PATCH - UPDATE PARCIAL
 // ===================================================
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any // 👈 força tipagem para evitar conflito
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
     const data = await req.json();
 
-    // atualiza somente os campos enviados
     const updated = await prisma.category.update({
       where: { id },
       data,
     });
 
     return NextResponse.json(updated);
+
   } catch (err) {
     console.error("Erro PATCH /categories/[id]:", err);
     return NextResponse.json(
@@ -29,14 +29,14 @@ export async function PATCH(
 }
 
 // ===================================================
-// PUT - EDITAR NOME E ACTIVE (método já existente)
+// PUT - UPDATE NAME / ACTIVE
 // ===================================================
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any // 👈 força tipagem para evitar conflito
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
     const { name, active } = await req.json();
 
     const updated = await prisma.category.update({
@@ -45,6 +45,7 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
+
   } catch (err) {
     console.error("Erro PUT /categories/[id]:", err);
     return NextResponse.json(
@@ -55,20 +56,21 @@ export async function PUT(
 }
 
 // ===================================================
-// DELETE - EXCLUIR
+// DELETE
 // ===================================================
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any // 👈 força tipagem para evitar conflito
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
 
     await prisma.category.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
+
   } catch (err) {
     console.error("Erro DELETE /categories/[id]:", err);
     return NextResponse.json(
