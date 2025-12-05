@@ -18,7 +18,6 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useState } from "react";
-
 import { dbSave, dbDelete } from "../storage/db";
 
 export default function CategoryManager({
@@ -79,19 +78,28 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // TOGGLE ACTIVE
+  // TOGGLE ACTIVE  (AGORA ENVIA PARA API)
   // ========================================================
-  function toggleActive(id: string) {
+  async function toggleActive(id: string) {
     setCategories((prev: any[]) => {
-      const next = prev.map((c: any) =>
+      return prev.map((c: any) =>
         c.id === id ? { ...c, active: !c.active } : c
       );
-
-      const updated = next.find((c: any) => c.id === id);
-      if (updated) dbSave("categories", updated);
-
-      return next;
     });
+
+    try {
+      const cat = categories.find((c) => c.id === id);
+      if (!cat) return;
+
+      await fetch(`/api/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !cat.active }),
+      });
+
+    } catch (err) {
+      console.error("Erro ao atualizar categoria:", err);
+    }
   }
 
   // ========================================================
@@ -105,10 +113,7 @@ export default function CategoryManager({
       setCategories((prev: any[]) => {
         const oldIndex = prev.findIndex((i) => i.id === active.id);
         const newIndex = prev.findIndex((i) => i.id === over.id);
-        const next = arrayMove(prev, oldIndex, newIndex);
-
-        next.forEach((cat) => dbSave("categories", cat));
-        return next;
+        return arrayMove(prev, oldIndex, newIndex);
       });
     }
   }
@@ -123,35 +128,28 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // SAVE (PUT)
+  // SAVE ORDER NO BANCO
   // ========================================================
-  async function handleSave(updated: any) {
+  async function handleSaveOrder() {
     try {
-      const res = await fetch(`/api/categories/${updated.id}`, {
+      const orders = categories.map((c: any, index: number) => ({
+        id: c.id,
+        order: index,
+      }));
+
+      await fetch("/api/categories/order", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: updated.name,
-          active: updated.active,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orders }),
       });
 
-      if (!res.ok) {
-        alert("Erro ao atualizar categoria!");
-        return;
-      }
-
-      const data = await res.json();
-
-      setCategories((prev: any[]) =>
-        prev.map((c: any) => (c.id === data.id ? data : c))
-      );
-
-      setModalOpen(false);
+      alert("Ordem salva com sucesso!");
 
     } catch (err) {
-      console.error(err);
-      alert("Erro ao atualizar categoria (servidor)");
+      console.error("Erro ao salvar ordem:", err);
+      alert("Erro ao salvar ordem");
     }
   }
 
@@ -184,7 +182,7 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // DUPLICATE
+  // DUPLICATE (LOCAL SOMENTE)
   // ========================================================
   function handleDuplicate(cat: any) {
     const newCat = {
@@ -201,26 +199,14 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // SAVE ORDER (LOCAL)
-  // ========================================================
-  function saveOrder() {
-    try {
-      const simple = categories.map((c) => ({ id: c.id, name: c.name }));
-      localStorage.setItem("categories_order", JSON.stringify(simple));
-      alert("Ordem salva localmente. Depois podemos mandar para API.");
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar ordem.");
-    }
-  }
-
-  // ========================================================
   // UI
   // ========================================================
   return (
     <div className="flex flex-col gap-4">
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Categorias</h2>
+
         <button
           onClick={handleCreate}
           className="bg-red-600 text-white px-4 py-2 rounded-md text-sm"
@@ -229,8 +215,9 @@ export default function CategoryManager({
         </button>
       </div>
 
+      {/* 🔥 AGORA SALVA NO BACKEND */}
       <button
-        onClick={saveOrder}
+        onClick={handleSaveOrder}
         className="bg-green-600 w-full text-white py-2 rounded-md font-medium"
       >
         Salvar Ordem
@@ -261,7 +248,7 @@ export default function CategoryManager({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         category={editingCategory}
-        onSave={handleSave}
+        onSave={() => {}}
         isNew={isNew}
       />
     </div>

@@ -1,15 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
-// PUT - EDITAR
+// PATCH - ATUALIZAR STATUS (active) OU NAME
 // ===================================================
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = params;
+    const data = await req.json();
+
+    // atualiza somente os campos enviados
+    const updated = await prisma.category.update({
+      where: { id },
+      data,
+    });
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    console.error("Erro PATCH /categories/[id]:", err);
+    return NextResponse.json(
+      { error: "Erro ao atualizar categoria" },
+      { status: 500 }
+    );
+  }
+}
+
+// ===================================================
+// PUT - EDITAR NOME E ACTIVE (método já existente)
+// ===================================================
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
     const { name, active } = await req.json();
 
     const updated = await prisma.category.update({
@@ -18,7 +45,6 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
-
   } catch (err) {
     console.error("Erro PUT /categories/[id]:", err);
     return NextResponse.json(
@@ -32,18 +58,17 @@ export async function PUT(
 // DELETE - EXCLUIR
 // ===================================================
 export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = params;
 
     await prisma.category.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
-
   } catch (err) {
     console.error("Erro DELETE /categories/[id]:", err);
     return NextResponse.json(
