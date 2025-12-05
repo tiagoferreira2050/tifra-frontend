@@ -52,12 +52,12 @@ export default function CardapioPage() {
         }
 
         // 🔥 Garante estrutura compatível com o restante do app
-        const formatted = data.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          active: true, // default — backend ainda não salva
-          products: [], // obrigatório para ProductList
-        }));
+       const formatted = data.map((cat: any) => ({
+  id: cat.id,
+  name: cat.name,
+  active: true, // default
+  products: Array.isArray(cat.products) ? cat.products : [], // 👈 usa os produtos vindos do backend
+}));
 
         setCategories(formatted);
         setSelectedCategoryId(formatted[0]?.id || null);
