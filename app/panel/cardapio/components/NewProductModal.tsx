@@ -123,8 +123,18 @@ export default function NewProductModal({
 
       alert("Produto salvo com sucesso!");
 
-      // Fecha modal
-      onClose();
+// 1. Buscar categorias atualizadas do backend
+const catRes = await fetch("/api/categories");
+const updatedCategories = await catRes.json();
+
+// 2. Informar o componente pai para atualizar o estado
+if (onSave) {
+  onSave(updatedCategories);
+}
+
+// 3. Fechar modal
+onClose();
+
 
     } catch (error) {
       console.error("Erro ao salvar produto no banco:", error);
