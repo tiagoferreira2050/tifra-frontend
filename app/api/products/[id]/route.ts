@@ -3,14 +3,16 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
-// PATCH - Atualizar ativo (ou outros campos futuramente)
+// PATCH - atualizar campos do produto
 // ===================================================
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    // agora params é Promise — precisa de await
+    const { id } = await context.params;
+
     const data = await req.json();
 
     const updated = await prisma.product.update({
@@ -30,14 +32,14 @@ export async function PATCH(
 }
 
 // ===================================================
-// DELETE - Excluir produto
+// DELETE - remover produto
 // ===================================================
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     await prisma.product.delete({
       where: { id },
