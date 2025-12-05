@@ -34,11 +34,10 @@ export default function EditCategoryModal({
     if (!name.trim()) return;
 
     onSave({
-      ...category,
-      name,
-    });
+  ...category,
+  name,
+});
 
-    onClose?.();
   }
 
   return (
