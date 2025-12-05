@@ -105,28 +105,45 @@ export default function ProductList({
                 id={prod.id}
                 product={prod}
                 complements={complements}
-                onToggle={() =>
+
+                // 🟢 Toggle ativo/desativo
+                onToggle={async () => {
+                  const newActive = !prod.active;
+
                   updateProducts(
                     products.map((p: any) =>
-                      p.id === prod.id ? { ...p, active: !p.active } : p
+                      p.id === prod.id ? { ...p, active: newActive } : p
                     )
-                  )
-                }
-                onDelete={() =>
-                  updateProducts(products.filter((p: any) => p.id !== prod.id))
-                }
+                  );
 
-                // ⭐⭐⭐ CORREÇÃO: TIPAGEM DO fullProducts ⭐⭐⭐
+                  await fetch(`/api/products/${prod.id}`, {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ active: newActive }),
+                  });
+                }}
+
+                // 🟢 EXCLUIR PRODUTO
+                onDelete={async () => {
+                  // atualiza UI
+                  updateProducts(products.filter((p: any) => p.id !== prod.id));
+
+                  // remove do banco
+                  await fetch(`/api/products/${prod.id}`, {
+                    method: "DELETE",
+                  });
+                }}
+
+                // 🟢 Editar Produto
                 onEdit={async (p: any) => {
                   try {
-                    // 🔥 CORREÇÃO AQUI
                     const fullProducts = (await dbLoadAll("products")) as any[];
 
-                    // produto vindo do db
                     const dbProd =
                       fullProducts.find((prod: any) => prod.id === p.id) || null;
 
-                    // merge
                     let merged = {
                       ...(dbProd || {}),
                       ...(p || {}),
@@ -135,6 +152,7 @@ export default function ProductList({
                     const dbHasComplements =
                       Array.isArray(dbProd?.complements) &&
                       dbProd.complements.length > 0;
+
                     const pHasComplements =
                       Array.isArray(p?.complements) &&
                       p.complements.length > 0;
@@ -167,6 +185,7 @@ export default function ProductList({
                     console.error("Erro ao carregar produto completo:", err);
 
                     const fallback = { ...p };
+
                     if (Array.isArray(fallback.complements)) {
                       fallback.complements = fallback.complements.map(
                         (c: any, idx: number) => ({
