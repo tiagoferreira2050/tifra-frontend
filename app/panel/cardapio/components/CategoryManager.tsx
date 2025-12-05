@@ -78,28 +78,25 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // TOGGLE ACTIVE  (AGORA ENVIA PARA API)
+  // TOGGLE ACTIVE  (CORREÇÃO: USAR NOVO ESTADO)
   // ========================================================
   async function toggleActive(id: string) {
     setCategories((prev: any[]) => {
-      return prev.map((c: any) =>
+      const updated = prev.map((c: any) =>
         c.id === id ? { ...c, active: !c.active } : c
       );
+
+      const changed = updated.find((c: any) => c.id === id);
+      if (changed) {
+        fetch(`/api/categories/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: changed.active }),
+        }).catch((err) => console.error("Erro ao atualizar categoria:", err));
+      }
+
+      return updated;
     });
-
-    try {
-      const cat = categories.find((c) => c.id === id);
-      if (!cat) return;
-
-      await fetch(`/api/categories/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !cat.active }),
-      });
-
-    } catch (err) {
-      console.error("Erro ao atualizar categoria:", err);
-    }
   }
 
   // ========================================================
@@ -215,7 +212,7 @@ export default function CategoryManager({
         </button>
       </div>
 
-      {/* 🔥 AGORA SALVA NO BACKEND */}
+      {/* 🔥 SALVA NO BACKEND */}
       <button
         onClick={handleSaveOrder}
         className="bg-green-600 w-full text-white py-2 rounded-md font-medium"
