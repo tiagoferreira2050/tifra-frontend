@@ -7,7 +7,7 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react";
 export default function ProductItem({
   id,
   product,
-  complements = [], // complementos globais (id, title)
+  complements = [], // complementos globais
   onEdit,
   onDelete,
   onToggle,
@@ -35,7 +35,6 @@ export default function ProductItem({
     Array.isArray(product.complements) && product.complements.length > 0
       ? product.complements
           .map((pc: any) => {
-            // novo padrão => pc.complementId
             const comp = complements.find(
               (c: any) => c.id === (pc.complementId || pc.id)
             );

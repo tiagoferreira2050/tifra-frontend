@@ -5,7 +5,7 @@ export async function PUT(req: NextRequest) {
   try {
     const { orders } = await req.json();
 
-    // validação básica
+    // validação mínima
     if (!Array.isArray(orders) || orders.length === 0) {
       return NextResponse.json(
         { error: "Orders inválido ou vazio" },
@@ -13,11 +13,16 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // monta updates apenas com itens válidos
-    const updates = orders
-      .filter((item: any) => item?.id !== undefined)
+    // limpa ids duplicados
+    const uniqueOrders = Array.from(
+      new Map(orders.map((item: any) => [item.id, item])).values()
+    );
+
+    // cria operações
+    const updates = uniqueOrders
+      .filter((item: any) => typeof item?.id === "string" && item.id.trim().length > 0)
       .map((item: any) => {
-        // garante número
+        // número garantido
         const orderValue =
           typeof item.order === "number" && !isNaN(item.order)
             ? item.order
@@ -29,7 +34,6 @@ export async function PUT(req: NextRequest) {
         });
       });
 
-    // se não existe nada pra atualizar
     if (updates.length === 0) {
       return NextResponse.json(
         { error: "Nenhum item válido enviado" },
@@ -37,7 +41,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // executa transação
+    // transação com todas as operações
     await prisma.$transaction(updates);
 
     return NextResponse.json({ success: true });

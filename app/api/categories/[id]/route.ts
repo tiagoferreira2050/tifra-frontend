@@ -6,10 +6,18 @@ import { prisma } from "@/lib/prisma";
 // ===================================================
 export async function PATCH(
   req: NextRequest,
-  context: any // 👈 força tipagem para evitar conflito
+  context: any
 ) {
   try {
     const { id } = context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID inválido" },
+        { status: 400 }
+      );
+    }
+
     const data = await req.json();
 
     const updated = await prisma.category.update({
@@ -33,10 +41,18 @@ export async function PATCH(
 // ===================================================
 export async function PUT(
   req: NextRequest,
-  context: any // 👈 força tipagem para evitar conflito
+  context: any
 ) {
   try {
     const { id } = context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID inválido" },
+        { status: 400 }
+      );
+    }
+
     const { name, active } = await req.json();
 
     const updated = await prisma.category.update({
@@ -60,10 +76,27 @@ export async function PUT(
 // ===================================================
 export async function DELETE(
   req: NextRequest,
-  context: any // 👈 força tipagem para evitar conflito
+  context: any
 ) {
   try {
     const { id } = context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID inválido" },
+        { status: 400 }
+      );
+    }
+
+    // verifica se existe
+    const exists = await prisma.category.findUnique({
+      where: { id },
+    });
+
+    // se não existir, simplesmente retornar sucesso
+    if (!exists) {
+      return NextResponse.json({ success: true });
+    }
 
     await prisma.category.delete({
       where: { id },
