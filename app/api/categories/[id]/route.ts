@@ -18,8 +18,27 @@ export async function PATCH(
       );
     }
 
-    // 🔥 captura somente campos válidos
-    const { name, active, order } = await req.json();
+    // 🔥 tenta parsear o body de forma segura
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (_) {
+      // se falhar, body fica vazio
+    }
+
+    const { name, active, order } = body;
+
+    // 🔥 se nenhum campo foi enviado, não tem o que atualizar
+    if (
+      name === undefined &&
+      active === undefined &&
+      order === undefined
+    ) {
+      return NextResponse.json(
+        { error: "Nenhum campo enviado" },
+        { status: 400 }
+      );
+    }
 
     const updated = await prisma.category.update({
       where: { id },
