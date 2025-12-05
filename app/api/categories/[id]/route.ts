@@ -6,10 +6,10 @@ import { prisma } from "@/lib/prisma";
 // ===================================================
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
     const { name, active } = await req.json();
 
     const updated = await prisma.category.update({
@@ -18,6 +18,7 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
+
   } catch (err) {
     console.error("Erro PUT /categories/[id]:", err);
     return NextResponse.json(
@@ -32,16 +33,17 @@ export async function PUT(
 // ===================================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
 
     await prisma.category.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
+
   } catch (err) {
     console.error("Erro DELETE /categories/[id]:", err);
     return NextResponse.json(
