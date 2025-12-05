@@ -28,6 +28,7 @@ model Category {
   id        String     @id @default(uuid())
   storeId   String
   name      String
+  active    Boolean    @default(true)
   createdAt DateTime   @default(now())
 
   store     Store      @relation(fields: [storeId], references: [id])
