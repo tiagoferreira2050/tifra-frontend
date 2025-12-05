@@ -23,7 +23,9 @@ export default function CardapioPage() {
   // ======================================================
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
 
   const [newComplementOpen, setNewComplementOpen] = useState(false);
   const [editComplementOpen, setEditComplementOpen] = useState(false);
@@ -35,26 +37,41 @@ export default function CardapioPage() {
   const [newProductOpen, setNewProductOpen] = useState(false);
 
   // ======================================================
-  // 1) CARREGAR BANCO AO ABRIR O PAINEL
+  // 1) CARREGAR CATEGORIAS DO BACKEND AO ABRIR O PAINEL
   // ======================================================
   useEffect(() => {
-  async function loadData() {
-    try {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
+    async function loadData() {
+      try {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
 
-      setCategories(data || []);
-      setSelectedCategoryId(data[0]?.id || null);
-      setComplements([]); // vazio por enquanto
-    } catch (error) {
-      console.error("Erro ao carregar categorias:", error);
+        if (!Array.isArray(data)) {
+          console.error("Resposta inválida de /api/categories:", data);
+          setCategories([]);
+          return;
+        }
+
+        // 🔥 Garante estrutura compatível com o restante do app
+        const formatted = data.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          active: true, // default — backend ainda não salva
+          products: [], // obrigatório para ProductList
+        }));
+
+        setCategories(formatted);
+        setSelectedCategoryId(formatted[0]?.id || null);
+
+        // complementos ainda não estão no backend
+        setComplements([]);
+      } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+        setCategories([]);
+      }
     }
-  }
 
-  loadData();
-}, []);
-
-  
+    loadData();
+  }, []);
 
   // ======================================================
   // 4) SALVAR NOVO PRODUTO
@@ -120,15 +137,12 @@ export default function CardapioPage() {
   return (
     <>
       <div className="flex w-full h-full p-4 gap-4">
-
         {/* LEFT — CATEGORIAS */}
         <div className="w-1/3 bg-white rounded-lg border shadow-sm p-4 overflow-y-auto">
           <CategoryManager
             categories={categories}
             setCategories={setCategories}
             selectedCategoryId={selectedCategoryId}
-
-            // 🔥 ÚNICA CORREÇÃO NECESSÁRIA
             onSelectCategory={(id: string | null) =>
               setSelectedCategoryId(id || "")
             }
@@ -137,7 +151,6 @@ export default function CardapioPage() {
 
         {/* RIGHT */}
         <div className="flex-1 bg-white rounded-lg border shadow-sm p-4">
-
           {/* TABS */}
           <div className="flex border-b mb-4 gap-6">
             {["produtos", "complementos", "promocoes"].map((tab) => (

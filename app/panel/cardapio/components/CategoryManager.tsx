@@ -89,11 +89,16 @@ export default function CategoryManager({
     const name = prompt("Nome da categoria:");
     if (!name) return;
 
+    const storeId = process.env.NEXT_PUBLIC_STORE_ID;
+
     try {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({
+          name,
+          storeId,
+        }),
       });
 
       const data = await res.json();
@@ -112,7 +117,6 @@ export default function CategoryManager({
       };
 
       setCategories((prev: any[]) => [...prev, newCat]);
-
       onSelectCategory(newCat.id);
 
     } catch (err) {

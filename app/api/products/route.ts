@@ -3,16 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const { name, description, priceInCents, categoryId, storeId } = await req.json();
 
-    const {
-      name,
-      description,
-      priceInCents,
-      categoryId,
-      storeId,
-    } = body;
-
+    // VALIDATION
     if (!name || !priceInCents || !categoryId || !storeId) {
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
@@ -22,10 +15,11 @@ export async function POST(req: Request) {
 
     const price = priceInCents / 100;
 
+    // CREATE
     const product = await prisma.product.create({
       data: {
         name,
-        description,
+        description: description || null,
         price,
         categoryId,
         storeId,
@@ -35,11 +29,13 @@ export async function POST(req: Request) {
     return NextResponse.json(product, { status: 201 });
 
   } catch (error: any) {
-  console.error("Erro ao criar produto no Prisma:", error);
+    console.error("Erro ao criar produto no Prisma:", error);
 
-  return NextResponse.json(
-    { error: error.message || "Erro interno ao criar produto" },
-    { status: 500 }
-  );
-}
+    return NextResponse.json(
+      {
+        error: error?.meta?.cause || error.message || "Erro interno ao criar produto",
+      },
+      { status: 500 }
+    );
+  }
 }
