@@ -23,9 +23,8 @@ export default function CardapioPage() {
   // ======================================================
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const [newComplementOpen, setNewComplementOpen] = useState(false);
   const [editComplementOpen, setEditComplementOpen] = useState(false);
@@ -37,7 +36,7 @@ export default function CardapioPage() {
   const [newProductOpen, setNewProductOpen] = useState(false);
 
   // ======================================================
-  // 1) CARREGAR CATEGORIAS DO BACKEND AO ABRIR O PAINEL
+  // 1) CARREGAR CATEGORIAS
   // ======================================================
   useEffect(() => {
     async function loadData() {
@@ -51,19 +50,16 @@ export default function CardapioPage() {
           return;
         }
 
-        // 🔥 Garante estrutura compatível com o restante do app
-       const formatted = data.map((cat: any) => ({
-  id: cat.id,
-  name: cat.name,
-  active: cat.active ?? true,
-  products: Array.isArray(cat.products) ? cat.products : [], // 👈 usa os produtos vindos do backend
-}));
+        const formatted = data.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          active: cat.active ?? true,
+          products: Array.isArray(cat.products) ? cat.products : [],
+        }));
 
         setCategories(formatted);
         setSelectedCategoryId(formatted[0]?.id || null);
 
-        // complementos ainda não estão no backend
-        setComplements([]);
       } catch (error) {
         console.error("Erro ao carregar categorias:", error);
         setCategories([]);
@@ -74,16 +70,30 @@ export default function CardapioPage() {
   }, []);
 
   // ======================================================
-  // 4) SALVAR NOVO PRODUTO
+  // 2) CARREGAR COMPLEMENTOS DO BACKEND
+  // ======================================================
+  useEffect(() => {
+    async function loadComplements() {
+      try {
+        const res = await fetch("/api/complements", { cache: "no-store" });
+        const data = await res.json();
+        setComplements(data);
+      } catch (err) {
+        console.error("Erro ao carregar complementos:", err);
+      }
+    }
+
+    loadComplements();
+  }, []);
+
+  // ======================================================
+  // 3) SALVAR NOVO PRODUTO
   // ======================================================
   function handleSaveProduct(categoryId: string, newProduct: any) {
     setCategories((prev) =>
       prev.map((cat) =>
         cat.id === categoryId
-          ? {
-              ...cat,
-              products: [...cat.products, newProduct],
-            }
+          ? { ...cat, products: [...cat.products, newProduct] }
           : cat
       )
     );
@@ -92,7 +102,7 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 5) ATUALIZAR (EDITAR) PRODUTO
+  // 4) ATUALIZAR PRODUTO
   // ======================================================
   function handleUpdateProduct(updatedProduct: any) {
     setCategories((prev) =>
