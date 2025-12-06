@@ -54,7 +54,6 @@ model Product {
 
   complementGroups ComplementGroup[]
 
-
   @@index([categoryId])
   @@index([storeId])
 }
@@ -71,7 +70,7 @@ model User {
 
 model ComplementGroup {
   id        String     @id @default(uuid())
-  productId String
+  productId String?
   name      String
   required  Boolean    @default(false)
   min       Int        @default(0)
@@ -79,7 +78,7 @@ model ComplementGroup {
   active    Boolean    @default(true)
   createdAt DateTime   @default(now())
 
-  product   Product    @relation(fields: [productId], references: [id])
+  product   Product?   @relation(fields: [productId], references: [id])
   items     Complement[]
 
   @@index([productId])

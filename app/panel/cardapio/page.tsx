@@ -140,7 +140,6 @@ export default function CardapioPage() {
   // ======================================================
   async function saveNewComplement(newComp: any, productId: string) {
   try {
-    // 1. CRIA O GRUPO
     const res = await fetch("/api/complements", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -150,55 +149,33 @@ export default function CardapioPage() {
         required: newComp.required,
         min: newComp.minChoose,
         max: newComp.maxChoose,
+        options: newComp.options || [], // <<< enviar sub-opções
       }),
     });
 
-    const createdGroup = await res.json();
+    const created = await res.json();
 
     if (!res.ok) {
-      console.error("Erro ao criar complemento:", createdGroup);
+      console.error("Erro ao criar complemento:", created);
       alert("Erro ao criar complemento");
       return;
     }
 
-    // 2. SALVAR ITEMS (OPÇÕES)
-    if (Array.isArray(newComp.options)) {
-      for (const opt of newComp.options) {
-        await fetch("/api/complements/items", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            groupId: createdGroup.id,
-            name: opt.name,
-            price: opt.price ?? 0,
-            active: opt.active ?? true,
-          }),
-        });
-      }
-    }
-
-    // 3. RECARREGAR DO BACKEND PARA ATUALIZAR UI
-    const reload = await fetch("/api/complements", { cache: "no-store" });
-    const updated = await reload.json();
-
-    setComplements(
-      updated.map((g: any) => ({
-        id: g.id,
-        title: g.name,
-        description: "",
-        type: "multiple",
-        required: g.required,
-        minChoose: g.min,
-        maxChoose: g.max,
-        active: true,
-        options: g.items?.map((i: any) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price ?? 0,
-          active: i.active ?? true,
-        })) || [],
-      }))
-    );
+    // atualizar UI
+    setComplements((prev) => [...prev, {
+      id: created.id,
+      title: created.name,
+      required: created.required,
+      minChoose: created.min,
+      maxChoose: created.max,
+      active: created.active,
+      options: created.items?.map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        price: i.price,
+        active: i.active,
+      })) || [],
+    }]);
 
   } catch (err) {
     console.error("Erro salvar complemento:", err);

@@ -28,11 +28,11 @@ export async function GET() {
 }
 
 // ===================================================
-// POST - CRIAR GRUPO DE COMPLEMENTO
+// POST - CRIAR GRUPO DE COMPLEMENTO + ITENS
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { name, required, min, max } = await req.json();
+    const { productId, name, required, min, max, options } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -41,29 +41,47 @@ export async function POST(req: Request) {
       );
     }
 
+    // criar grupo
     const group = await prisma.complementGroup.create({
       data: {
+        productId: productId || null,
         name,
         required: required ?? false,
         min: min ?? 0,
         max: max ?? 1,
       },
+    });
+
+    // se existir opções, cria cada item
+    if (Array.isArray(options) && options.length > 0) {
+      await prisma.complement.createMany({
+        data: options.map((opt: any) => ({
+          groupId: group.id,
+          name: opt.name,
+          price: opt.price ?? 0,
+          active: opt.active ?? true,
+        })),
+      });
+    }
+
+    // retorna grupo completo com itens
+    const result = await prisma.complementGroup.findUnique({
+      where: { id: group.id },
       include: {
         items: true,
       },
     });
 
-    return NextResponse.json(group, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Erro POST /complements:", err);
     return NextResponse.json(
-      { error: "Erro ao criar complemento" },
+      { error: "Erro ao criar complemento", details: err.message },
       { status: 500 }
     );
   }
 }
-
 
 
 // ===================================================
