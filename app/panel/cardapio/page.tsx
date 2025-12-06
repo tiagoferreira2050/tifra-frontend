@@ -73,38 +73,36 @@ export default function CardapioPage() {
   // 2) CARREGAR COMPLEMENTOS DO BACKEND
   // ======================================================
   useEffect(() => {
-  async function loadComplements() {
-    try {
-      const res = await fetch("/api/complements", { cache: "no-store" });
-      const data = await res.json();
+    async function loadComplements() {
+      try {
+        const res = await fetch("/api/complements", { cache: "no-store" });
+        const data = await res.json();
 
-      const formatted = data.map((g: any) => ({
-        id: g.id,
-        title: g.name,
-        description: "",
-        type: "multiple",
-        required: g.required,
-        minChoose: g.min,
-        maxChoose: g.max,
-        active: true,
-        options: g.items?.map((i: any) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price ?? 0,
-          active: i.active ?? true,
-        })) || [],
-      }));
+        const formatted = data.map((g: any) => ({
+          id: g.id,
+          title: g.name,
+          description: "",
+          type: "multiple",
+          required: g.required,
+          minChoose: g.min,
+          maxChoose: g.max,
+          active: g.active ?? true,
+          options: g.items?.map((i: any) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price ?? 0,
+            active: i.active ?? true,
+          })) || [],
+        }));
 
-      setComplements(formatted);
-    } catch (err) {
-      console.error("Erro ao carregar complementos:", err);
+        setComplements(formatted);
+      } catch (err) {
+        console.error("Erro ao carregar complementos:", err);
+      }
     }
-  }
 
-  loadComplements();
-}, []);
-
-
+    loadComplements();
+  }, []);
 
   // ======================================================
   // 3) SALVAR NOVO PRODUTO
@@ -138,8 +136,47 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // COMPLEMENTOS
+  // 5) SALVAR NOVO COMPLEMENTO (NO BANCO)
   // ======================================================
+  async function saveNewComplement(newComp: any) {
+    try {
+      // gambiarra: usa primeiro produto da categoria
+      const category = categories.find((c) => c.id === selectedCategoryId);
+      const productId = category?.products?.[0]?.id;
+
+      if (!productId) {
+        alert("Crie um produto antes de adicionar complemento.");
+        return;
+      }
+
+      const res = await fetch("/api/complements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          name: newComp.title,
+          required: newComp.required,
+          min: newComp.minChoose,
+          max: newComp.maxChoose,
+        }),
+      });
+
+      const created = await res.json();
+
+      if (!res.ok) {
+        console.error("Erro ao criar complemento:", created);
+        alert("Erro ao criar complemento");
+        return;
+      }
+
+      setComplements((prev) => [...prev, created]);
+
+    } catch (err) {
+      console.error("Erro salvar complemento:", err);
+      alert("Erro ao salvar complemento");
+    }
+  }
+
   function openCreateComplement() {
     setNewComplementOpen(true);
   }
@@ -149,15 +186,11 @@ export default function CardapioPage() {
     setEditComplementOpen(true);
   }
 
-  function saveNewComplement(newComp: any) {
-    setComplements((prev) => [...prev, newComp]);
-    dbSave("complements", newComp);
-  }
-
   function saveEditedComplement(updated: any) {
     setComplements((prev) =>
       prev.map((c) => (c.id === updated.id ? updated : c))
     );
+
     dbSave("complements", updated);
   }
 
@@ -179,8 +212,8 @@ export default function CardapioPage() {
           />
         </div>
 
-        {/* RIGHT */}
         <div className="flex-1 bg-white rounded-lg border shadow-sm p-4">
+
           {/* TABS */}
           <div className="flex border-b mb-4 gap-6">
             {["produtos", "complementos", "promocoes"].map((tab) => (
@@ -220,7 +253,7 @@ export default function CardapioPage() {
             )}
           </div>
 
-          {/* TABS */}
+          {/* LISTAS */}
           {activeTab === "produtos" && (
             <ProductList
               categories={categories}
