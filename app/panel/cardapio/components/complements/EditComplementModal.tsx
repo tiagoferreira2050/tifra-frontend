@@ -80,50 +80,49 @@ export default function EditComplementModal({
   // SALVAR E ATUALIZAR NO BANCO
   // ================================================
   async function handleSave() {
-    if (!title.trim()) return alert("Título obrigatório");
+  if (!title.trim()) return alert("Título obrigatório");
 
-    // monta objeto para API
-    const payload = {
-      id: complement.id,
-      name: title,
+  const payload = {
+    id: complement.id,
+    name: title,
+    required,
+    min: minChoose ? parseInt(minChoose) : null,
+    max: maxChoose ? parseInt(maxChoose) : null,
+  };
+
+  try {
+    const res = await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Erro ao atualizar:", data);
+      alert("Erro ao atualizar complemento");
+      return;
+    }
+
+    // atualiza UI local
+    const updated = {
+      ...complement,
+      title,
       required,
-      min: minChoose ? Number(minChoose) : null,
-      max: maxChoose ? Number(maxChoose) : null,
+      minChoose,
+      maxChoose,
+      options,
     };
 
-    try {
-      const res = await fetch("/api/complements", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Erro ao atualizar:", data);
-        alert("Erro ao salvar alteração");
-        return;
-      }
-
-      // atualiza UI local
-      const updated = {
-        ...complement,
-        title,
-        required,
-        minChoose,
-        maxChoose,
-        options,
-      };
-
-      onSave(updated);
-
-      onClose();
-    } catch (err) {
-      console.error("Erro no PATCH:", err);
-      alert("Erro ao atualizar complemento");
-    }
+    onSave(updated);
+    onClose();
+  } catch (err) {
+    console.error("Erro no PATCH:", err);
+    alert("Erro ao atualizar complemento");
   }
+}
+
 
   // ======================================================
   // LAYOUT
