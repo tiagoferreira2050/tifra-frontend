@@ -200,38 +200,47 @@ export default function CategoryManager({
     }
   }
 
-  // ========================================================
-  // DUPLICATE (CORRIGIDO)
-  // ========================================================
-  async function duplicateCategory(cat: any) {
-    try {
-      const payload = {
-        name: `${cat.name} (cópia)`,
-        active: cat.active ?? true,
-        storeId: STORE_ID,
-      };
+// ========================================================
+// DUPLICATE (ATUALIZADO)
+// ========================================================
+async function handleDuplicate(cat: any) {
+  try {
+    // monta payload
+    const payload = {
+      name: `${cat.name} (cópia)`,
+      active: cat.active ?? true,
+      storeId: STORE_ID,
+    };
 
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    // envia pro backend
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        console.error("Erro ao duplicar categoria", await res.text());
-        return;
-      }
-
-      const created = await res.json();
-
-      setCategories((prev: any[]) => [...prev, created]);
-      onSelectCategory(created.id);
-    } catch (err) {
-      console.error("Erro ao duplicar categoria:", err);
+    if (!res.ok) {
+      const msg = await res.text();
+      console.error("Erro ao duplicar:", msg);
+      alert("Erro ao duplicar categoria");
+      return;
     }
+
+    // retorna o que foi criado no banco
+    const created = await res.json();
+
+    // adiciona no front
+    setCategories((prev: any[]) => [...prev, created]);
+
+    // seleciona a nova categoria
+    onSelectCategory(created.id);
+
+  } catch (err) {
+    console.error("Erro ao duplicar categoria:", err);
+    alert("Erro ao duplicar categoria");
   }
+}
+
 
   // ========================================================
   // UI
@@ -278,7 +287,7 @@ export default function CategoryManager({
                 onToggle={toggleActive}
                 onEdit={() => handleEdit(cat)}
                 onDelete={() => handleDelete(cat.id)}
-                onDuplicate={() => duplicateCategory(cat)} 
+                onDuplicate={() => handleDuplicate(cat)} 
               />
             ))}
           </div>
