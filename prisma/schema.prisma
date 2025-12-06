@@ -52,6 +52,9 @@ model Product {
   category    Category   @relation(fields: [categoryId], references: [id])
   store       Store      @relation(fields: [storeId], references: [id])
 
+  complementGroups ComplementGroup[]
+
+
   @@index([categoryId])
   @@index([storeId])
 }
@@ -64,4 +67,32 @@ model User {
   createdAt DateTime @default(now())
 
   stores    Store[]
+}
+
+model ComplementGroup {
+  id        String     @id @default(uuid())
+  productId String
+  name      String
+  required  Boolean    @default(false)
+  min       Int        @default(0)
+  max       Int        @default(1)
+  createdAt DateTime   @default(now())
+
+  product   Product    @relation(fields: [productId], references: [id])
+  items     Complement[]
+
+  @@index([productId])
+}
+
+model Complement {
+  id        String   @id @default(uuid())
+  groupId   String
+  name      String
+  price     Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  group     ComplementGroup @relation(fields: [groupId], references: [id])
+
+  @@index([groupId])
 }
