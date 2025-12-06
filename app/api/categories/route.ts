@@ -44,24 +44,25 @@ export async function POST(req: Request) {
     const category = await prisma.category.create({
       data: {
         name,
-        store: {
-          connect: { id: storeId }, // 👈 OBRIGATÓRIO
-        },
+        storeId,
+
         products: products.length
           ? {
-              create: products.map((p: any) => ({
+              create: products.map((p: any, index: number) => ({
                 name: p.name ?? "",
                 price: p.price ?? 0,
                 description: p.description ?? null,
-                image: p.image ?? null,   // 👈 sem undefined
+                imageUrl: p.imageUrl ?? null,
                 active: p.active ?? true,
-                order: p.order ?? 0,      // 👈 sem undefined
+                order: p.order ?? index,
+                storeId: storeId,        
               })),
             }
           : undefined,
       },
+
       include: {
-        products: true, // 👈 pra retornar tudo pro front
+        products: true,
       },
     });
 
