@@ -38,28 +38,29 @@ export default function ComplementManager({
 
   // ---------------- TOGGLE ACTIVE + SALVAR NO BACKEND ----------------
   async function toggleActive(id: string) {
-    setComplements((prev: any[]) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, active: !c.active } : c
-      )
-    );
+  setComplements((prev: any[]) =>
+    prev.map((c) =>
+      c.id === id ? { ...c, active: !c.active } : c
+    )
+  );
 
-    const changed = complements.find((c) => c.id === id);
-    if (!changed) return;
+  const changed = complements.find((c) => c.id === id);
+  if (!changed) return;
 
-    try {
-      await fetch("/api/complements/items", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          active: !changed.active,
-        }),
-      });
-    } catch (err) {
-      console.error("Erro ao atualizar complemento:", err);
-    }
+  try {
+    await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        active: !changed.active,
+      }),
+    });
+  } catch (err) {
+    console.error("Erro ao atualizar complemento:", err);
   }
+}
+
 
   // ---------------- DELETE (LOCAL) ----------------
   function deleteComplement(id: string) {
