@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         max: max ?? 1,
       },
       include: {
-        items: true, // só pra retornar vazio por enquanto
+        items: true,
       },
     });
 
@@ -60,6 +60,37 @@ export async function POST(req: Request) {
     console.error("Erro POST /complements:", err);
     return NextResponse.json(
       { error: "Erro ao criar complemento" },
+      { status: 500 }
+    );
+  }
+}
+
+
+// ===================================================
+// PATCH - ATUALIZAR STATUS DO GRUPO
+// ===================================================
+export async function PATCH(req: Request) {
+  try {
+    const { id, active } = await req.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.complementGroup.update({
+      where: { id },
+      data: { active },
+    });
+
+    return NextResponse.json(updated, { status: 200 });
+
+  } catch (err: any) {
+    console.error("Erro PATCH /complements:", err);
+    return NextResponse.json(
+      { error: "Erro ao atualizar complemento", details: err.message },
       { status: 500 }
     );
   }
