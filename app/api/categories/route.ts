@@ -48,14 +48,13 @@ export async function POST(req: Request) {
 
         products: products.length
           ? {
-              create: products.map((p: any, index: number) => ({
+              create: products.map((p: any) => ({
                 name: p.name ?? "",
                 price: p.price ?? 0,
                 description: p.description ?? null,
                 imageUrl: p.imageUrl ?? null,
                 active: p.active ?? true,
-                order: p.order ?? index,
-                storeId: storeId,        
+                storeId: storeId,    // ✔️ obrigatório
               })),
             }
           : undefined,
