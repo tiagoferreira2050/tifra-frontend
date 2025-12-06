@@ -84,12 +84,13 @@ export async function POST(req: Request) {
 }
 
 
+
 // ===================================================
-// PATCH - ATUALIZAR STATUS DO GRUPO
+// PATCH - ATUALIZAR GRUPO COMPLETO
 // ===================================================
 export async function PATCH(req: Request) {
   try {
-    const { id, name, required, min, max } = await req.json();
+    const { id, name, required, min, max, active } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -101,17 +102,19 @@ export async function PATCH(req: Request) {
     const updated = await prisma.complementGroup.update({
       where: { id },
       data: {
-        name,
-        required,
-        min,
-        max,
+        ...(name !== undefined && { name }),
+        ...(required !== undefined && { required }),
+        ...(min !== undefined && { min: Number(min) }),
+        ...(max !== undefined && { max: Number(max) }),
+        ...(active !== undefined && { active }),
       },
       include: {
-        items: true,
-      },
+        items: true
+      }
     });
 
     return NextResponse.json(updated, { status: 200 });
+
   } catch (err: any) {
     console.error("Erro PATCH /complements:", err);
     return NextResponse.json(

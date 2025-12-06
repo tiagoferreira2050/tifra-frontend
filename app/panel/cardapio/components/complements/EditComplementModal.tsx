@@ -83,12 +83,13 @@ export default function EditComplementModal({
   if (!title.trim()) return alert("Título obrigatório");
 
   const payload = {
-    id: complement.id,
-    name: title,
-    required,
-    min: minChoose ? parseInt(minChoose) : null,
-    max: maxChoose ? parseInt(maxChoose) : null,
-  };
+  id: complement.id,
+  name: title,
+  required,
+  min: minChoose ? Number(minChoose) : null,
+  max: maxChoose ? Number(maxChoose) : null,
+  active: complement.active,
+};
 
   try {
     const res = await fetch("/api/complements", {
