@@ -10,8 +10,8 @@ export default function CategoryItem({
   onSelect,
   onEdit,
   onDelete,
-  onUpdateUI,      // 👈 NOVO: pai atualiza UI
-  storeId          // 👈 NOVO: usado na duplicação
+  onToggle,
+  onDuplicate,
 }: any) {
 
   // =============================
@@ -22,47 +22,17 @@ export default function CategoryItem({
   }
 
   // =============================
-  // TOGGLE ACTIVE (frontend + backend)
+  // TOGGLE (frontend + backend é feito no pai)
   // =============================
-  async function handleToggle() {
-    const newActive = !active;
-
-    // Atualiza UI
-    if (onUpdateUI) {
-      onUpdateUI(id, { active: newActive });
-    }
-
-    // Salva no backend
-    await fetch(`/api/categories/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ active: newActive }),
-    });
+  function handleToggle() {
+    if (onToggle) onToggle(id);
   }
 
   // =============================
-  // DUPLICAR (frontend + backend)
+  // DUPLICAR (apenas chama o pai)
   // =============================
-  async function handleDuplicate() {
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: name + " (cópia)",
-        storeId,
-      }),
-    });
-
-    const newCat = await res.json();
-
-    // Atualiza UI
-    if (onUpdateUI) {
-      onUpdateUI(null, null, newCat);
-    }
+  function handleDuplicate() {
+    if (onDuplicate) onDuplicate();
   }
 
   return (
@@ -73,10 +43,10 @@ export default function CategoryItem({
       isSelected={isSelected}
 
       onSelect={handleSelect}
-      onToggle={handleToggle}        // 👈 atualizado
+      onToggle={handleToggle}
       onEdit={onEdit}
       onDelete={onDelete}
-      onDuplicate={handleDuplicate}  // 👈 atualizado
+      onDuplicate={handleDuplicate}
     />
   );
 }
