@@ -18,7 +18,6 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useState } from "react";
-import { dbSave, dbDelete } from "../storage/db";
 
 export default function CategoryManager({
   categories,
@@ -31,9 +30,7 @@ export default function CategoryManager({
   selectedCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
 }) {
-
   const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
-
   const sensors = useSensors(useSensor(PointerSensor));
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -73,7 +70,6 @@ export default function CategoryManager({
 
       setCategories((prev: any[]) => [...prev, newCat]);
       onSelectCategory(newCat.id);
-
     } catch (err) {
       console.error(err);
       alert("Erro ao criar categoria (servidor)");
@@ -94,28 +90,20 @@ export default function CategoryManager({
   // ========================================================
   async function handleSaveCategory(updated: any) {
     try {
-      // 1. SALVA NO BACKEND
       await fetch(`/api/categories/${updated.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: updated.name }),
       });
 
-      // 2. ATUALIZA NO FRONTEND
       setCategories((prev: any[]) =>
         prev.map((c: any) =>
           c.id === updated.id ? { ...c, name: updated.name } : c
         )
       );
 
-      // 🔥 Mantém modal alinhado com o valor atual
       setEditingCategory(updated);
-
-      
-
-      // 3. FECHA MODAL
       setModalOpen(false);
-
     } catch (err) {
       console.error("Erro ao salvar categoria:", err);
       alert("Erro ao salvar categoria");
@@ -179,7 +167,6 @@ export default function CategoryManager({
       });
 
       alert("Ordem salva com sucesso!");
-
     } catch (err) {
       console.error("Erro ao salvar ordem:", err);
       alert("Erro ao salvar ordem");
@@ -207,7 +194,6 @@ export default function CategoryManager({
       if (selectedCategoryId === id) {
         onSelectCategory(null);
       }
-
     } catch (err) {
       console.error(err);
       alert("Erro ao excluir categoria (servidor)");
@@ -215,20 +201,36 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // DUPLICATE (LOCAL SOMENTE)
+  // DUPLICATE (CORRIGIDO)
   // ========================================================
-  function handleDuplicate(cat: any) {
-    const newCat = {
-      ...cat,
-      id: String(Date.now()),
-      name: cat.name + " (cópia)",
-      products: cat.products ? [...cat.products] : [],
-    };
+  async function duplicateCategory(cat: any) {
+    try {
+      const payload = {
+        name: `${cat.name} (cópia)`,
+        active: cat.active ?? true,
+        storeId: STORE_ID,
+      };
 
-    setCategories((prev: any[]) => [...prev, newCat]);
-    onSelectCategory(newCat.id);
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    dbSave("categories", newCat);
+      if (!res.ok) {
+        console.error("Erro ao duplicar categoria", await res.text());
+        return;
+      }
+
+      const created = await res.json();
+
+      setCategories((prev: any[]) => [...prev, created]);
+      onSelectCategory(created.id);
+    } catch (err) {
+      console.error("Erro ao duplicar categoria:", err);
+    }
   }
 
   // ========================================================
@@ -236,7 +238,6 @@ export default function CategoryManager({
   // ========================================================
   return (
     <div className="flex flex-col gap-4">
-
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Categorias</h2>
 
@@ -256,8 +257,15 @@ export default function CategoryManager({
         Salvar Ordem
       </button>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext
+          items={categories.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="flex flex-col gap-3">
             {categories.map((cat: any) => (
               <CategoryItem
@@ -270,7 +278,7 @@ export default function CategoryManager({
                 onToggle={toggleActive}
                 onEdit={() => handleEdit(cat)}
                 onDelete={() => handleDelete(cat.id)}
-                onDuplicate={() => handleDuplicate(cat)}
+                onDuplicate={() => duplicateCategory(cat)} 
               />
             ))}
           </div>
