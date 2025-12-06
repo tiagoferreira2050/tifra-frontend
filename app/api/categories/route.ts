@@ -28,12 +28,11 @@ export async function GET() {
 }
 
 // ===================================================
-// POST - CRIAR (suporta duplicar com produtos)
+// POST - CRIAR / DUPLICAR
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, storeId, products } = body;
+    const { name, storeId, products = [] } = await req.json();
 
     if (!name || !storeId) {
       return NextResponse.json(
@@ -42,41 +41,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. cria a categoria
+    // cria categoria com nested create nos produtos
     const category = await prisma.category.create({
-      data: { name, storeId },
-    });
-
-    // 2. se veio array de produtos, duplica
-    if (Array.isArray(products) && products.length > 0) {
-      const ops = products.map((p: any) =>
-        prisma.product.create({
-          data: {
+      data: {
+        name,
+        storeId,
+        products: {
+          create: products.map((p: any) => ({
             name: p.name,
             price: p.price,
             description: p.description,
             image: p.image,
-            active: p.active ?? true,
-            order: p.order ?? 0,
-            categoryId: category.id,
-          },
-        })
-      );
-
-      await prisma.$transaction(ops);
-    }
-
-    // 3. busca categoria com produtos (para retornar completa)
-    const full = await prisma.category.findUnique({
-      where: { id: category.id },
-      include: {
-        products: {
-          orderBy: { createdAt: "asc" },
+            active: p.active,
+            order: p.order,
+          })),
         },
+      },
+      include: {
+        products: true,
       },
     });
 
-    return NextResponse.json(full, { status: 201 });
+    return NextResponse.json(category, { status: 201 });
 
   } catch (err) {
     console.error("Erro POST /categories:", err);
