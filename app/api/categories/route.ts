@@ -28,7 +28,7 @@ export async function GET() {
 }
 
 // ===================================================
-// POST - CRIAR / DUPLICAR
+// POST - CRIAR (COM PRODUTOS ANINHADOS)
 // ===================================================
 export async function POST(req: Request) {
   try {
@@ -41,33 +41,36 @@ export async function POST(req: Request) {
       );
     }
 
-    // cria categoria com nested create nos produtos
     const category = await prisma.category.create({
       data: {
         name,
-        storeId,
-        products: {
-          create: products.map((p: any) => ({
-            name: p.name,
-            price: p.price,
-            description: p.description,
-            image: p.image,
-            active: p.active,
-            order: p.order,
-          })),
+        store: {
+          connect: { id: storeId }, // 👈 OBRIGATÓRIO
         },
+        products: products.length
+          ? {
+              create: products.map((p: any) => ({
+                name: p.name ?? "",
+                price: p.price ?? 0,
+                description: p.description ?? null,
+                image: p.image ?? null,   // 👈 sem undefined
+                active: p.active ?? true,
+                order: p.order ?? 0,      // 👈 sem undefined
+              })),
+            }
+          : undefined,
       },
       include: {
-        products: true,
+        products: true, // 👈 pra retornar tudo pro front
       },
     });
 
     return NextResponse.json(category, { status: 201 });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Erro POST /categories:", err);
     return NextResponse.json(
-      { error: "Erro ao criar categoria" },
+      { error: "Erro ao criar categoria", details: err.message },
       { status: 500 }
     );
   }
