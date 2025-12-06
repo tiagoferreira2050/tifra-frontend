@@ -138,44 +138,73 @@ export default function CardapioPage() {
   // ======================================================
   // 5) SALVAR NOVO COMPLEMENTO (NO BANCO)
   // ======================================================
-  async function saveNewComplement(newComp: any) {
-    try {
-      // gambiarra: usa primeiro produto da categoria
-      const category = categories.find((c) => c.id === selectedCategoryId);
-      const productId = category?.products?.[0]?.id;
+  async function saveNewComplement(newComp: any, productId: string) {
+  try {
+    // 1. CRIA O GRUPO
+    const res = await fetch("/api/complements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId,
+        name: newComp.title,
+        required: newComp.required,
+        min: newComp.minChoose,
+        max: newComp.maxChoose,
+      }),
+    });
 
-      if (!productId) {
-        alert("Crie um produto antes de adicionar complemento.");
-        return;
-      }
+    const createdGroup = await res.json();
 
-      const res = await fetch("/api/complements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          name: newComp.title,
-          required: newComp.required,
-          min: newComp.minChoose,
-          max: newComp.maxChoose,
-        }),
-      });
-
-      const created = await res.json();
-
-      if (!res.ok) {
-        console.error("Erro ao criar complemento:", created);
-        alert("Erro ao criar complemento");
-        return;
-      }
-
-      setComplements((prev) => [...prev, created]);
-
-    } catch (err) {
-      console.error("Erro salvar complemento:", err);
-      alert("Erro ao salvar complemento");
+    if (!res.ok) {
+      console.error("Erro ao criar complemento:", createdGroup);
+      alert("Erro ao criar complemento");
+      return;
     }
+
+    // 2. SALVAR ITEMS (OPÇÕES)
+    if (Array.isArray(newComp.options)) {
+      for (const opt of newComp.options) {
+        await fetch("/api/complements/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            groupId: createdGroup.id,
+            name: opt.name,
+            price: opt.price ?? 0,
+            active: opt.active ?? true,
+          }),
+        });
+      }
+    }
+
+    // 3. RECARREGAR DO BACKEND PARA ATUALIZAR UI
+    const reload = await fetch("/api/complements", { cache: "no-store" });
+    const updated = await reload.json();
+
+    setComplements(
+      updated.map((g: any) => ({
+        id: g.id,
+        title: g.name,
+        description: "",
+        type: "multiple",
+        required: g.required,
+        minChoose: g.min,
+        maxChoose: g.max,
+        active: true,
+        options: g.items?.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price ?? 0,
+          active: i.active ?? true,
+        })) || [],
+      }))
+    );
+
+  } catch (err) {
+    console.error("Erro salvar complemento:", err);
+    alert("Erro ao salvar complemento");
   }
+}
 
   function openCreateComplement() {
     setNewComplementOpen(true);
