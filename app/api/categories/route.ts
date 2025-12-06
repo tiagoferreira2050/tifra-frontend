@@ -4,12 +4,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
-// GET - LISTAR
+// GET - LISTAR (ordenado por `order`)
 // ===================================================
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
-      orderBy: { createdAt: "asc" },
+      orderBy: [
+        { order: "asc" },     
+        { createdAt: "asc" }, 
+      ],
       include: {
         products: {
           orderBy: { createdAt: "asc" },
