@@ -208,11 +208,10 @@ async function handleDuplicate(cat: any) {
     // monta payload
     const payload = {
       name: `${cat.name} (cópia)`,
-      active: cat.active ?? true,
       storeId: STORE_ID,
+      products: cat.products || [],  
     };
 
-    // envia pro backend
     const res = await fetch("/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -226,13 +225,12 @@ async function handleDuplicate(cat: any) {
       return;
     }
 
-    // retorna o que foi criado no banco
     const created = await res.json();
 
-    // adiciona no front
+    // atualiza UI adicionando
     setCategories((prev: any[]) => [...prev, created]);
 
-    // seleciona a nova categoria
+    // seleciona nova categoria
     onSelectCategory(created.id);
 
   } catch (err) {
