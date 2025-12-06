@@ -192,13 +192,47 @@ export default function CardapioPage() {
     setEditComplementOpen(true);
   }
 
-  function saveEditedComplement(updated: any) {
+  async function saveEditedComplement(updated: any) {
+  try {
+    const res = await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: updated.id,
+        name: updated.title,
+        required: updated.required,
+        min: updated.minChoose,
+        max: updated.maxChoose,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Erro ao atualizar:", data);
+      alert("Erro ao atualizar complemento");
+      return;
+    }
+
+    // atualiza UI
     setComplements((prev) =>
-      prev.map((c) => (c.id === updated.id ? updated : c))
+      prev.map((c) => (c.id === updated.id
+        ? {
+            ...c,
+            title: data.name,
+            required: data.required,
+            minChoose: data.min,
+            maxChoose: data.max,
+          }
+        : c))
     );
 
-    dbSave("complements", updated);
+  } catch (err) {
+    console.error("Erro salvar edição:", err);
+    alert("Erro ao salvar edição");
   }
+}
+
 
   // ======================================================
   // LAYOUT

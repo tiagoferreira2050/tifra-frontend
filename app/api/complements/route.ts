@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 // ===================================================
 export async function PATCH(req: Request) {
   try {
-    const { id, active } = await req.json();
+    const { id, name, required, min, max } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -100,11 +100,18 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.complementGroup.update({
       where: { id },
-      data: { active: !!active },
+      data: {
+        name,
+        required,
+        min,
+        max,
+      },
+      include: {
+        items: true,
+      },
     });
 
     return NextResponse.json(updated, { status: 200 });
-
   } catch (err: any) {
     console.error("Erro PATCH /complements:", err);
     return NextResponse.json(
@@ -113,4 +120,3 @@ export async function PATCH(req: Request) {
     );
   }
 }
-

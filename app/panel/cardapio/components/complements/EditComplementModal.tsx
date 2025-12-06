@@ -20,12 +20,14 @@ export default function EditComplementModal({
 
   useEffect(() => {
     if (!complement) return;
+
     setTitle(complement.title || "");
     setDescription(complement.description || "");
     setType(complement.type || "multiple");
     setRequired(!!complement.required);
     setMinChoose(complement.minChoose ? String(complement.minChoose) : "");
     setMaxChoose(complement.maxChoose ? String(complement.maxChoose) : "");
+
     setOptions(
       (complement.options || []).map((o: any) => ({
         id: o.id || "opt-" + Date.now(),
@@ -74,29 +76,58 @@ export default function EditComplementModal({
     return isNaN(num) ? 0 : num;
   }
 
-  function handleSave() {
+  // ================================================
+  // SALVAR E ATUALIZAR NO BANCO
+  // ================================================
+  async function handleSave() {
     if (!title.trim()) return alert("Título obrigatório");
 
-    const parsedOptions = options.map((o) => ({
-      ...o,
-      price: toNumber(o.price || "0"),
-    }));
-
-    const updated = {
-      ...complement,
-      title,
-      description,
-      type,
+    // monta objeto para API
+    const payload = {
+      id: complement.id,
+      name: title,
       required,
-      minChoose: minChoose ? Number(minChoose) : null,
-      maxChoose: maxChoose ? Number(maxChoose) : null,
-      options: parsedOptions,
+      min: minChoose ? Number(minChoose) : null,
+      max: maxChoose ? Number(maxChoose) : null,
     };
 
-    onSave(updated);
-    onClose();
+    try {
+      const res = await fetch("/api/complements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Erro ao atualizar:", data);
+        alert("Erro ao salvar alteração");
+        return;
+      }
+
+      // atualiza UI local
+      const updated = {
+        ...complement,
+        title,
+        required,
+        minChoose,
+        maxChoose,
+        options,
+      };
+
+      onSave(updated);
+
+      onClose();
+    } catch (err) {
+      console.error("Erro no PATCH:", err);
+      alert("Erro ao atualizar complemento");
+    }
   }
 
+  // ======================================================
+  // LAYOUT
+  // ======================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[820px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
