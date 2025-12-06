@@ -32,18 +32,17 @@ export async function GET() {
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { productId, name, required, min, max } = await req.json();
+    const { name, required, min, max } = await req.json();
 
-    if (!productId || !name) {
+    if (!name) {
       return NextResponse.json(
-        { error: "productId e name são obrigatórios" },
+        { error: "name é obrigatório" },
         { status: 400 }
       );
     }
 
     const group = await prisma.complementGroup.create({
       data: {
-        productId,
         name,
         required: required ?? false,
         min: min ?? 0,
@@ -66,6 +65,7 @@ export async function POST(req: Request) {
 }
 
 
+
 // ===================================================
 // PATCH - ATUALIZAR STATUS DO GRUPO
 // ===================================================
@@ -82,7 +82,7 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.complementGroup.update({
       where: { id },
-      data: { active },
+      data: { active: !!active },
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -95,3 +95,4 @@ export async function PATCH(req: Request) {
     );
   }
 }
+
