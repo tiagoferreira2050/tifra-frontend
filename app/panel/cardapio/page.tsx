@@ -73,18 +73,38 @@ export default function CardapioPage() {
   // 2) CARREGAR COMPLEMENTOS DO BACKEND
   // ======================================================
   useEffect(() => {
-    async function loadComplements() {
-      try {
-        const res = await fetch("/api/complements", { cache: "no-store" });
-        const data = await res.json();
-        setComplements(data);
-      } catch (err) {
-        console.error("Erro ao carregar complementos:", err);
-      }
-    }
+  async function loadComplements() {
+    try {
+      const res = await fetch("/api/complements", { cache: "no-store" });
+      const data = await res.json();
 
-    loadComplements();
-  }, []);
+      const formatted = data.map((g: any) => ({
+        id: g.id,
+        title: g.name,
+        description: "",
+        type: "multiple",
+        required: g.required,
+        minChoose: g.min,
+        maxChoose: g.max,
+        active: true,
+        options: g.items?.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price ?? 0,
+          active: i.active ?? true,
+        })) || [],
+      }));
+
+      setComplements(formatted);
+    } catch (err) {
+      console.error("Erro ao carregar complementos:", err);
+    }
+  }
+
+  loadComplements();
+}, []);
+
+
 
   // ======================================================
   // 3) SALVAR NOVO PRODUTO
