@@ -84,21 +84,22 @@ async function handleSave() {
   console.log("type antes do envio:", type);
 
   const payload = {
-    id: complement.id,
-    name: title,
-    description, // 👈 ENVIAR DESCRIÇÃO
-    required,
-    min: minChoose ? Number(minChoose) : null,
-    max: maxChoose ? Number(maxChoose) : null,
-    active: complement.active,
-    type,
-    options: options.map((opt: any) => ({
-      id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-      name: opt.name,
-      price: toNumber(opt.price),
-      active: opt.active,
-    })),
-  };
+  id: complement.id,
+  name: title,
+  description, // 👈 ADICIONAR
+  required,
+  min: minChoose ? Number(minChoose) : null,
+  max: maxChoose ? Number(maxChoose) : null,
+  active: complement.active,
+  type,
+  options: options.map((opt: any) => ({
+    id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+    name: opt.name,
+    price: toNumber(opt.price),
+    active: opt.active,
+  })),
+};
+
 
   console.log("payload:", payload);
 
