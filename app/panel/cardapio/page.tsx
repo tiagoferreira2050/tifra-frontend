@@ -194,13 +194,15 @@ export default function CardapioPage() {
 
   async function saveEditedComplement(updated: any) {
   try {
-    // 1) Atualiza o GRUPO (nome, min, max, obrigatório, ativo)
+    // ---------------------------------------------------
+    // 1) Atualiza o GRUPO
+    // ---------------------------------------------------
     const groupPayload = {
       id: updated.id,
       name: updated.title,
       required: updated.required,
-      min: updated.minChoose !== null ? Number(updated.minChoose) : null,
-      max: updated.maxChoose !== null ? Number(updated.maxChoose) : null,
+      min: updated.minChoose ? Number(updated.minChoose) : 0,
+      max: updated.maxChoose ? Number(updated.maxChoose) : 1,
       active: updated.active,
     };
 
@@ -218,24 +220,29 @@ export default function CardapioPage() {
       return;
     }
 
-    // 2) Sincroniza ITENS (criar novos + atualizar existentes)
+    // ---------------------------------------------------
+    // 2) ITENS (criar / atualizar)
+    // ---------------------------------------------------
     const options = updated.options || [];
 
     const createPromises: Promise<any>[] = [];
     const updatePromises: Promise<any>[] = [];
 
     for (const opt of options) {
+      // 🛑 ignorar itens vazios
+      if (!opt.name || opt.name.trim() === "") continue;
+
       const isNew = !opt.id || String(opt.id).startsWith("opt-");
 
       const basePayload = {
         groupId: savedGroup.id,
-        name: opt.name || "",
-        price: opt.price ?? 0,
+        name: opt.name.trim(),
+        price: Number(opt.price ?? 0),
         active: opt.active ?? true,
       };
 
       if (isNew) {
-        // cria item novo
+        // criar item
         createPromises.push(
           fetch("/api/complements/items", {
             method: "POST",
@@ -244,7 +251,7 @@ export default function CardapioPage() {
           })
         );
       } else {
-        // atualiza item existente
+        // atualizar item
         updatePromises.push(
           fetch("/api/complements/items", {
             method: "PATCH",
@@ -258,10 +265,16 @@ export default function CardapioPage() {
       }
     }
 
+    // 🧠 Espera todas operações
     await Promise.all([...createPromises, ...updatePromises]);
 
-    // 3) Recarrega complementos do backend para refletir tudo certinho
-    const resReload = await fetch("/api/complements", { cache: "no-store" });
+    // ---------------------------------------------------
+    // 3) Recarrega dados para UI atualizada
+    // ---------------------------------------------------
+    const resReload = await fetch("/api/complements", {
+      cache: "no-store",
+    });
+
     const dataReload = await resReload.json();
 
     const formatted = dataReload.map((g: any) => ({
@@ -289,6 +302,7 @@ export default function CardapioPage() {
     alert("Erro ao atualizar complemento");
   }
 }
+
 
 
   // ======================================================

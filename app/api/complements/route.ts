@@ -47,8 +47,8 @@ export async function POST(req: Request) {
         productId: productId || null,
         name,
         required: required ?? false,
-        min: min ?? 0,
-        max: max ?? 1,
+        min: min !== undefined ? Number(min) : 0,
+        max: max !== undefined ? Number(max) : 1,
       },
     });
 
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         data: options.map((opt: any) => ({
           groupId: group.id,
           name: opt.name,
-          price: opt.price ?? 0,
+          price: opt.price !== undefined ? Number(opt.price) : 0,
           active: opt.active ?? true,
         })),
       });
@@ -84,7 +84,6 @@ export async function POST(req: Request) {
 }
 
 
-
 // ===================================================
 // PATCH - ATUALIZAR COMPLEMENTO + ITENS
 // ===================================================
@@ -105,38 +104,36 @@ export async function PATCH(req: Request) {
       data: {
         name,
         required: !!required,
-        min: min ?? 0,
-        max: max ?? 1,
+        min: min !== undefined ? Number(min) : 0,
+        max: max !== undefined ? Number(max) : 1,
         active: active ?? true,
       },
     });
 
-    // 2) Atualiza os itens
+    // 2) Atualiza os itens (update e create)
     for (const opt of options) {
-      // UPDATE
-      if (opt.id && typeof opt.id === "string" && !opt.id.startsWith("opt-")) {
-        await prisma.complement.update({
-          where: { id: opt.id },
+      const isNew = !opt.id || String(opt.id).startsWith("opt-");
+
+      const payload = {
+        name: opt.name,
+        price: opt.price !== undefined ? Number(opt.price) : 0,
+        active: opt.active ?? true,
+      };
+
+      if (isNew) {
+        await prisma.complement.create({
           data: {
-            name: opt.name,
-            price: opt.price ?? 0,
-            active: opt.active ?? true,
+            groupId: id,
+            ...payload,
           },
         });
         continue;
       }
 
-      // CREATE (se não tem id real)
-      if (!opt.id || opt.id.startsWith("opt-")) {
-        await prisma.complement.create({
-          data: {
-            groupId: id,
-            name: opt.name,
-            price: opt.price ?? 0,
-            active: opt.active ?? true,
-          },
-        });
-      }
+      await prisma.complement.update({
+        where: { id: opt.id },
+        data: payload,
+      });
     }
 
     // 3) Retorna atualizado com itens
