@@ -289,22 +289,23 @@ export default function CardapioPage() {
     const dataReload = await resReload.json();
 
     const formatted = dataReload.map((g: any) => ({
-      id: g.id,
-      title: g.name,
-      description: "",
-      type: "multiple",
-      required: g.required,
-      minChoose: g.min,
-      maxChoose: g.max,
-      active: g.active,
-      options:
-        g.items?.map((i: any) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price ?? 0,
-          active: i.active ?? true,
-        })) || [],
-    }));
+  id: g.id,
+  title: g.name,
+  description: g.description || "",
+  type: g.type || "multiple",
+  required: g.required,
+  minChoose: g.min,
+  maxChoose: g.max,
+  active: g.active,
+  options:
+    g.items?.map((i: any) => ({
+      id: i.id,
+      name: i.name,
+      price: i.price ?? 0,
+      active: i.active ?? true,
+    })) || [],
+}));
+
 
     setComplements(formatted);
 
