@@ -89,7 +89,10 @@ export async function POST(req: Request) {
 // ===================================================
 export async function PATCH(req: Request) {
   try {
-    const { id, name, required, min, max, active, options = [] } = await req.json();
+    const body = await req.json();
+
+    const { id, name, required, min, max, active } = body;
+    const options = Array.isArray(body.options) ? body.options : null;
 
     if (!id) {
       return NextResponse.json(
@@ -110,54 +113,58 @@ export async function PATCH(req: Request) {
       },
     });
 
-    // 2) Atualiza itens (criar e atualizar)
-    for (const opt of options) {
-      const isNew = !opt.id || String(opt.id).startsWith("opt-");
+    // 2) Se options foram enviados, mexe nos itens
+    if (options && options.length > 0) {
 
-      const payload = {
-        name: opt.name,
-        price: opt.price !== undefined ? Number(opt.price) : 0,
-        active: opt.active ?? true,
-      };
+      // 2.1 Criar / atualizar
+      for (const opt of options) {
+        const isNew = !opt.id || String(opt.id).startsWith("opt-");
 
-      if (isNew) {
-        await prisma.complement.create({
-          data: {
-            groupId: id,
-            ...payload,
-          },
+        const payload = {
+          name: opt.name,
+          price: opt.price !== undefined ? Number(opt.price) : 0,
+          active: opt.active ?? true,
+        };
+
+        if (isNew) {
+          await prisma.complement.create({
+            data: {
+              groupId: id,
+              ...payload,
+            },
+          });
+
+          continue;
+        }
+
+        await prisma.complement.update({
+          where: { id: opt.id },
+          data: payload,
         });
-
-        continue;
       }
 
-      await prisma.complement.update({
-        where: { id: opt.id },
-        data: payload,
+      // 2.2 Remover itens que foram deletados
+      const existingItemIds = await prisma.complement.findMany({
+        where: { groupId: id },
+        select: { id: true },
       });
+
+      const payloadIds = options
+        .filter((opt: any) => opt.id && !String(opt.id).startsWith("opt-"))
+        .map((opt: any) => opt.id);
+
+      const toDeleteIds = existingItemIds
+        .map((i: any) => i.id)
+        .filter((itemId: string) => !payloadIds.includes(itemId));
+
+      if (toDeleteIds.length > 0) {
+        await prisma.complement.deleteMany({
+          where: { id: { in: toDeleteIds } },
+        });
+      }
     }
 
-    // 3) Remover itens que foram deletados (não existem mais no payload)
-    const existingItemIds = await prisma.complement.findMany({
-      where: { groupId: id },
-      select: { id: true },
-    });
-
-    const payloadIds = options
-      .filter((opt: any) => opt.id && !String(opt.id).startsWith("opt-"))
-      .map((opt: any) => opt.id);
-
-    const toDeleteIds = existingItemIds
-      .map((i: any) => i.id)
-      .filter((itemId: string) => !payloadIds.includes(itemId));
-
-    if (toDeleteIds.length > 0) {
-      await prisma.complement.deleteMany({
-        where: { id: { in: toDeleteIds } },
-      });
-    }
-
-    // 4) Retorna atualizado com itens
+    // 3) Retorna atualizado com itens
     const updated = await prisma.complementGroup.findUnique({
       where: { id },
       include: {
