@@ -160,7 +160,7 @@ export default function EditComplementModal({
     <option value="multiple">Múltipla escolha (checkbox)</option>
     <option value="addable">Somável (cada opção soma preço)</option>
   </select>
-</div>   {/* <-- FECHAR A DIV AQUI */}
+</div>
 
 <div>
   <label className="block font-medium mb-1">Obrigatório</label>
@@ -173,6 +173,7 @@ export default function EditComplementModal({
     <span className="text-sm text-gray-600">Exigir escolha</span>
   </div>
 </div>
+
 
           {/* Min */}
           <div>
