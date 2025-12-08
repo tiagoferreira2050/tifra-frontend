@@ -89,7 +89,16 @@ export default function EditComplementModal({
   min: minChoose ? Number(minChoose) : null,
   max: maxChoose ? Number(maxChoose) : null,
   active: complement.active,
+
+  // ENVIAR ITENS PARA PATCH NO BACKEND
+  options: options.map((opt: any) => ({
+    id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+    name: opt.name,
+    price: toNumber(opt.price),
+    active: opt.active,
+  })),
 };
+
 
   try {
     const res = await fetch("/api/complements", {
