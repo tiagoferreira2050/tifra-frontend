@@ -207,12 +207,14 @@ export default function CardapioPage() {
     const groupPayload = {
   id: updated.id,
   name: updated.title,
+  description: updated.description ?? "", // 👈 ESSA LINHA
   required: updated.required,
   min: updated.minChoose ? Number(updated.minChoose) : 0,
   max: updated.maxChoose ? Number(updated.maxChoose) : 1,
   active: updated.active,
-  type: updated.type, // 👈 CORRETO
+  type: updated.type,
 };
+
 
 
 
@@ -305,6 +307,7 @@ export default function CardapioPage() {
       active: i.active ?? true,
     })) || [],
 }));
+
 
 
     setComplements(formatted);
