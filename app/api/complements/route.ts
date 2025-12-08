@@ -32,7 +32,7 @@ export async function GET() {
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { productId, name, required, min, max, type, options } = await req.json();
+    const { productId, name, description, required, min, max, type, options } = await req.json();
 
     if (!name) {
       return NextResponse.json(
