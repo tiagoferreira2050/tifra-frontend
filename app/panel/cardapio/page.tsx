@@ -205,8 +205,10 @@ export default function CardapioPage() {
   min: updated.minChoose ? Number(updated.minChoose) : 0,
   max: updated.maxChoose ? Number(updated.maxChoose) : 1,
   active: updated.active,
-  type: updated.type, // 👈 ADICIONAR AQUI
+  type: updated.type, // 👈 CORRETO
 };
+
+
 
 
     const resGroup = await fetch("/api/complements", {
