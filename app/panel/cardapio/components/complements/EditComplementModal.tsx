@@ -77,61 +77,69 @@ export default function EditComplementModal({
   }
 
   // ================================================
-  // SALVAR E ATUALIZAR NO BANCO
-  // ================================================
-  async function handleSave() {
-    console.log("SALVANDO...", type);
-    if (!title.trim()) return alert("Título obrigatório");
+// SALVAR E ATUALIZAR NO BANCO
+// ================================================
+async function handleSave() {
+  console.log("🔵 handleSave chamado");
+  console.log("type antes do envio:", type);
 
-    const payload = {
-      id: complement.id,
-      name: title,
+  const payload = {
+    id: complement.id,
+    name: title,
+    description, // 👈 ENVIAR DESCRIÇÃO
+    required,
+    min: minChoose ? Number(minChoose) : null,
+    max: maxChoose ? Number(maxChoose) : null,
+    active: complement.active,
+    type,
+    options: options.map((opt: any) => ({
+      id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+      name: opt.name,
+      price: toNumber(opt.price),
+      active: opt.active,
+    })),
+  };
+
+  console.log("payload:", payload);
+
+  try {
+    console.log("🔵 Enviando PATCH...");
+
+    const res = await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("🟢 Resposta do PATCH:", res.status);
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Erro ao atualizar:", data);
+      alert("Erro ao atualizar complemento");
+      return;
+    }
+
+    const updated = {
+      ...complement,
+      title,
+      description, // 👈 ATUALIZA NA UI TAMBÉM
       required,
-      min: minChoose ? Number(minChoose) : null,
-      max: maxChoose ? Number(maxChoose) : null,
-      active: complement.active,
+      minChoose,
+      maxChoose,
       type,
-
-      options: options.map((opt: any) => ({
-        id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-        name: opt.name,
-        price: toNumber(opt.price),
-        active: opt.active,
-      })),
+      options,
     };
 
-    try {
-      const res = await fetch("/api/complements", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Erro ao atualizar:", data);
-        alert("Erro ao atualizar complemento");
-        return;
-      }
-
-      const updated = {
-        ...complement,
-        title,
-        required,
-        minChoose,
-        maxChoose,
-        type,
-        options,
-      };
-
-      onSave(updated);
-      onClose();
-    } catch (err) {
-      console.error("Erro no PATCH:", err);
-      alert("Erro ao atualizar complemento");
-    }
+    onSave(updated);
+    onClose();
+  } catch (err) {
+    console.error("Erro no PATCH:", err);
+    alert("Erro ao atualizar complemento");
   }
+}
+
 
   // ======================================================
   // LAYOUT

@@ -32,7 +32,9 @@ export async function GET() {
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { name, required, min, max, type, options } = await req.json();
+    // 👇 AGORA RECEBE description TAMBÉM
+    const { name, description, required, min, max, type, options } =
+      await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
     const group = await prisma.complementGroup.create({
       data: {
         name,
+        description: description ?? "", // 👈 GARANTE STRING
         required: required ?? false,
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
@@ -74,7 +77,6 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(result, { status: 201 });
-
   } catch (err: any) {
     console.error("Erro POST /complements:", err);
     return NextResponse.json(
@@ -91,8 +93,8 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
-    const { id, name, required, min, max, active, type } = body;
-
+    // 👇 AGORA RECEBE description TAMBÉM
+    const { id, name, description, required, min, max, active, type } = body;
     const options = Array.isArray(body.options) ? body.options : null;
 
     if (!id) {
@@ -107,6 +109,7 @@ export async function PATCH(req: Request) {
       where: { id },
       data: {
         name,
+        description: description ?? "", // 👈 ATUALIZA DESCRIÇÃO
         required: !!required,
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
@@ -117,7 +120,6 @@ export async function PATCH(req: Request) {
 
     // 2) Se options foram enviados, mexe nos itens
     if (options && options.length > 0) {
-
       // 2.1 Criar / atualizar
       for (const opt of options) {
         const isNew = !opt.id || String(opt.id).startsWith("opt-");
@@ -176,7 +178,6 @@ export async function PATCH(req: Request) {
     });
 
     return NextResponse.json(updated, { status: 200 });
-
   } catch (err: any) {
     console.error("Erro PATCH /complements:", err);
     return NextResponse.json(
