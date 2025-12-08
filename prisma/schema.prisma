@@ -76,6 +76,7 @@ model ComplementGroup {
   min       Int        @default(0)
   max       Int        @default(1)
   active    Boolean    @default(true)
+  type      String     @default("multiple")
   createdAt DateTime   @default(now())
 
   product   Product?   @relation(fields: [productId], references: [id])
@@ -83,6 +84,8 @@ model ComplementGroup {
 
   @@index([productId])
 }
+
+
 
 model Complement {
   id        String   @id @default(uuid())

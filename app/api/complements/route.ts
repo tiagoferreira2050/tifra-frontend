@@ -32,7 +32,7 @@ export async function GET() {
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { productId, name, required, min, max, options } = await req.json();
+    const { productId, name, required, min, max, type, options } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // criar grupo
+    // 1) Criar grupo
     const group = await prisma.complementGroup.create({
       data: {
         productId: productId || null,
@@ -49,10 +49,12 @@ export async function POST(req: Request) {
         required: required ?? false,
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
+        active: true,                   // mantive igual estava antes
+        type: type || "multiple",       // 👈 SALVA O TIPO
       },
     });
 
-    // se existir opções, cria cada item
+    // 2) Se existir opções, cria cada item
     if (Array.isArray(options) && options.length > 0) {
       await prisma.complement.createMany({
         data: options.map((opt: any) => ({
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // retorna grupo completo com itens
+    // 3) Retorna grupo completo com itens
     const result = await prisma.complementGroup.findUnique({
       where: { id: group.id },
       include: {
@@ -91,7 +93,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
-    const { id, name, required, min, max, active } = body;
+    const { id, name, required, min, max, active, type } = body;
     const options = Array.isArray(body.options) ? body.options : null;
 
     if (!id) {
@@ -110,6 +112,7 @@ export async function PATCH(req: Request) {
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
         active: active ?? true,
+        type: type || "multiple", // 👈 SALVANDO O TIPO
       },
     });
 
@@ -133,7 +136,6 @@ export async function PATCH(req: Request) {
               ...payload,
             },
           });
-
           continue;
         }
 
@@ -143,7 +145,7 @@ export async function PATCH(req: Request) {
         });
       }
 
-      // 2.2 Remover itens que foram deletados
+      // 2.2 Remover itens deletados
       const existingItemIds = await prisma.complement.findMany({
         where: { groupId: id },
         select: { id: true },
