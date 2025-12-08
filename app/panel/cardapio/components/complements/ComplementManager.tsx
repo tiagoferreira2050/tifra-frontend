@@ -63,11 +63,36 @@ export default function ComplementManager({
 
 
   // ---------------- DELETE (LOCAL) ----------------
-  function deleteComplement(id: string) {
-    if (!confirm("Deseja deletar este complemento?")) return;
+  async function deleteComplement(id: string) {
+  if (!confirm("Deseja deletar este complemento?")) return;
 
-    setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
+  // backup
+  const backup = complements;
+
+  // remove da UI
+  setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
+
+  try {
+    const res = await fetch("/api/complements", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Falha no backend");
+    }
+
+  } catch (err) {
+    console.error("Erro ao deletar:", err);
+
+    // rollback
+    setComplements(backup);
+
+    alert("Erro ao deletar complemento");
   }
+}
+
 
   // ---------------- UI ----------------
   return (

@@ -186,3 +186,41 @@ export async function PATCH(req: Request) {
     );
   }
 }
+
+// ===================================================
+// DELETE - REMOVER GRUPO + ITENS
+// ===================================================
+export async function DELETE(req: Request) {
+  try {
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Deletar itens ligados ao grupo
+    await prisma.complement.deleteMany({
+      where: { groupId: id },
+    });
+
+    // Deletar grupo
+    await prisma.complementGroup.delete({
+      where: { id },
+    });
+
+    return NextResponse.json(
+      { success: true },
+      { status: 200 }
+    );
+
+  } catch (err: any) {
+    console.error("Erro DELETE /complements:", err);
+    return NextResponse.json(
+      { error: "Erro ao deletar complemento", details: err.message },
+      { status: 500 }
+    );
+  }
+}
