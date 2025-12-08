@@ -194,42 +194,44 @@ export default function CardapioPage() {
 
   async function saveEditedComplement(updated: any) {
   try {
+    const payload = {
+      id: updated.id,
+      name: updated.title,
+      required: updated.required,
+      min: updated.minChoose !== null ? Number(updated.minChoose) : null,
+      max: updated.maxChoose !== null ? Number(updated.maxChoose) : null,
+      active: updated.active,
+    };
+
     const res = await fetch("/api/complements", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: updated.id,
-        name: updated.title,
-        required: updated.required,
-        min: updated.minChoose,
-        max: updated.maxChoose,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      console.error("Erro ao atualizar:", data);
+      console.error("Erro ao atualizar complemento:", data);
       alert("Erro ao atualizar complemento");
       return;
     }
 
-    // atualiza UI
+    // Atualiza lista no frontend
     setComplements((prev) =>
-      prev.map((c) => (c.id === updated.id
-        ? {
-            ...c,
-            title: data.name,
-            required: data.required,
-            minChoose: data.min,
-            maxChoose: data.max,
-          }
-        : c))
+      prev.map((c) => (c.id === data.id ? {
+        ...c,
+        title: data.name,
+        required: data.required,
+        minChoose: data.min,
+        maxChoose: data.max,
+        active: data.active,
+      } : c))
     );
 
   } catch (err) {
-    console.error("Erro salvar edição:", err);
-    alert("Erro ao salvar edição");
+    console.error("Erro PATCH:", err);
+    alert("Erro ao atualizar complemento");
   }
 }
 
