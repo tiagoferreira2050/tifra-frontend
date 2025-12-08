@@ -81,19 +81,21 @@ export default function CardapioPage() {
         const formatted = data.map((g: any) => ({
   id: g.id,
   title: g.name,
-  description: "",
-  type: g.type || "multiple", // 👈 CORREÇÃO AQUI
+  description: g.description || "", // 👈 pega a descrição real
+  type: g.type || "multiple",        // 👈 agora pega o tipo real
   required: g.required,
   minChoose: g.min,
   maxChoose: g.max,
   active: g.active ?? true,
-  options: g.items?.map((i: any) => ({
-    id: i.id,
-    name: i.name,
-    price: i.price ?? 0,
-    active: i.active ?? true,
-  })) || [],
+  options:
+    g.items?.map((i: any) => ({
+      id: i.id,
+      name: i.name,
+      price: i.price ?? 0,
+      active: i.active ?? true,
+    })) || [],
 }));
+
 
 
         setComplements(formatted);
@@ -142,17 +144,21 @@ export default function CardapioPage() {
   async function saveNewComplement(newComp: any, productId: string) {
   try {
     const res = await fetch("/api/complements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId,
-        name: newComp.title,
-        required: newComp.required,
-        min: newComp.minChoose,
-        max: newComp.maxChoose,
-        options: newComp.options || [], // <<< enviar sub-opções
-      }),
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    productId,
+    name: newComp.title,
+    description: newComp.description, // 👈 enviar
+    type: newComp.type,               // 👈 enviar
+    required: newComp.required,
+    min: newComp.minChoose,
+    max: newComp.maxChoose,
+    options: newComp.options || [],
+  }),
+});
+
+
 
     const created = await res.json();
 

@@ -41,18 +41,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1) Criar grupo
-    const group = await prisma.complementGroup.create({
-      data: {
-        productId: productId || null,
-        name,
-        required: required ?? false,
-        min: min !== undefined ? Number(min) : 0,
-        max: max !== undefined ? Number(max) : 1,
-        active: true,                   // mantive igual estava antes
-        type: type || "multiple",       // 👈 SALVA O TIPO
-      },
-    });
+  // 1) Criar grupo
+const group = await prisma.complementGroup.create({
+  data: {
+    productId: productId || null,
+    name,
+    description,
+    required: required ?? false,
+    min: min !== undefined ? Number(min) : 0,
+    max: max !== undefined ? Number(max) : 1,
+    active: true,
+    type: type || "multiple",
+  },
+});
+
 
     // 2) Se existir opções, cria cada item
     if (Array.isArray(options) && options.length > 0) {
@@ -93,7 +95,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
-    const { id, name, required, min, max, active, type } = body;
+    const { id, name, description, required, min, max, active, type } = body;
     const options = Array.isArray(body.options) ? body.options : null;
 
     if (!id) {
@@ -108,11 +110,12 @@ await prisma.complementGroup.update({
   where: { id },
   data: {
     name,
+    description,
     required: !!required,
     min: min !== undefined ? Number(min) : 0,
     max: max !== undefined ? Number(max) : 1,
     active: active ?? true,
-    type: type ?? undefined,
+    type: typeof type === "string" ? type : "multiple",
   },
 });
 
