@@ -79,21 +79,22 @@ export default function CardapioPage() {
         const data = await res.json();
 
         const formatted = data.map((g: any) => ({
-          id: g.id,
-          title: g.name,
-          description: "",
-          type: "multiple",
-          required: g.required,
-          minChoose: g.min,
-          maxChoose: g.max,
-          active: g.active ?? true,
-          options: g.items?.map((i: any) => ({
-            id: i.id,
-            name: i.name,
-            price: i.price ?? 0,
-            active: i.active ?? true,
-          })) || [],
-        }));
+  id: g.id,
+  title: g.name,
+  description: "",
+  type: g.type || "multiple", // 👈 CORREÇÃO AQUI
+  required: g.required,
+  minChoose: g.min,
+  maxChoose: g.max,
+  active: g.active ?? true,
+  options: g.items?.map((i: any) => ({
+    id: i.id,
+    name: i.name,
+    price: i.price ?? 0,
+    active: i.active ?? true,
+  })) || [],
+}));
+
 
         setComplements(formatted);
       } catch (err) {
@@ -198,13 +199,15 @@ export default function CardapioPage() {
     // 1) Atualiza o GRUPO
     // ---------------------------------------------------
     const groupPayload = {
-      id: updated.id,
-      name: updated.title,
-      required: updated.required,
-      min: updated.minChoose ? Number(updated.minChoose) : 0,
-      max: updated.maxChoose ? Number(updated.maxChoose) : 1,
-      active: updated.active,
-    };
+  id: updated.id,
+  name: updated.title,
+  required: updated.required,
+  min: updated.minChoose ? Number(updated.minChoose) : 0,
+  max: updated.maxChoose ? Number(updated.maxChoose) : 1,
+  active: updated.active,
+  type: updated.type, // 👈 ADICIONAR AQUI
+};
+
 
     const resGroup = await fetch("/api/complements", {
       method: "PATCH",

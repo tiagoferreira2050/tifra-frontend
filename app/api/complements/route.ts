@@ -104,17 +104,18 @@ export async function PATCH(req: Request) {
     }
 
     // 1) Atualiza o grupo
-    await prisma.complementGroup.update({
-      where: { id },
-      data: {
-        name,
-        required: !!required,
-        min: min !== undefined ? Number(min) : 0,
-        max: max !== undefined ? Number(max) : 1,
-        active: active ?? true,
-        type: type || "multiple", // 👈 SALVANDO O TIPO
-      },
-    });
+await prisma.complementGroup.update({
+  where: { id },
+  data: {
+    name,
+    required: !!required,
+    min: min !== undefined ? Number(min) : 0,
+    max: max !== undefined ? Number(max) : 1,
+    active: active ?? true,
+    type: type ?? undefined,
+  },
+});
+
 
     // 2) Se options foram enviados, mexe nos itens
     if (options && options.length > 0) {
