@@ -194,7 +194,8 @@ export default function CardapioPage() {
 
   async function saveEditedComplement(updated: any) {
   try {
-    const payload = {
+    // 1) Atualiza o GRUPO (nome, min, max, obrigatório, ativo)
+    const groupPayload = {
       id: updated.id,
       name: updated.title,
       required: updated.required,
@@ -203,34 +204,88 @@ export default function CardapioPage() {
       active: updated.active,
     };
 
-    const res = await fetch("/api/complements", {
+    const resGroup = await fetch("/api/complements", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(groupPayload),
     });
 
-    const data = await res.json();
+    const savedGroup = await resGroup.json();
 
-    if (!res.ok) {
-      console.error("Erro ao atualizar complemento:", data);
+    if (!resGroup.ok) {
+      console.error("Erro ao atualizar grupo:", savedGroup);
       alert("Erro ao atualizar complemento");
       return;
     }
 
-    // Atualiza lista no frontend
-    setComplements((prev) =>
-      prev.map((c) => (c.id === data.id ? {
-        ...c,
-        title: data.name,
-        required: data.required,
-        minChoose: data.min,
-        maxChoose: data.max,
-        active: data.active,
-      } : c))
-    );
+    // 2) Sincroniza ITENS (criar novos + atualizar existentes)
+    const options = updated.options || [];
+
+    const createPromises: Promise<any>[] = [];
+    const updatePromises: Promise<any>[] = [];
+
+    for (const opt of options) {
+      const isNew = !opt.id || String(opt.id).startsWith("opt-");
+
+      const basePayload = {
+        groupId: savedGroup.id,
+        name: opt.name || "",
+        price: opt.price ?? 0,
+        active: opt.active ?? true,
+      };
+
+      if (isNew) {
+        // cria item novo
+        createPromises.push(
+          fetch("/api/complements/items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(basePayload),
+          })
+        );
+      } else {
+        // atualiza item existente
+        updatePromises.push(
+          fetch("/api/complements/items", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: opt.id,
+              ...basePayload,
+            }),
+          })
+        );
+      }
+    }
+
+    await Promise.all([...createPromises, ...updatePromises]);
+
+    // 3) Recarrega complementos do backend para refletir tudo certinho
+    const resReload = await fetch("/api/complements", { cache: "no-store" });
+    const dataReload = await resReload.json();
+
+    const formatted = dataReload.map((g: any) => ({
+      id: g.id,
+      title: g.name,
+      description: "",
+      type: "multiple",
+      required: g.required,
+      minChoose: g.min,
+      maxChoose: g.max,
+      active: g.active,
+      options:
+        g.items?.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price ?? 0,
+          active: i.active ?? true,
+        })) || [],
+    }));
+
+    setComplements(formatted);
 
   } catch (err) {
-    console.error("Erro PATCH:", err);
+    console.error("Erro salvar complemento + itens:", err);
     alert("Erro ao atualizar complemento");
   }
 }
