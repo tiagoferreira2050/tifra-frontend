@@ -80,59 +80,57 @@ export default function EditComplementModal({
   // SALVAR E ATUALIZAR NO BANCO
   // ================================================
   async function handleSave() {
-  if (!title.trim()) return alert("Título obrigatório");
+    if (!title.trim()) return alert("Título obrigatório");
 
-  const payload = {
-  id: complement.id,
-  name: title,
-  required,
-  min: minChoose ? Number(minChoose) : null,
-  max: maxChoose ? Number(maxChoose) : null,
-  active: complement.active,
-
-  // ENVIAR ITENS PARA PATCH NO BACKEND
-  options: options.map((opt: any) => ({
-    id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-    name: opt.name,
-    price: toNumber(opt.price),
-    active: opt.active,
-  })),
-};
-
-
-  try {
-    const res = await fetch("/api/complements", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Erro ao atualizar:", data);
-      alert("Erro ao atualizar complemento");
-      return;
-    }
-
-    // atualiza UI local
-    const updated = {
-      ...complement,
-      title,
+    const payload = {
+      id: complement.id,
+      name: title,
       required,
-      minChoose,
-      maxChoose,
-      options,
+      min: minChoose ? Number(minChoose) : null,
+      max: maxChoose ? Number(maxChoose) : null,
+      active: complement.active,
+      type,
+
+      options: options.map((opt: any) => ({
+        id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+      })),
     };
 
-    onSave(updated);
-    onClose();
-  } catch (err) {
-    console.error("Erro no PATCH:", err);
-    alert("Erro ao atualizar complemento");
-  }
-}
+    try {
+      const res = await fetch("/api/complements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Erro ao atualizar:", data);
+        alert("Erro ao atualizar complemento");
+        return;
+      }
+
+      const updated = {
+        ...complement,
+        title,
+        required,
+        minChoose,
+        maxChoose,
+        type,
+        options,
+      };
+
+      onSave(updated);
+      onClose();
+    } catch (err) {
+      console.error("Erro no PATCH:", err);
+      alert("Erro ao atualizar complemento");
+    }
+  }
 
   // ======================================================
   // LAYOUT
@@ -149,15 +147,22 @@ export default function EditComplementModal({
         <textarea className="w-full border rounded-md p-2 mb-3" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
 
         <div className="flex gap-3 mb-3">
+
+          {/* Tipo */}
           <div>
             <label className="block font-medium mb-1">Tipo</label>
-            <select className="border rounded-md p-2" value={type} onChange={(e) => setType(e.target.value as any)}>
+            <select
+              className="border rounded-md p-2"
+              value={type}
+              onChange={(e) => setType(e.target.value as any)}
+            >
               <option value="single">Opção única (radio)</option>
               <option value="multiple">Múltipla escolha (checkbox)</option>
               <option value="addable">Somável (cada opção soma preço)</option>
             </select>
           </div>
 
+          {/* Obrigatório */}
           <div>
             <label className="block font-medium mb-1">Obrigatório</label>
             <div className="flex items-center gap-2">
@@ -166,22 +171,27 @@ export default function EditComplementModal({
             </div>
           </div>
 
+          {/* Min */}
           <div>
             <label className="block font-medium mb-1">Min</label>
             <input className="border rounded-md p-2 w-20" value={minChoose} onChange={(e) => setMinChoose(e.target.value)} />
           </div>
 
+          {/* Max */}
           <div>
             <label className="block font-medium mb-1">Max</label>
             <input className="border rounded-md p-2 w-20" value={maxChoose} onChange={(e) => setMaxChoose(e.target.value)} />
           </div>
+
         </div>
 
+        {/* Opções Header */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button onClick={addOption} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm">+ Adicionar opção</button>
         </div>
 
+        {/* Lista de opções */}
         <div className="flex flex-col gap-3 mb-4">
           {options.map((opt) => (
             <div key={opt.id} className="border rounded-lg p-3 flex gap-3 items-start">
@@ -212,6 +222,7 @@ export default function EditComplementModal({
           ))}
         </div>
 
+        {/* Botões */}
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
           <button onClick={handleSave} className="px-4 py-2 bg-red-600 text-white rounded-md">Salvar alterações</button>
