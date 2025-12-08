@@ -44,7 +44,6 @@ export async function POST(req: Request) {
   // 1) Criar grupo
 const group = await prisma.complementGroup.create({
   data: {
-    productId: productId || null,
     name,
     description,
     required: required ?? false,
