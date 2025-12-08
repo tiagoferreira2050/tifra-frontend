@@ -86,11 +86,11 @@ export async function POST(req: Request) {
 
 
 // ===================================================
-// PATCH - ATUALIZAR GRUPO COMPLETO
+// PATCH - ATUALIZAR COMPLEMENTO + ITENS
 // ===================================================
 export async function PATCH(req: Request) {
   try {
-    const { id, name, required, min, max, active } = await req.json();
+    const { id, name, required, min, max, active, options = [] } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -99,18 +99,54 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const updated = await prisma.complementGroup.update({
+    // 1) Atualiza o grupo
+    const group = await prisma.complementGroup.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name }),
-        ...(required !== undefined && { required }),
-        ...(min !== undefined && { min: Number(min) }),
-        ...(max !== undefined && { max: Number(max) }),
-        ...(active !== undefined && { active }),
+        name,
+        required: !!required,
+        min: min ?? 0,
+        max: max ?? 1,
+        active: active ?? true,
       },
-      include: {
-        items: true
+    });
+
+    // 2) Atualiza os itens
+    for (const opt of options) {
+      // UPDATE
+      if (opt.id && typeof opt.id === "string" && !opt.id.startsWith("opt-")) {
+        await prisma.complement.update({
+          where: { id: opt.id },
+          data: {
+            name: opt.name,
+            price: opt.price ?? 0,
+            active: opt.active ?? true,
+          },
+        });
+        continue;
       }
+
+      // CREATE (se não tem id real)
+      if (!opt.id || opt.id.startsWith("opt-")) {
+        await prisma.complement.create({
+          data: {
+            groupId: id,
+            name: opt.name,
+            price: opt.price ?? 0,
+            active: opt.active ?? true,
+          },
+        });
+      }
+    }
+
+    // 3) Retorna atualizado com itens
+    const updated = await prisma.complementGroup.findUnique({
+      where: { id },
+      include: {
+        items: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
 
     return NextResponse.json(updated, { status: 200 });
