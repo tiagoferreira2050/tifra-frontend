@@ -32,7 +32,7 @@ export async function GET() {
 // ===================================================
 export async function POST(req: Request) {
   try {
-    const { productId, name, description, required, min, max, type, options } = await req.json();
+    const { name, required, min, max, type, options } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -41,19 +41,17 @@ export async function POST(req: Request) {
       );
     }
 
-  // 1) Criar grupo
-const group = await prisma.complementGroup.create({
-  data: {
-    name,
-    description,
-    required: required ?? false,
-    min: min !== undefined ? Number(min) : 0,
-    max: max !== undefined ? Number(max) : 1,
-    active: true,
-    type: type || "multiple",
-  },
-});
-
+    // 1) Criar grupo
+    const group = await prisma.complementGroup.create({
+      data: {
+        name,
+        required: required ?? false,
+        min: min !== undefined ? Number(min) : 0,
+        max: max !== undefined ? Number(max) : 1,
+        active: true,
+        type: type || "multiple",
+      },
+    });
 
     // 2) Se existir opções, cria cada item
     if (Array.isArray(options) && options.length > 0) {
@@ -86,7 +84,6 @@ const group = await prisma.complementGroup.create({
   }
 }
 
-
 // ===================================================
 // PATCH - ATUALIZAR COMPLEMENTO + ITENS
 // ===================================================
@@ -94,7 +91,8 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
-    const { id, name, description, required, min, max, active, type } = body;
+    const { id, name, required, min, max, active, type } = body;
+
     const options = Array.isArray(body.options) ? body.options : null;
 
     if (!id) {
@@ -105,19 +103,17 @@ export async function PATCH(req: Request) {
     }
 
     // 1) Atualiza o grupo
-await prisma.complementGroup.update({
-  where: { id },
-  data: {
-    name,
-    description,
-    required: !!required,
-    min: min !== undefined ? Number(min) : 0,
-    max: max !== undefined ? Number(max) : 1,
-    active: active ?? true,
-    type: typeof type === "string" ? type : "multiple",
-  },
-});
-
+    await prisma.complementGroup.update({
+      where: { id },
+      data: {
+        name,
+        required: !!required,
+        min: min !== undefined ? Number(min) : 0,
+        max: max !== undefined ? Number(max) : 1,
+        active: active ?? true,
+        type: typeof type === "string" ? type : "multiple",
+      },
+    });
 
     // 2) Se options foram enviados, mexe nos itens
     if (options && options.length > 0) {
