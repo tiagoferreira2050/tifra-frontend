@@ -80,6 +80,7 @@ export default function EditComplementModal({
   // SALVAR E ATUALIZAR NO BANCO
   // ================================================
   async function handleSave() {
+    console.log("SALVANDO...", type);
     if (!title.trim()) return alert("Título obrigatório");
 
     const payload = {
