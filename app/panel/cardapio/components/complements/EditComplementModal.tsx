@@ -149,27 +149,30 @@ export default function EditComplementModal({
         <div className="flex gap-3 mb-3">
 
           {/* Tipo */}
-          <div>
-            <label className="block font-medium mb-1">Tipo</label>
-            <select
-              className="border rounded-md p-2"
-              value={type}
-              onChange={(e) => setType(e.target.value as any)}
-            >
-              <option value="single">Opção única (radio)</option>
-              <option value="multiple">Múltipla escolha (checkbox)</option>
-              <option value="addable">Somável (cada opção soma preço)</option>
-            </select>
-          </div>
+         <div>
+  <label className="block font-medium mb-1">Tipo</label>
+  <select
+    className="border rounded-md p-2"
+    value={type}
+    onChange={(e) => setType(e.target.value as any)}
+  >
+    <option value="single">Opção única (radio)</option>
+    <option value="multiple">Múltipla escolha (checkbox)</option>
+    <option value="addable">Somável (cada opção soma preço)</option>
+  </select>
+</div>   {/* <-- FECHAR A DIV AQUI */}
 
-          {/* Obrigatório */}
-          <div>
-            <label className="block font-medium mb-1">Obrigatório</label>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
-              <span className="text-sm text-gray-600">Exigir escolha</span>
-            </div>
-          </div>
+<div>
+  <label className="block font-medium mb-1">Obrigatório</label>
+  <div className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={required}
+      onChange={(e) => setRequired(e.target.checked)}
+    />
+    <span className="text-sm text-gray-600">Exigir escolha</span>
+  </div>
+</div>
 
           {/* Min */}
           <div>
