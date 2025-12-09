@@ -45,7 +45,7 @@ export default function NewComplementModal({
   }
 
   // ==========================================
-  // UPLOAD DE IMAGEM (CLOUDINARY)
+  // UPLOAD DE IMAGEM
   // ==========================================
   async function handleImageUpload(e: any, id: string) {
     const file = e.target.files[0];
@@ -91,7 +91,7 @@ export default function NewComplementModal({
   }
 
   // ==========================================
-  // SALVAR NO BANCO (POST)
+  // SALVAR (POST)
   // ==========================================
   async function handleSave() {
     if (!title.trim()) return alert("Título obrigatório");
@@ -127,27 +127,12 @@ export default function NewComplementModal({
         return;
       }
 
-      onSave({
-  id: data.id,
-  title: data.name,
-  description: data.description || "",
-  required: data.required,
-  minChoose: data.min,
-  maxChoose: data.max,
-  active: data.active,
-  type: data.type || "multiple",
-  options: data.items?.map((i) => ({
-    id: i.id,
-    name: i.name,
-    price: i.price ?? 0,
-    active: i.active ?? true,
-    image: i.imageUrl || null,
-    description: i.description || "",
-  })) || [],
-});
+      // ⚠️ IMPORTANTE:
+      // AGORA NÃO ENVIAMOS MAIS O OBJETO PARA O PAI
+      // Apenas avisamos que terminou, e o pai recarrega do servidor.
+      onSave();
 
-onClose();
-
+      onClose();
     } catch (err) {
       console.error("Erro no POST:", err);
       alert("Erro ao criar complemento");
@@ -178,7 +163,6 @@ onClose();
         />
 
         <div className="flex gap-3 mb-3">
-
           {/* Tipo */}
           <div>
             <label className="block font-medium mb-1">Tipo</label>
@@ -227,7 +211,7 @@ onClose();
           </div>
         </div>
 
-        {/* Itens */}
+        {/* Opções */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button
@@ -238,11 +222,9 @@ onClose();
           </button>
         </div>
 
-        {/* Lista */}
         <div className="flex flex-col gap-3 mb-4">
           {options.map((opt) => (
             <div key={opt.id} className="border rounded-lg p-3 flex gap-3 items-start">
-
               <div className="flex-1">
                 <input
                   className="w-full border rounded p-2 mb-2"
@@ -260,6 +242,7 @@ onClose();
                       updateOption(opt.id, { price: formatCurrency(e.target.value) })
                     }
                   />
+
                   <input
                     className="border rounded p-2 w-36"
                     placeholder="PDV"

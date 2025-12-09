@@ -134,56 +134,60 @@ export default function CardapioPage() {
   // SALVAR NOVO COMPLEMENTO (e evitar erro falso!)
   // ======================================================
   async function saveNewComplement(newComp: any) {
-    try {
-      const res = await fetch("/api/complements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newComp.title,
-          description: newComp.description,
-          type: newComp.type,
-          required: newComp.required,
-          min: newComp.minChoose,
-          max: newComp.maxChoose,
-          options: newComp.options || [],
-        }),
-      });
+  try {
+    const res = await fetch("/api/complements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newComp.title,
+        description: newComp.description,
+        type: newComp.type,
+        required: newComp.required,
+        min: newComp.minChoose,
+        max: newComp.maxChoose,
+        options: newComp.options || [],
+      }),
+    });
 
-      const created = await res.json();
+    const created = await res.json();
 
-      if (!res.ok) {
-        alert("Erro ao criar complemento");
-        return;
-      }
-
-      // Adiciona na UI SEM QUEBRAR (formato igual ao loadComplements)
-      setComplements((prev) => [
-        ...prev,
-        {
-          id: created.id,
-          title: created.name,
-          description: created.description || "",
-          required: created.required,
-          minChoose: created.min,
-          maxChoose: created.max,
-          active: created.active,
-          type: created.type || "multiple",
-          options:
-            created.items?.map((i: any) => ({
-              id: i.id,
-              name: i.name,
-              price: i.price,
-              active: i.active,
-              image: i.imageUrl || null,
-              description: i.description || "",
-            })) || [],
-        },
-      ]);
-    } catch (err) {
-      console.error("Erro salvar complemento:", err);
-      alert("Erro ao salvar complemento");
+    if (!res.ok) {
+      alert("Erro ao criar complemento");
+      return;
     }
+
+    // ✔ EM VEZ DE ADICIONAR NA UI, CARREGA DO BANCO
+    const reload = await fetch("/api/complements", { cache: "no-store" });
+    const data = await reload.json();
+
+    const formatted = data.map((g: any) => ({
+      id: g.id,
+      title: g.name,
+      description: g.description || "",
+      type: g.type || "multiple",
+      required: g.required,
+      minChoose: g.min,
+      maxChoose: g.max,
+      active: g.active,
+      options:
+        g.items?.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price ?? 0,
+          active: i.active ?? true,
+          image: i.imageUrl || null,
+          description: i.description || "",
+        })) || [],
+    }));
+
+    setComplements(formatted);
+  } catch (err) {
+    console.error("Erro salvar complemento:", err);
+    alert("Erro ao salvar complemento");
   }
+}
+
+
 
   function openCreateComplement() {
     setNewComplementOpen(true);
