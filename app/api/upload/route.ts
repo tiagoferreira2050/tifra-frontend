@@ -1,62 +1,49 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
+
+export const runtime = "edge"; // recomendado para upload rápido
 
 export async function POST(req: Request) {
   try {
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "Nenhum arquivo enviado" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
     }
 
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-    if (!cloudName || !uploadPreset) {
+    if (!cloudName || !preset) {
+      console.error("Variáveis faltando:", { cloudName, preset });
       return NextResponse.json(
-        { error: "Cloudinary não configurado corretamente" },
+        { error: "Cloudinary não configurado" },
         { status: 500 }
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
 
-    const uploaded = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      {
-        method: "POST",
-        body: (() => {
-          const data = new FormData();
-          const blob = new Blob([buffer], { type: file.type });
-          data.append("file", blob);
-          data.append("upload_preset", uploadPreset);
-          return data;
-        })(),
-      }
-    ).then((res) => res.json());
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", preset);
 
-    if (uploaded.error) {
-      return NextResponse.json(
-        { error: uploaded.error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      url: uploaded.secure_url,
-      publicId: uploaded.public_id,
+    const upload = await fetch(uploadUrl, {
+      method: "POST",
+      body: data,
     });
-  } catch (err) {
-    console.error("Erro no upload:", err);
-    return NextResponse.json(
-      { error: "Erro ao enviar arquivo" },
-      { status: 500 }
-    );
+
+    const json = await upload.json();
+
+    if (!upload.ok) {
+      console.error("Erro Cloudinary:", json);
+      return NextResponse.json({ error: "Falha no upload" }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: json.secure_url });
+
+  } catch (err: any) {
+    console.error("Erro no /api/upload:", err);
+    return NextResponse.json({ error: "Erro no servidor" }, { status: 500 });
   }
 }
