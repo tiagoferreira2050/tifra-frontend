@@ -59,13 +59,15 @@ export async function POST(req: Request) {
     // 2) Se existir opções, cria cada item
     if (Array.isArray(options) && options.length > 0) {
       await prisma.complement.createMany({
-        data: options.map((opt: any) => ({
-          groupId: group.id,
-          name: opt.name,
-          price: opt.price !== undefined ? Number(opt.price) : 0,
-          active: opt.active ?? true,
-        })),
-      });
+  data: options.map((opt: any) => ({
+    groupId: group.id,
+    name: opt.name,
+    price: opt.price !== undefined ? Number(opt.price) : 0,
+    active: opt.active ?? true,
+    imageUrl: opt.imageUrl || null,
+  })),
+});
+
     }
 
     // 3) Retorna grupo completo com itens

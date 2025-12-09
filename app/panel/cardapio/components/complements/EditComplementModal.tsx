@@ -56,12 +56,33 @@ export default function EditComplementModal({
     setOptions((prev) => prev.filter((o) => o.id !== id));
   }
 
-  function handleImageUpload(e: any, id: string) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    updateOption(id, { image: url });
+  async function handleImageUpload(e: any, id: string) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const data = new FormData();
+    data.append("file", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: data,
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.url) {
+      alert("Erro ao enviar imagem");
+      return;
+    }
+
+    updateOption(id, { image: json.url }); // 👈 agora a imagem é a URL DO CLOUDINARY
+  } catch (err) {
+    console.error("Erro ao enviar imagem:", err);
+    alert("Falha no upload da imagem");
   }
+}
+
 
   function formatCurrency(value: string) {
     if (!value) return "0,00";
@@ -93,11 +114,12 @@ async function handleSave() {
   active: complement.active,
   type,
   options: options.map((opt: any) => ({
-    id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-    name: opt.name,
-    price: toNumber(opt.price),
-    active: opt.active,
-  })),
+  id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+  name: opt.name,
+  price: toNumber(opt.price),
+  active: opt.active,
+  imageUrl: opt.image || null, 
+})),
 };
 
 

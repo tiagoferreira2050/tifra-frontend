@@ -92,6 +92,7 @@ model Complement {
   name      String
   price     Float    @default(0)
   active    Boolean  @default(true)
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   group     ComplementGroup @relation(fields: [groupId], references: [id])
