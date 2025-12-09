@@ -29,7 +29,7 @@ model Category {
   storeId   String
   name      String
   active    Boolean    @default(true)
-  order     Int        @default(0) 
+  order     Int        @default(0)
   createdAt DateTime   @default(now())
 
   store     Store      @relation(fields: [storeId], references: [id])
@@ -46,7 +46,7 @@ model Product {
   price       Float
   description String?
   imageUrl    String?
-  active      Boolean @default(true)
+  active      Boolean    @default(true)
   createdAt   DateTime   @default(now())
 
   category    Category   @relation(fields: [categoryId], references: [id])
@@ -72,7 +72,7 @@ model ComplementGroup {
   id          String     @id @default(uuid())
   productId   String?
   name        String
-  description String?    @default("")
+  description String? @default("")
   required    Boolean    @default(false)
   min         Int        @default(0)
   max         Int        @default(1)
@@ -87,15 +87,18 @@ model ComplementGroup {
 }
 
 model Complement {
-  id        String   @id @default(uuid())
-  groupId   String
-  name      String
-  price     Float    @default(0)
-  active    Boolean  @default(true)
-  imageUrl  String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  groupId     String
+  name        String
+  price       Float    @default(0)
+  active      Boolean  @default(true)
+  imageUrl    String?
 
-  group     ComplementGroup @relation(fields: [groupId], references: [id])
+  description String?   // ✅ ADICIONADA AQUI
+
+  createdAt   DateTime @default(now())
+
+  group       ComplementGroup @relation(fields: [groupId], references: [id])
 
   @@index([groupId])
 }
