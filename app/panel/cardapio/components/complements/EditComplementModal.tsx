@@ -122,74 +122,36 @@ export default function EditComplementModal({
   }
 
   // ==========================================================
-  // SALVAR (PATCH)
+  // SALVAR — AGORA DELEGANDO PARA O PAGE (PADRÃO CORRETO)
   // ==========================================================
-  async function handleSave() {
-  const payload = {
-    id: complement.id,
-    name: title,
-    description,
-    required,
-    min: minChoose ? Number(minChoose) : null,
-    max: maxChoose ? Number(maxChoose) : null,
-    active: complement.active,
-    type,
-    options: options.map((opt: any) => ({
-  id: String(opt.id).startsWith("opt-") ? undefined : opt.id, 
-  name: opt.name,
-  price: toNumber(opt.price),
-  active: opt.active,
-  imageUrl: opt.image || null,
-  description: opt.description || "",
-})),
-  };
-
-  try {
-    // Envia o PATCH
-    const res = await fetch("/api/complements", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const updatedFromDB = await res.json();
-
-    if (!res.ok) {
-      console.error("Erro ao atualizar:", updatedFromDB);
-      alert("Erro ao atualizar complemento");
+  function handleSave() {
+    if (!title.trim()) {
+      alert("Título obrigatório");
       return;
     }
 
-    // Agora formatamos com os valores REAIS vindos do banco
-    const updatedFinal = {
-  id: updatedFromDB.id,
-  title: updatedFromDB.name,
-  description: updatedFromDB.description || "",
-  required: updatedFromDB.required,
-  minChoose: updatedFromDB.min,
-  maxChoose: updatedFromDB.max,
-  type: updatedFromDB.type || "multiple",
-  active: updatedFromDB.active,
-  options: updatedFromDB.items.map((i: any) => ({
-    id: i.id,
-    name: i.name,
-    price: i.price,
-    active: i.active,
-    image: i.imageUrl || null,
-    description: i.description || "",
-  })),
-};
+    const payload = {
+      id: complement.id,
+      title,
+      description,
+      type,
+      required,
+      minChoose: minChoose ? Number(minChoose) : null,
+      maxChoose: maxChoose ? Number(maxChoose) : null,
+      active: complement.active,
+      options: options.map((opt: any) => ({
+        id: opt.id, // se começar com "opt-", o Page converte para undefined
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        image: opt.image || null,
+        description: opt.description || "",
+      })),
+    };
 
-
-    onSave(updatedFinal); // Agora atualiza certinho no painel
+    onSave(payload);
     onClose();
-
-  } catch (err) {
-    console.error("Erro PATCH:", err);
-    alert("Erro ao atualizar complemento");
   }
-}
-
 
   // ==========================================================
   // LAYOUT
@@ -225,7 +187,7 @@ export default function EditComplementModal({
             >
               <option value="single">Opção única (radio)</option>
               <option value="multiple">Múltipla escolha (checkbox)</option>
-              <option value="addable">Somável (cada opção soma preço)</option>
+              <option value="addable">Somável</option>
             </select>
           </div>
 
@@ -273,29 +235,23 @@ export default function EditComplementModal({
 
         <div className="flex flex-col gap-3 mb-4">
           {options.map((opt) => (
-            <div
-              key={opt.id}
-              className="border rounded-lg p-3 flex gap-3 items-start"
-            >
+            <div key={opt.id} className="border rounded-lg p-3 flex gap-3 items-start">
               <div className="flex-1">
+
                 <input
                   className="w-full border rounded p-2 mb-2"
                   placeholder="Nome da opção"
                   value={opt.name}
-                  onChange={(e) =>
-                    updateOption(opt.id, { name: e.target.value })
-                  }
+                  onChange={(e) => updateOption(opt.id, { name: e.target.value })}
                 />
 
                 <div className="flex gap-2">
                   <input
                     className="border rounded p-2 w-36"
-                    placeholder="Preço (ex: 3,50)"
+                    placeholder="Preço"
                     value={opt.price}
                     onChange={(e) =>
-                      updateOption(opt.id, {
-                        price: formatCurrency(e.target.value),
-                      })
+                      updateOption(opt.id, { price: formatCurrency(e.target.value) })
                     }
                   />
 
@@ -311,7 +267,7 @@ export default function EditComplementModal({
 
                 <textarea
                   className="w-full border rounded p-2 mt-2"
-                  placeholder="Descrição (opcional)"
+                  placeholder="Descrição"
                   value={opt.description}
                   onChange={(e) =>
                     updateOption(opt.id, { description: e.target.value })
@@ -324,10 +280,7 @@ export default function EditComplementModal({
 
                 <div className="w-20 h-20 border rounded-md overflow-hidden mb-1">
                   {opt.image ? (
-                    <img
-                      src={opt.image}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={opt.image} className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-400 text-xs">
                       sem imagem
@@ -335,19 +288,14 @@ export default function EditComplementModal({
                   )}
                 </div>
 
-                <input
-                  type="file"
-                  onChange={(e) => handleImageUpload(e, opt.id)}
-                />
+                <input type="file" onChange={(e) => handleImageUpload(e, opt.id)} />
 
                 <div className="flex items-center gap-2 mt-2">
                   <label className="inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={opt.active}
-                      onChange={(e) =>
-                        updateOption(opt.id, { active: e.target.checked })
-                      }
+                      onChange={(e) => updateOption(opt.id, { active: e.target.checked })}
                     />
                     <span className="ml-2 text-sm">Ativo</span>
                   </label>
@@ -364,12 +312,8 @@ export default function EditComplementModal({
           ))}
         </div>
 
-        {/* Botões */}
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded-md"
-          >
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">
             Cancelar
           </button>
 
