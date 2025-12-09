@@ -18,6 +18,9 @@ export default function EditComplementModal({
   const [maxChoose, setMaxChoose] = useState("");
   const [options, setOptions] = useState<any[]>([]);
 
+  // ==========================================================
+  // INICIALIZAR CAMPOS COM DADOS ATUAIS
+  // ==========================================================
   useEffect(() => {
     if (!complement) return;
 
@@ -33,18 +36,29 @@ export default function EditComplementModal({
         id: o.id || "opt-" + Date.now(),
         name: o.name || "",
         price: o.price !== undefined ? String(o.price).replace(".", ",") : "0,00",
-        active: o.active !== undefined ? o.active : true,
+        active: o.active ?? true,
         pdv: o.pdv || "",
-        image: o.image || null,
+        image: o.image || o.imageUrl || null,
         description: o.description || "",
       }))
     );
   }, [complement, open]);
 
+  // ==========================================================
+  // GERENCIAR OPÇÕES
+  // ==========================================================
   function addOption() {
     setOptions((prev) => [
       ...prev,
-      { id: "opt-" + Date.now(), name: "", price: "0,00", active: true, pdv: "", image: null, description: "" },
+      {
+        id: "opt-" + Date.now(),
+        name: "",
+        price: "0,00",
+        active: true,
+        pdv: "",
+        image: null,
+        description: "",
+      },
     ]);
   }
 
@@ -56,39 +70,44 @@ export default function EditComplementModal({
     setOptions((prev) => prev.filter((o) => o.id !== id));
   }
 
+  // ==========================================================
+  // UPLOAD IMAGEM PARA CLOUDINARY
+  // ==========================================================
   async function handleImageUpload(e: any, id: string) {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const data = new FormData();
-    data.append("file", file);
+    try {
+      const data = new FormData();
+      data.append("file", file);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: data,
-    });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: data,
+      });
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (!res.ok || !json.url) {
-      alert("Erro ao enviar imagem");
-      return;
+      if (!res.ok || !json.url) {
+        alert("Erro ao enviar imagem");
+        return;
+      }
+
+      updateOption(id, { image: json.url });
+    } catch (err) {
+      console.error("Erro ao enviar imagem:", err);
+      alert("Falha no upload");
     }
-
-    updateOption(id, { image: json.url }); // 👈 agora a imagem é a URL DO CLOUDINARY
-  } catch (err) {
-    console.error("Erro ao enviar imagem:", err);
-    alert("Falha no upload da imagem");
   }
-}
 
-
+  // ==========================================================
+  // FORMATADORES
+  // ==========================================================
   function formatCurrency(value: string) {
     if (!value) return "0,00";
-    const onlyNums = value.replace(/\D/g, "");
-    if (!onlyNums) return "0,00";
-    const cents = (parseInt(onlyNums) / 100).toFixed(2);
+    const only = value.replace(/\D/g, "");
+    if (!only) return "0,00";
+    const cents = (parseInt(only) / 100).toFixed(2);
     return cents.replace(".", ",");
   }
 
@@ -97,77 +116,73 @@ export default function EditComplementModal({
     return isNaN(num) ? 0 : num;
   }
 
-  // ================================================
-// SALVAR E ATUALIZAR NO BANCO
-// ================================================
-async function handleSave() {
-  console.log("🔵 handleSave chamado");
-  console.log("type antes do envio:", type);
-
-  const payload = {
-  id: complement.id,
-  name: title,
-  description, // 👈 ADICIONAR
-  required,
-  min: minChoose ? Number(minChoose) : null,
-  max: maxChoose ? Number(maxChoose) : null,
-  active: complement.active,
-  type,
-  options: options.map((opt: any) => ({
-  id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-  name: opt.name,
-  price: toNumber(opt.price),
-  active: opt.active,
-  imageUrl: opt.image || null,
-  description: opt.description || "",   // 👈 AGORA ENVIA PARA O BANCO
-})),
-};
-
-
-  console.log("payload:", payload);
-
-  try {
-    console.log("🔵 Enviando PATCH...");
-
-    const res = await fetch("/api/complements", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("🟢 Resposta do PATCH:", res.status);
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Erro ao atualizar:", data);
-      alert("Erro ao atualizar complemento");
-      return;
-    }
-
-    const updated = {
-      ...complement,
-      title,
-      description, // 👈 ATUALIZA NA UI TAMBÉM
+  // ==========================================================
+  // SALVAR PATCH
+  // ==========================================================
+  async function handleSave() {
+    const payload = {
+      id: complement.id,
+      name: title,
+      description,
       required,
-      minChoose,
-      maxChoose,
+      min: minChoose ? Number(minChoose) : null,
+      max: maxChoose ? Number(maxChoose) : null,
+      active: complement.active,
       type,
-      options,
+      options: options.map((opt: any) => ({
+        id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        imageUrl: opt.image || null,
+        description: opt.description || "",
+      })),
     };
 
-    onSave(updated);
-    onClose();
-  } catch (err) {
-    console.error("Erro no PATCH:", err);
-    alert("Erro ao atualizar complemento");
+    try {
+      const res = await fetch("/api/complements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Erro ao atualizar:", data);
+        alert("Erro ao atualizar complemento");
+        return;
+      }
+
+      // ======================================================
+      // RETORNAR VALORES FORMATADOS IGUAL AO NEW MODAL
+      // ======================================================
+      const updated = {
+        id: complement.id,
+        title,
+        description,
+        required,
+        minChoose,
+        maxChoose,
+        type,
+        active: complement.active,
+        options: options.map((o) => ({
+          ...o,
+          price: toNumber(o.price),
+        })),
+      };
+
+      onSave(updated);
+      onClose();
+    } catch (err) {
+      console.error("Erro PATCH:", err);
+      alert("Erro ao atualizar complemento");
+    }
   }
-}
 
-
-  // ======================================================
+  // ==========================================================
   // LAYOUT
-  // ======================================================
+  // ==========================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[820px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
@@ -180,86 +195,85 @@ async function handleSave() {
         <textarea className="w-full border rounded-md p-2 mb-3" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
 
         <div className="flex gap-3 mb-3">
+          <div>
+            <label className="block font-medium mb-1">Tipo</label>
+            <select className="border rounded-md p-2" value={type} onChange={(e) => setType(e.target.value as any)}>
+              <option value="single">Opção única (radio)</option>
+              <option value="multiple">Múltipla escolha (checkbox)</option>
+              <option value="addable">Somável (cada opção soma preço)</option>
+            </select>
+          </div>
 
-          {/* Tipo */}
-         <div>
-  <label className="block font-medium mb-1">Tipo</label>
-  <select
-    className="border rounded-md p-2"
-    value={type}
-    onChange={(e) => setType(e.target.value as any)}
-  >
-    <option value="single">Opção única (radio)</option>
-    <option value="multiple">Múltipla escolha (checkbox)</option>
-    <option value="addable">Somável (cada opção soma preço)</option>
-  </select>
-</div>
+          <div>
+            <label className="block font-medium mb-1">Obrigatório</label>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
+              <span className="text-sm text-gray-600">Exigir escolha</span>
+            </div>
+          </div>
 
-<div>
-  <label className="block font-medium mb-1">Obrigatório</label>
-  <div className="flex items-center gap-2">
-    <input
-      type="checkbox"
-      checked={required}
-      onChange={(e) => setRequired(e.target.checked)}
-    />
-    <span className="text-sm text-gray-600">Exigir escolha</span>
-  </div>
-</div>
-
-
-          {/* Min */}
           <div>
             <label className="block font-medium mb-1">Min</label>
             <input className="border rounded-md p-2 w-20" value={minChoose} onChange={(e) => setMinChoose(e.target.value)} />
           </div>
 
-          {/* Max */}
           <div>
             <label className="block font-medium mb-1">Max</label>
             <input className="border rounded-md p-2 w-20" value={maxChoose} onChange={(e) => setMaxChoose(e.target.value)} />
           </div>
-
         </div>
 
-        {/* Opções Header */}
+        {/* Opções */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
-          <button onClick={addOption} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm">+ Adicionar opção</button>
+          <button onClick={addOption} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm">
+            + Adicionar opção
+          </button>
         </div>
 
-        {/* Lista de opções */}
         <div className="flex flex-col gap-3 mb-4">
           {options.map((opt) => (
             <div key={opt.id} className="border rounded-lg p-3 flex gap-3 items-start">
               <div className="flex-1">
                 <input className="w-full border rounded p-2 mb-2" placeholder="Nome da opção" value={opt.name} onChange={(e) => updateOption(opt.id, { name: e.target.value })} />
+
                 <div className="flex gap-2">
                   <input className="border rounded p-2 w-36" placeholder="Preço (ex: 3,50)" value={opt.price} onChange={(e) => updateOption(opt.id, { price: formatCurrency(e.target.value) })} />
+
                   <input className="border rounded p-2 w-36" placeholder="PDV" value={opt.pdv} onChange={(e) => updateOption(opt.id, { pdv: e.target.value })} />
                 </div>
+
                 <textarea className="w-full border rounded p-2 mt-2" placeholder="Descrição (opcional)" value={opt.description} onChange={(e) => updateOption(opt.id, { description: e.target.value })} />
               </div>
 
               <div className="flex flex-col items-end gap-2">
                 <label className="text-xs text-gray-600">Imagem</label>
+
                 <div className="w-20 h-20 border rounded-md overflow-hidden mb-1">
-                  {opt.image ? <img src={opt.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-400 text-xs">sem imagem</div>}
+                  {opt.image ? (
+                    <img src={opt.image} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-xs">sem imagem</div>
+                  )}
                 </div>
+
                 <input type="file" onChange={(e) => handleImageUpload(e, opt.id)} />
+
                 <div className="flex items-center gap-2 mt-2">
                   <label className="inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={opt.active} onChange={(e) => updateOption(opt.id, { active: e.target.checked })} />
                     <span className="ml-2 text-sm">Ativo</span>
                   </label>
-                  <button onClick={() => removeOption(opt.id)} className="text-red-600 px-2">Remover</button>
+
+                  <button onClick={() => removeOption(opt.id)} className="text-red-600 px-2">
+                    Remover
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Botões */}
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
           <button onClick={handleSave} className="px-4 py-2 bg-red-600 text-white rounded-md">Salvar alterações</button>

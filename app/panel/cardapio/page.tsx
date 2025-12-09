@@ -18,9 +18,6 @@ import { Search, Plus } from "lucide-react";
 import { dbSave } from "./storage/db";
 
 export default function CardapioPage() {
-  // ======================================================
-  // ESTADOS PRINCIPAIS
-  // ======================================================
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
 
@@ -36,7 +33,7 @@ export default function CardapioPage() {
   const [newProductOpen, setNewProductOpen] = useState(false);
 
   // ======================================================
-  // 1) CARREGAR CATEGORIAS
+  // CARREGAR CATEGORIAS
   // ======================================================
   useEffect(() => {
     async function loadData() {
@@ -65,7 +62,7 @@ export default function CardapioPage() {
   }, []);
 
   // ======================================================
-  // 2) CARREGAR COMPLEMENTOS DO BACKEND
+  // CARREGAR COMPLEMENTOS
   // ======================================================
   useEffect(() => {
     async function loadComplements() {
@@ -82,8 +79,6 @@ export default function CardapioPage() {
           minChoose: g.min,
           maxChoose: g.max,
           active: g.active ?? true,
-
-          // AQUI ESTAVA O ERRO — AGORA PEGAMOS TODOS OS CAMPOS DO ITEM
           options:
             g.items?.map((i: any) => ({
               id: i.id,
@@ -105,7 +100,7 @@ export default function CardapioPage() {
   }, []);
 
   // ======================================================
-  // 3) SALVAR NOVO PRODUTO
+  // SALVAR NOVO PRODUTO
   // ======================================================
   function handleSaveProduct(categoryId: string, newProduct: any) {
     setCategories((prev) =>
@@ -120,7 +115,7 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 4) ATUALIZAR PRODUTO
+  // ATUALIZAR PRODUTO
   // ======================================================
   function handleUpdateProduct(updatedProduct: any) {
     setCategories((prev) =>
@@ -136,7 +131,7 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 5) SALVAR NOVO COMPLEMENTO
+  // SALVAR NOVO COMPLEMENTO (e evitar erro falso!)
   // ======================================================
   async function saveNewComplement(newComp: any) {
     try {
@@ -161,7 +156,7 @@ export default function CardapioPage() {
         return;
       }
 
-      // Adiciona à UI
+      // Adiciona na UI SEM QUEBRAR (formato igual ao loadComplements)
       setComplements((prev) => [
         ...prev,
         {
@@ -172,6 +167,7 @@ export default function CardapioPage() {
           minChoose: created.min,
           maxChoose: created.max,
           active: created.active,
+          type: created.type || "multiple",
           options:
             created.items?.map((i: any) => ({
               id: i.id,
@@ -199,7 +195,7 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 6) SALVAR EDIÇÃO DO COMPLEMENTO
+  // SALVAR EDIÇÃO DO COMPLEMENTO
   // ======================================================
   async function saveEditedComplement(updated: any) {
     try {
@@ -212,8 +208,6 @@ export default function CardapioPage() {
         max: updated.maxChoose ? Number(updated.maxChoose) : 1,
         active: updated.active,
         type: updated.type,
-
-        // ENVIO COMPLETO DOS ITENS
         options: updated.options.map((opt: any) => ({
           id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
           name: opt.name,
@@ -324,7 +318,7 @@ export default function CardapioPage() {
             )}
           </div>
 
-          {/* LISTAS */}
+          {/* LISTAGEM */}
           {activeTab === "produtos" && (
             <ProductList
               categories={categories}
@@ -377,5 +371,3 @@ export default function CardapioPage() {
     </>
   );
 }
-
-

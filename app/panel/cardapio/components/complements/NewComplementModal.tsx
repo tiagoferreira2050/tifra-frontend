@@ -127,8 +127,27 @@ export default function NewComplementModal({
         return;
       }
 
-      onSave(data); // retorna grupo criado
-      onClose();
+      onSave({
+  id: data.id,
+  title: data.name,
+  description: data.description || "",
+  required: data.required,
+  minChoose: data.min,
+  maxChoose: data.max,
+  active: data.active,
+  type: data.type || "multiple",
+  options: data.items?.map((i) => ({
+    id: i.id,
+    name: i.name,
+    price: i.price ?? 0,
+    active: i.active ?? true,
+    image: i.imageUrl || null,
+    description: i.description || "",
+  })) || [],
+});
+
+onClose();
+
     } catch (err) {
       console.error("Erro no POST:", err);
       alert("Erro ao criar complemento");
