@@ -135,13 +135,14 @@ export default function EditComplementModal({
     active: complement.active,
     type,
     options: options.map((opt: any) => ({
-      id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-      name: opt.name,
-      price: toNumber(opt.price),
-      active: opt.active,
-      imageUrl: opt.image || null,
-      description: opt.description || "",
-    })),
+  id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+  groupId: complement.id, // <- NECESSÁRIO PARA CRIAR ITEM NOVO
+  name: opt.name,
+  price: toNumber(opt.price),
+  active: opt.active,
+  imageUrl: opt.image || null,
+  description: opt.description || "",
+})),
   };
 
   try {
