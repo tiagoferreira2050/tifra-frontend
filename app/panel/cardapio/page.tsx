@@ -247,14 +247,14 @@ export default function CardapioPage() {
         maxChoose: g.max,
         active: g.active,
         options:
-          g.items?.map((i: any) => ({
-            id: i.id,
-            name: i.name,
-            price: i.price ?? 0,
-            active: i.active ?? true,
-            image: i.imageUrl || null,
-            description: i.description || "",
-          })) || [],
+  g.items?.map((i: any) => ({
+    id: i.id,
+    name: i.name,
+    price: i.price ?? 0,
+    active: i.active ?? true,
+    image: i.imageUrl || i.image || null, // <- garante compatibilidade
+    description: i.description || "",
+  })) || [],
       }));
 
       setComplements(formatted);
