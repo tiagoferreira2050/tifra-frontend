@@ -94,50 +94,46 @@ export default function NewComplementModal({
   // SALVAR (POST)
   // ==========================================
   async function handleSave() {
-    if (!title.trim()) return alert("Título obrigatório");
+  if (!title.trim()) return alert("Título obrigatório");
 
-    const payload = {
-      name: title,
-      description,
-      required,
-      min: minChoose ? Number(minChoose) : null,
-      max: maxChoose ? Number(maxChoose) : null,
-      type,
-      options: options.map((opt) => ({
-        name: opt.name,
-        price: toNumber(opt.price),
-        active: opt.active,
-        imageUrl: opt.image || null,
-        description: opt.description || "",
-      })),
-    };
+  const payload = {
+    name: title,
+    description,
+    required,
+    min: minChoose ? Number(minChoose) : null,
+    max: maxChoose ? Number(maxChoose) : null,
+    type,
+    options: options.map((opt) => ({
+      name: opt.name,
+      price: toNumber(opt.price),
+      active: opt.active,
+      imageUrl: opt.image || null,
+      description: opt.description || "",
+    })),
+  };
 
-    try {
-      const res = await fetch("/api/complements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  try {
+    const res = await fetch("/api/complements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Erro ao criar:", data);
-        alert("Erro ao criar complemento");
-        return;
-      }
-
-      // ⚠️ IMPORTANTE:
-      // AGORA NÃO ENVIAMOS MAIS O OBJETO PARA O PAI
-      // Apenas avisamos que terminou, e o pai recarrega do servidor.
-      onSave();
-
-      onClose();
-    } catch (err) {
-      console.error("Erro no POST:", err);
+    if (!res.ok) {
       alert("Erro ao criar complemento");
+      return;
     }
+
+    // ❗ NÃO chama mais onSave() aqui (evita duplicação)
+    // ❗ NÃO tenta ler o retorno da API (evita erro falso)
+
+    onClose(); // apenas fecha o modal
+
+  } catch (err) {
+    console.error("Erro no POST:", err);
+    alert("Erro ao criar complemento");
   }
+}
 
   // ==========================================
   // LAYOUT
