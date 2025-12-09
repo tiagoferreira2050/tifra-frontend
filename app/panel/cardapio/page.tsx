@@ -15,7 +15,7 @@ import EditComplementModal from "./components/complements/EditComplementModal";
 import { Search, Plus } from "lucide-react";
 
 // 📦 IndexedDB
-import { dbLoadAll, dbSave } from "./storage/db";
+import { dbSave } from "./storage/db";
 
 export default function CardapioPage() {
   // ======================================================
@@ -44,22 +44,17 @@ export default function CardapioPage() {
         const res = await fetch("/api/categories", { cache: "no-store" });
         const data = await res.json();
 
-        if (!Array.isArray(data)) {
-          console.error("Resposta inválida de /api/categories:", data);
-          setCategories([]);
-          return;
-        }
-
-        const formatted = data.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          active: cat.active ?? true,
-          products: Array.isArray(cat.products) ? cat.products : [],
-        }));
+        const formatted = Array.isArray(data)
+          ? data.map((cat: any) => ({
+              id: cat.id,
+              name: cat.name,
+              active: cat.active ?? true,
+              products: Array.isArray(cat.products) ? cat.products : [],
+            }))
+          : [];
 
         setCategories(formatted);
         setSelectedCategoryId(formatted[0]?.id || null);
-
       } catch (error) {
         console.error("Erro ao carregar categorias:", error);
         setCategories([]);
@@ -87,12 +82,16 @@ export default function CardapioPage() {
           minChoose: g.min,
           maxChoose: g.max,
           active: g.active ?? true,
+
+          // AQUI ESTAVA O ERRO — AGORA PEGAMOS TODOS OS CAMPOS DO ITEM
           options:
             g.items?.map((i: any) => ({
               id: i.id,
               name: i.name,
               price: i.price ?? 0,
               active: i.active ?? true,
+              image: i.imageUrl || null,
+              description: i.description || "",
             })) || [],
         }));
 
@@ -137,15 +136,14 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 5) SALVAR NOVO COMPLEMENTO (NO BANCO)
+  // 5) SALVAR NOVO COMPLEMENTO
   // ======================================================
-  async function saveNewComplement(newComp: any, productId: string) {
+  async function saveNewComplement(newComp: any) {
     try {
       const res = await fetch("/api/complements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productId,
           name: newComp.title,
           description: newComp.description,
           type: newComp.type,
@@ -159,11 +157,11 @@ export default function CardapioPage() {
       const created = await res.json();
 
       if (!res.ok) {
-        console.error("Erro ao criar complemento:", created);
         alert("Erro ao criar complemento");
         return;
       }
 
+      // Adiciona à UI
       setComplements((prev) => [
         ...prev,
         {
@@ -180,6 +178,8 @@ export default function CardapioPage() {
               name: i.name,
               price: i.price,
               active: i.active,
+              image: i.imageUrl || null,
+              description: i.description || "",
             })) || [],
         },
       ]);
@@ -199,14 +199,11 @@ export default function CardapioPage() {
   }
 
   // ======================================================
-  // 6) SALVAR EDITAR COMPLEMENTO (PATCH)
+  // 6) SALVAR EDIÇÃO DO COMPLEMENTO
   // ======================================================
   async function saveEditedComplement(updated: any) {
     try {
-      // ---------------------------------------------------
-      // 1) Atualiza o GRUPO
-      // ---------------------------------------------------
-      const groupPayload = {
+      const payload = {
         id: updated.id,
         name: updated.title,
         description: updated.description ?? "",
@@ -216,7 +213,7 @@ export default function CardapioPage() {
         active: updated.active,
         type: updated.type,
 
-        // ✅ ADICIONADO — NECESSÁRIO PARA SALVAR ITENS
+        // ENVIO COMPLETO DOS ITENS
         options: updated.options.map((opt: any) => ({
           id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
           name: opt.name,
@@ -227,30 +224,22 @@ export default function CardapioPage() {
         })),
       };
 
-      const resGroup = await fetch("/api/complements", {
+      const res = await fetch("/api/complements", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupPayload),
+        body: JSON.stringify(payload),
       });
 
-      const savedGroup = await resGroup.json();
-
-      if (!resGroup.ok) {
-        console.error("Erro ao atualizar grupo:", savedGroup);
+      if (!res.ok) {
         alert("Erro ao atualizar complemento");
         return;
       }
 
-      // ---------------------------------------------------
-      // 3) Recarregar dados atualizados
-      // ---------------------------------------------------
-      const resReload = await fetch("/api/complements", {
-        cache: "no-store",
-      });
+      // Recarrega lista
+      const reload = await fetch("/api/complements", { cache: "no-store" });
+      const data = await reload.json();
 
-      const dataReload = await resReload.json();
-
-      const formatted = dataReload.map((g: any) => ({
+      const formatted = data.map((g: any) => ({
         id: g.id,
         title: g.name,
         description: g.description || "",
@@ -265,12 +254,14 @@ export default function CardapioPage() {
             name: i.name,
             price: i.price ?? 0,
             active: i.active ?? true,
+            image: i.imageUrl || null,
+            description: i.description || "",
           })) || [],
       }));
 
       setComplements(formatted);
     } catch (err) {
-      console.error("Erro salvar complemento + itens:", err);
+      console.error("Erro ao atualizar complemento:", err);
       alert("Erro ao atualizar complemento");
     }
   }
@@ -386,3 +377,5 @@ export default function CardapioPage() {
     </>
   );
 }
+
+
