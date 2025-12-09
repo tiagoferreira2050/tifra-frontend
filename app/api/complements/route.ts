@@ -116,32 +116,39 @@ export async function PATCH(req: Request) {
       },
     });
 
+    
     // 2) Atualizar / Criar itens
-    for (const opt of options) {
-      const isNew = !opt.id || String(opt.id).startsWith("opt-");
+for (const opt of options) {
 
-      const payload = {
-        name: opt.name,
-        price: opt.price !== undefined ? Number(opt.price) : 0,
-        active: opt.active ?? true,
-        imageUrl: opt.imageUrl || null,
-        description: opt.description || "",
-      };
+  // Item novo NÃO tem id real do banco
+  const isNew =
+    !opt.id ||
+    typeof opt.id !== "string" ||
+    opt.id.startsWith("opt-");
 
-      if (isNew) {
-        await prisma.complement.create({
-          data: {
-            groupId: id,
-            ...payload,
-          },
-        });
-      } else {
-        await prisma.complement.update({
-          where: { id: opt.id },
-          data: payload,
-        });
-      }
-    }
+  const payload = {
+    name: opt.name,
+    price: opt.price !== undefined ? Number(opt.price) : 0,
+    active: opt.active ?? true,
+    imageUrl: opt.imageUrl || opt.image || null,
+    description: opt.description || "",
+  };
+
+  if (isNew) {
+    await prisma.complement.create({
+      data: {
+        groupId: id,
+        ...payload,
+      },
+    });
+  } else {
+    await prisma.complement.update({
+      where: { id: opt.id },
+      data: payload,
+    });
+  }
+}
+
 
     // 3) Remover itens excluídos
     const existingItemIds = await prisma.complement.findMany({
