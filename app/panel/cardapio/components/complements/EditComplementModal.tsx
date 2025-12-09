@@ -118,7 +118,8 @@ async function handleSave() {
   name: opt.name,
   price: toNumber(opt.price),
   active: opt.active,
-  imageUrl: opt.image || null, 
+  imageUrl: opt.image || null,
+  description: opt.description || "",   // 👈 AGORA ENVIA PARA O BANCO
 })),
 };
 

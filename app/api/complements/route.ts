@@ -28,11 +28,10 @@ export async function GET() {
 }
 
 // ===================================================
-// POST - CRIAR GRUPO DE COMPLEMENTO + ITENS
+// POST - CRIAR GRUPO + ITENS
 // ===================================================
 export async function POST(req: Request) {
   try {
-    // 👇 AGORA RECEBE description TAMBÉM
     const { name, description, required, min, max, type, options } =
       await req.json();
 
@@ -43,11 +42,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1) Criar grupo
+    // 1) Criar grupo corretamente
     const group = await prisma.complementGroup.create({
       data: {
         name,
-        description: description ?? "", // 👈 GARANTE STRING
+        description: description ?? "",
         required: required ?? false,
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
@@ -56,21 +55,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2) Se existir opções, cria cada item
+    // 2) Criar itens
     if (Array.isArray(options) && options.length > 0) {
       await prisma.complement.createMany({
-  data: options.map((opt: any) => ({
-    groupId: group.id,
-    name: opt.name,
-    price: opt.price !== undefined ? Number(opt.price) : 0,
-    active: opt.active ?? true,
-    imageUrl: opt.imageUrl || null,
-  })),
-});
-
+        data: options.map((opt: any) => ({
+          groupId: group.id,
+          name: opt.name,
+          price: opt.price !== undefined ? Number(opt.price) : 0,
+          active: opt.active ?? true,
+          imageUrl: opt.imageUrl || null,
+          description: opt.description || "",
+        })),
+      });
     }
 
-    // 3) Retorna grupo completo com itens
     const result = await prisma.complementGroup.findUnique({
       where: { id: group.id },
       include: {
@@ -89,15 +87,13 @@ export async function POST(req: Request) {
 }
 
 // ===================================================
-// PATCH - ATUALIZAR COMPLEMENTO + ITENS
+// PATCH - ATUALIZAR GRUPO + ITENS
 // ===================================================
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-
-    // 👇 AGORA RECEBE description TAMBÉM
     const { id, name, description, required, min, max, active, type } = body;
-    const options = Array.isArray(body.options) ? body.options : null;
+    const options = Array.isArray(body.options) ? body.options : [];
 
     if (!id) {
       return NextResponse.json(
@@ -106,12 +102,12 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // 1) Atualiza o grupo
+    // 1) Atualiza grupo
     await prisma.complementGroup.update({
       where: { id },
       data: {
         name,
-        description: description ?? "", // 👈 ATUALIZA DESCRIÇÃO
+        description: description ?? "",
         required: !!required,
         min: min !== undefined ? Number(min) : 0,
         max: max !== undefined ? Number(max) : 1,
@@ -120,66 +116,59 @@ export async function PATCH(req: Request) {
       },
     });
 
-    // 2) Se options foram enviados, mexe nos itens
-    if (options && options.length > 0) {
-      // 2.1 Criar / atualizar
-      for (const opt of options) {
-        const isNew = !opt.id || String(opt.id).startsWith("opt-");
+    // 2) Atualizar / Criar itens
+    for (const opt of options) {
+      const isNew = !opt.id || String(opt.id).startsWith("opt-");
 
-        const payload = {
-          name: opt.name,
-          price: opt.price !== undefined ? Number(opt.price) : 0,
-          active: opt.active ?? true,
-        };
+      const payload = {
+        name: opt.name,
+        price: opt.price !== undefined ? Number(opt.price) : 0,
+        active: opt.active ?? true,
+        imageUrl: opt.imageUrl || null,
+        description: opt.description || "",
+      };
 
-        if (isNew) {
-          await prisma.complement.create({
-            data: {
-              groupId: id,
-              ...payload,
-            },
-          });
-          continue;
-        }
-
+      if (isNew) {
+        await prisma.complement.create({
+          data: {
+            groupId: id,
+            ...payload,
+          },
+        });
+      } else {
         await prisma.complement.update({
           where: { id: opt.id },
           data: payload,
         });
       }
-
-      // 2.2 Remover itens deletados
-      const existingItemIds = await prisma.complement.findMany({
-        where: { groupId: id },
-        select: { id: true },
-      });
-
-      const payloadIds = options
-        .filter((opt: any) => opt.id && !String(opt.id).startsWith("opt-"))
-        .map((opt: any) => opt.id);
-
-      const toDeleteIds = existingItemIds
-        .map((i: any) => i.id)
-        .filter((itemId: string) => !payloadIds.includes(itemId));
-
-      if (toDeleteIds.length > 0) {
-        await prisma.complement.deleteMany({
-          where: { id: { in: toDeleteIds } },
-        });
-      }
     }
 
-    // 3) Retorna atualizado com itens
-    const updated = await prisma.complementGroup.findUnique({
-      where: { id },
-      include: {
-        items: {
-          orderBy: { createdAt: "asc" },
-        },
-      },
+    // 3) Remover itens excluídos
+    const existingItemIds = await prisma.complement.findMany({
+      where: { groupId: id },
+      select: { id: true },
     });
 
-    return NextResponse.json(updated, { status: 200 });
+    const payloadIds = options
+      .filter((opt) => opt.id && !String(opt.id).startsWith("opt-"))
+      .map((opt) => opt.id);
+
+    const toDelete = existingItemIds
+      .map((i) => i.id)
+      .filter((id) => !payloadIds.includes(id));
+
+    if (toDelete.length > 0) {
+      await prisma.complement.deleteMany({
+        where: { id: { in: toDelete } },
+      });
+    }
+
+    const updated = await prisma.complementGroup.findUnique({
+      where: { id },
+      include: { items: { orderBy: { createdAt: "asc" } } },
+    });
+
+    return NextResponse.json(updated);
   } catch (err: any) {
     console.error("Erro PATCH /complements:", err);
     return NextResponse.json(
@@ -203,21 +192,15 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Deletar itens ligados ao grupo
     await prisma.complement.deleteMany({
       where: { groupId: id },
     });
 
-    // Deletar grupo
     await prisma.complementGroup.delete({
       where: { id },
     });
 
-    return NextResponse.json(
-      { success: true },
-      { status: 200 }
-    );
-
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("Erro DELETE /complements:", err);
     return NextResponse.json(
