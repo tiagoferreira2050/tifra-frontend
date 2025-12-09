@@ -135,8 +135,7 @@ export default function EditComplementModal({
     active: complement.active,
     type,
     options: options.map((opt: any) => ({
-  id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-  groupId: complement.id, // <- NECESSÁRIO PARA CRIAR ITEM NOVO
+  id: String(opt.id).startsWith("opt-") ? undefined : opt.id, 
   name: opt.name,
   price: toNumber(opt.price),
   active: opt.active,
