@@ -96,13 +96,14 @@ export default function NewComplementModal({
   async function handleSave() {
   if (!title.trim()) return alert("Título obrigatório");
 
+  // Envia os dados crus para o Page salvar
   const payload = {
-    name: title,
+    title,
     description,
-    required,
-    min: minChoose ? Number(minChoose) : null,
-    max: maxChoose ? Number(maxChoose) : null,
     type,
+    required,
+    minChoose,
+    maxChoose,
     options: options.map((opt) => ({
       name: opt.name,
       price: toNumber(opt.price),
@@ -112,28 +113,10 @@ export default function NewComplementModal({
     })),
   };
 
-  try {
-    const res = await fetch("/api/complements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      alert("Erro ao criar complemento");
-      return;
-    }
-
-    // ❗ NÃO chama mais onSave() aqui (evita duplicação)
-    // ❗ NÃO tenta ler o retorno da API (evita erro falso)
-
-    onClose(); // apenas fecha o modal
-
-  } catch (err) {
-    console.error("Erro no POST:", err);
-    alert("Erro ao criar complemento");
-  }
+  onSave(payload); // Page faz o POST e recarrega
+  onClose(); // Fecha o modal
 }
+
 
   // ==========================================
   // LAYOUT
