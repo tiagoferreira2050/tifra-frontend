@@ -22,7 +22,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
 
     const data = new FormData();
     data.append("file", file);
