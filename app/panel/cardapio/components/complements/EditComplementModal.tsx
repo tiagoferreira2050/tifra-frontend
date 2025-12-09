@@ -125,49 +125,70 @@ export default function EditComplementModal({
   // SALVAR (PATCH)
   // ==========================================================
   async function handleSave() {
-    const payload = {
-      id: complement.id,
-      name: title,
-      description,
-      required,
-      min: minChoose ? Number(minChoose) : null,
-      max: maxChoose ? Number(maxChoose) : null,
-      active: complement.active,
-      type,
-      options: options.map((opt: any) => ({
-        id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
-        name: opt.name,
-        price: toNumber(opt.price),
-        active: opt.active,
-        imageUrl: opt.image || null,
-        description: opt.description || "",
+  const payload = {
+    id: complement.id,
+    name: title,
+    description,
+    required,
+    min: minChoose ? Number(minChoose) : null,
+    max: maxChoose ? Number(maxChoose) : null,
+    active: complement.active,
+    type,
+    options: options.map((opt: any) => ({
+      id: opt.id && !String(opt.id).startsWith("opt-") ? opt.id : null,
+      name: opt.name,
+      price: toNumber(opt.price),
+      active: opt.active,
+      imageUrl: opt.image || null,
+      description: opt.description || "",
+    })),
+  };
+
+  try {
+    // Envia o PATCH
+    const res = await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const updatedFromDB = await res.json();
+
+    if (!res.ok) {
+      console.error("Erro ao atualizar:", updatedFromDB);
+      alert("Erro ao atualizar complemento");
+      return;
+    }
+
+    // Agora formatamos com os valores REAIS vindos do banco
+    const updatedFinal = {
+      id: updatedFromDB.id,
+      title: updatedFromDB.name,
+      description: updatedFromDB.description || "",
+      required: updatedFromDB.required,
+      minChoose: updatedFromDB.min,
+      maxChoose: updatedFromDB.max,
+      type: updatedFromDB.type || "multiple",
+      active: updatedFromDB.active,
+      options: updatedFromDB.items.map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        price: i.price,
+        active: i.active,
+        image: i.imageUrl || null,
+        description: i.description || "",
       })),
     };
 
-    try {
-      const res = await fetch("/api/complements", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    onSave(updatedFinal); // Agora atualiza certinho no painel
+    onClose();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Erro ao atualizar:", data);
-        alert("Erro ao atualizar complemento");
-        return;
-      }
-
-      // 🚫 REMOVIDO BLOCO QUE DUPLICAVA ITENS
-      // O Page faz reload REAL após o PATCH
-      onSave();
-      onClose();
-    } catch (err) {
-      console.error("Erro PATCH:", err);
-      alert("Erro ao atualizar complemento");
-    }
+  } catch (err) {
+    console.error("Erro PATCH:", err);
+    alert("Erro ao atualizar complemento");
   }
+}
+
 
   // ==========================================================
   // LAYOUT
