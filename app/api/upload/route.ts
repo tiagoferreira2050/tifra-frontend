@@ -15,6 +15,10 @@ export async function POST(req: Request) {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+    console.log("🔍 CLOUD NAME =", cloudName);
+    console.log("🔍 PRESET =", preset);
+
+
     if (!cloudName || !preset) {
       console.error("Variáveis faltando:", { cloudName, preset });
       return NextResponse.json(
