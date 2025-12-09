@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "edge"; // recomendado para upload rápido
+// IMPORTANTÍSSIMO: usar Node.js runtime
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +24,6 @@ export async function POST(req: Request) {
     }
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-
 
     const data = new FormData();
     data.append("file", file);
