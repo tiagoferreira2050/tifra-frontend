@@ -54,7 +54,7 @@ export default function EditComplementModal({
     setOptions((prev) => [
       ...prev,
       {
-        id: "opt-" + Date.now(),
+        id: "opt-" + crypto.randomUUID(),
         name: "",
         price: "0,00",
         active: true,
