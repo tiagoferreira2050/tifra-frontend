@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 // IMPORTANTÍSSIMO: usar Node.js runtime
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
 
 export async function POST(req: Request) {
   try {
@@ -12,11 +14,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
     }
 
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const preset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
-    console.log("🔍 CLOUD NAME =", cloudName);
-    console.log("🔍 PRESET =", preset);
+
+     console.log("🧪 CLOUDINARY_CLOUD_NAME (server) =", process.env.CLOUDINARY_CLOUD_NAME);
+     console.log("🧪 CLOUDINARY_UPLOAD_PRESET (server) =", process.env.CLOUDINARY_UPLOAD_PRESET);
+
 
 
     if (!cloudName || !preset) {
