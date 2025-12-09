@@ -162,23 +162,24 @@ export default function EditComplementModal({
 
     // Agora formatamos com os valores REAIS vindos do banco
     const updatedFinal = {
-      id: updatedFromDB.id,
-      title: updatedFromDB.name,
-      description: updatedFromDB.description || "",
-      required: updatedFromDB.required,
-      minChoose: updatedFromDB.min,
-      maxChoose: updatedFromDB.max,
-      type: updatedFromDB.type || "multiple",
-      active: updatedFromDB.active,
-      options: updatedFromDB.items.map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        price: i.price,
-        active: i.active,
-        image: i.imageUrl || null,
-        description: i.description || "",
-      })),
-    };
+  id: updatedFromDB.id,
+  title: updatedFromDB.name,
+  description: updatedFromDB.description || "",
+  required: updatedFromDB.required,
+  minChoose: updatedFromDB.min,
+  maxChoose: updatedFromDB.max,
+  type: updatedFromDB.type || "multiple",
+  active: updatedFromDB.active,
+  options: updatedFromDB.items.map((i: any) => ({
+    id: i.id,
+    name: i.name,
+    price: i.price,
+    active: i.active,
+    image: i.imageUrl || null,
+    description: i.description || "",
+  })),
+};
+
 
     onSave(updatedFinal); // Agora atualiza certinho no painel
     onClose();
