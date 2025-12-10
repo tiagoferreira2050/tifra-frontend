@@ -213,7 +213,7 @@ export default function CardapioPage() {
         active: updated.active,
         type: updated.type,
         options: updated.options.map((opt: any) => ({
-  id: String(opt.id).startsWith("opt-") ? undefined : opt.id,
+  id: opt.id,
   name: opt.name,
   price: Number(opt.price ?? 0),
   active: opt.active,
