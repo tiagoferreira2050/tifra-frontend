@@ -217,7 +217,7 @@ export default function CardapioPage() {
   name: opt.name,
   price: Number(opt.price ?? 0),
   active: opt.active,
-  imageUrl: opt.image || null,
+  imageUrl: opt.imageUrl || opt.image || null,
   description: opt.description || "",
 })),
  };

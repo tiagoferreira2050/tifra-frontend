@@ -19,7 +19,7 @@ export default function EditComplementModal({
   const [options, setOptions] = useState<any[]>([]);
 
   // ==========================================================
-  // INICIAR CAMPOS COM DADOS EXISTENTES
+  // CARREGAR DADOS
   // ==========================================================
   useEffect(() => {
     if (!complement) return;
@@ -33,7 +33,7 @@ export default function EditComplementModal({
 
     setOptions(
       (complement.options || []).map((o: any) => ({
-        id: o.id || "opt-" + Date.now(),
+        id: o.id || "opt-" + crypto.randomUUID(),
         name: o.name || "",
         price:
           o.price !== undefined
@@ -76,33 +76,24 @@ export default function EditComplementModal({
   }
 
   // ==========================================================
-  // UPLOAD CLOUDINARY
+  // UPLOAD IMAGEM
   // ==========================================================
   async function handleImageUpload(e: any, id: string) {
     const file = e.target.files[0];
     if (!file) return;
 
-    try {
-      const data = new FormData();
-      data.append("file", file);
+    const data = new FormData();
+    data.append("file", file);
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: data,
-      });
+    const res = await fetch("/api/upload", { method: "POST", body: data });
+    const json = await res.json();
 
-      const json = await res.json();
-
-      if (!res.ok || !json.url) {
-        alert("Erro ao enviar imagem");
-        return;
-      }
-
-      updateOption(id, { image: json.url });
-    } catch (err) {
-      console.error("Erro ao enviar imagem:", err);
-      alert("Falha no upload");
+    if (!res.ok || !json.url) {
+      alert("Erro ao enviar imagem");
+      return;
     }
+
+    updateOption(id, { image: json.url });
   }
 
   // ==========================================================
@@ -112,17 +103,15 @@ export default function EditComplementModal({
     if (!value) return "0,00";
     const only = value.replace(/\D/g, "");
     if (!only) return "0,00";
-    const cents = (parseInt(only) / 100).toFixed(2);
-    return cents.replace(".", ",");
+    return (parseInt(only) / 100).toFixed(2).replace(".", ",");
   }
 
   function toNumber(val: string) {
-    const num = Number(val.replace(",", "."));
-    return isNaN(num) ? 0 : num;
+    return Number(val.replace(",", ".")) || 0;
   }
 
   // ==========================================================
-  // SALVAR — AGORA DELEGANDO PARA O PAGE (PADRÃO CORRETO)
+  // SALVAR
   // ==========================================================
   function handleSave() {
     if (!title.trim()) {
@@ -140,11 +129,11 @@ export default function EditComplementModal({
       maxChoose: maxChoose ? Number(maxChoose) : null,
       active: complement.active,
       options: options.map((opt: any) => ({
-        id: opt.id, // se começar com "opt-", o Page converte para undefined
+        id: opt.id,
         name: opt.name,
         price: toNumber(opt.price),
         active: opt.active,
-        image: opt.image || null,
+        imageUrl: opt.image || null,
         description: opt.description || "",
       })),
     };
@@ -177,6 +166,7 @@ export default function EditComplementModal({
           onChange={(e) => setDescription(e.target.value)}
         />
 
+        {/* Tipo / Required / Min / Max */}
         <div className="flex gap-3 mb-3">
           <div>
             <label className="block font-medium mb-1">Tipo</label>
@@ -185,22 +175,19 @@ export default function EditComplementModal({
               value={type}
               onChange={(e) => setType(e.target.value as any)}
             >
-              <option value="single">Opção única (radio)</option>
-              <option value="multiple">Múltipla escolha (checkbox)</option>
+              <option value="single">Opção única</option>
+              <option value="multiple">Múltipla escolha</option>
               <option value="addable">Somável</option>
             </select>
           </div>
 
           <div>
             <label className="block font-medium mb-1">Obrigatório</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={required}
-                onChange={(e) => setRequired(e.target.checked)}
-              />
-              <span className="text-sm text-gray-600">Exigir escolha</span>
-            </div>
+            <input
+              type="checkbox"
+              checked={required}
+              onChange={(e) => setRequired(e.target.checked)}
+            />
           </div>
 
           <div>
@@ -222,7 +209,7 @@ export default function EditComplementModal({
           </div>
         </div>
 
-        {/* Opções */}
+        {/* OPÇÕES */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button
@@ -275,6 +262,7 @@ export default function EditComplementModal({
                 />
               </div>
 
+              {/* IMAGEM */}
               <div className="flex flex-col items-end gap-2">
                 <label className="text-xs text-gray-600">Imagem</label>
 
@@ -291,14 +279,12 @@ export default function EditComplementModal({
                 <input type="file" onChange={(e) => handleImageUpload(e, opt.id)} />
 
                 <div className="flex items-center gap-2 mt-2">
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={opt.active}
-                      onChange={(e) => updateOption(opt.id, { active: e.target.checked })}
-                    />
-                    <span className="ml-2 text-sm">Ativo</span>
-                  </label>
+                  <input
+                    type="checkbox"
+                    checked={opt.active}
+                    onChange={(e) => updateOption(opt.id, { active: e.target.checked })}
+                  />
+                  <span className="text-sm">Ativo</span>
 
                   <button
                     onClick={() => removeOption(opt.id)}
