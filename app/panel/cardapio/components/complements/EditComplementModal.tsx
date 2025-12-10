@@ -8,7 +8,8 @@ export default function EditComplementModal({
   complement,
   onSave,
 }: any) {
-  if (!open) return null;
+  if (!open || !complement) return null;
+
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
