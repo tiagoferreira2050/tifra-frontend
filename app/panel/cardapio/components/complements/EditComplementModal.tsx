@@ -132,8 +132,8 @@ export default function EditComplementModal({
       type,
       required,
 
-      min: minChoose ? Number(minChoose),
-      max: maxChoose ? Number(maxChoose),
+      minChoose: minChoose ? Number(minChoose) : null,
+      maxChoose: maxChoose ? Number(maxChoose) : null,
 
       active: complement.active,
 
