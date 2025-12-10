@@ -44,9 +44,9 @@ export default function NewComplementModal({
     setOptions((prev) => prev.filter((o) => o.id !== id));
   }
 
-  // ==========================================
+  // ===========================================
   // UPLOAD DE IMAGEM
-  // ==========================================
+  // ===========================================
   async function handleImageUpload(e: any, id: string) {
     const file = e.target.files[0];
     if (!file) return;
