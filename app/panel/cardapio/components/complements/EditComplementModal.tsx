@@ -117,40 +117,44 @@ export default function EditComplementModal({
   // ==========================================================
   // SALVAR
   // ==========================================================
-  function handleSave() {
-    if (!title.trim()) {
-      alert("Título obrigatório");
-      return;
-    }
-
-    const payload = {
-      id: complement.id,
-
-      // nomes que o backend espera
-      name: title,
-      description,
-      type,
-      required,
-
-      min: minChoose ? Number(minChoose) : undefined,
-      max: maxChoose ? Number(maxChoose) : undefined,
-      active: complement.active,
-
-      options: options.map((opt: any) => ({
-        id: opt.id,
-        name: opt.name,
-        price: toNumber(opt.price),
-        active: opt.active,
-        imageUrl: opt.imageUrl || null,
-        description: opt.description || "",
-      })),
-    };
-
-    console.log("EDIT PAYLOAD ENVIADO:", payload);
-
-    onSave(payload);
-    onClose();
+  // substitua somente a função handleSave do EditComplementModal
+function handleSave() {
+  if (!title.trim()) {
+    alert("Título obrigatório");
+    return;
   }
+
+  // monta o payload com os nomes que o backend espera (name, min, max, options)
+  const payload = {
+    id: complement.id,
+    name: title,
+    description: description || "",
+    type,
+    required: !!required,
+    min: minChoose ? Number(minChoose) : 0,
+    max: maxChoose ? Number(maxChoose) : 1,
+    active: complement.active,
+    // usa o estado local "options" (não "updated" nem outra variável)
+    options: options.map((opt: any) => ({
+      id: opt.id,
+      name: opt.name,
+      price: toNumber(opt.price),
+      active: opt.active ?? true,
+      imageUrl: opt.imageUrl || null,
+      description: opt.description || "",
+    })),
+  };
+
+  // debug rápido para checar o que vai ser enviado
+  console.log("[EditComplementModal] payload ->", payload);
+
+  // chama a função onSave (a Page faz o PATCH)
+  onSave(payload);
+
+  // fecha o modal
+  onClose();
+}
+
 
   // ==========================================================
   // LAYOUT
