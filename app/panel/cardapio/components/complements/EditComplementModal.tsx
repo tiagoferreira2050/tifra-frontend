@@ -10,7 +10,6 @@ export default function EditComplementModal({
 }: any) {
   if (!open || !complement) return null;
 
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<"single" | "multiple" | "addable">("multiple");
@@ -42,7 +41,7 @@ export default function EditComplementModal({
             : "0,00",
         active: o.active ?? true,
         pdv: o.pdv || "",
-        imageUrl: o.imageUrl || o.image || null, // 🔥 PADRONIZADO
+        imageUrl: o.imageUrl || o.image || null,
         description: o.description || "",
       }))
     );
@@ -60,7 +59,7 @@ export default function EditComplementModal({
         price: "0,00",
         active: true,
         pdv: "",
-        imageUrl: null, // 🔥 PADRONIZADO
+        imageUrl: null,
         description: "",
       },
     ]);
@@ -92,7 +91,7 @@ export default function EditComplementModal({
       return;
     }
 
-    updateOption(id, { imageUrl: json.url }); // 🔥 PADRONIZADO
+    updateOption(id, { imageUrl: json.url });
   }
 
   // ==========================================================
@@ -105,11 +104,15 @@ export default function EditComplementModal({
     return (parseInt(only) / 100).toFixed(2).replace(".", ",");
   }
 
-  function toNumber(val: string) {
-  if (!val) return 0;
-  return Number(val.replace(".", "").replace(",", ".")) || 0;
-}
-
+  // aceita string "3,50" ou "3.5" ou number
+  function toNumber(val: string | number | undefined | null) {
+    if (val === undefined || val === null) return 0;
+    const s = typeof val === "number" ? String(val) : val;
+    // remove pontos de milhar e transforma vírgula em ponto decimal
+    const normalized = String(s).replace(/\./g, "").replace(",", ".");
+    const num = Number(normalized);
+    return isNaN(num) ? 0 : num;
+  }
 
   // ==========================================================
   // SALVAR
@@ -122,19 +125,19 @@ export default function EditComplementModal({
 
     const payload = {
       id: complement.id,
-      title,
+      name: title, // backend espera "name"
       description,
       type,
       required,
-      minChoose: minChoose ? Number(minChoose) : null,
-      maxChoose: maxChoose ? Number(maxChoose) : null,
+      min: minChoose ? Number(minChoose) : 0,
+      max: maxChoose ? Number(maxChoose) : 1,
       active: complement.active,
       options: options.map((opt: any) => ({
         id: opt.id,
         name: opt.name,
         price: toNumber(opt.price),
         active: opt.active,
-        imageUrl: opt.imageUrl || null, // 🔥 PADRONIZADO
+        imageUrl: opt.imageUrl || null,
         description: opt.description || "",
       })),
     };
