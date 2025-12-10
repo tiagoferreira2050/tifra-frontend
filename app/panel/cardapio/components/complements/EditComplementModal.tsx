@@ -16,10 +16,11 @@ export default function EditComplementModal({
   const [required, setRequired] = useState(false);
   const [minChoose, setMinChoose] = useState("");
   const [maxChoose, setMaxChoose] = useState("");
+
   const [options, setOptions] = useState<any[]>([]);
 
   // ==========================================================
-  // CARREGAR DADOS
+  // CARREGAR DADOS DO COMPLEMENTO
   // ==========================================================
   useEffect(() => {
     if (!complement) return;
@@ -28,38 +29,43 @@ export default function EditComplementModal({
     setDescription(complement.description || "");
     setType(complement.type || "multiple");
     setRequired(!!complement.required);
-    setMinChoose(complement.minChoose ? String(complement.minChoose) : "");
-    setMaxChoose(complement.maxChoose ? String(complement.maxChoose) : "");
+    setMinChoose(
+      complement.minChoose !== undefined && complement.minChoose !== null
+        ? String(complement.minChoose)
+        : ""
+    );
+    setMaxChoose(
+      complement.maxChoose !== undefined && complement.maxChoose !== null
+        ? String(complement.maxChoose)
+        : ""
+    );
 
     setOptions(
       (complement.options || []).map((o: any) => ({
-        id: o.id || "opt-" + crypto.randomUUID(),
+        id: o.id || "opt-" + Date.now(),
         name: o.name || "",
-        price:
-          o.price !== undefined
-            ? String(o.price).replace(".", ",")
-            : "0,00",
+        price: o.price !== undefined ? String(o.price).replace(".", ",") : "0,00",
         active: o.active ?? true,
         pdv: o.pdv || "",
-        imageUrl: o.imageUrl || o.image || null,
+        image: o.imageUrl || null,
         description: o.description || "",
       }))
     );
   }, [complement, open]);
 
   // ==========================================================
-  // GERENCIAR OPÇÕES
+  // GERENCIAR ITENS
   // ==========================================================
   function addOption() {
     setOptions((prev) => [
       ...prev,
       {
-        id: "opt-" + crypto.randomUUID(),
+        id: "opt-" + Date.now(),
         name: "",
         price: "0,00",
         active: true,
         pdv: "",
-        imageUrl: null,
+        image: null,
         description: "",
       },
     ]);
@@ -74,7 +80,7 @@ export default function EditComplementModal({
   }
 
   // ==========================================================
-  // UPLOAD IMAGEM
+  // UPLOAD DE IMAGEM
   // ==========================================================
   async function handleImageUpload(e: any, id: string) {
     const file = e.target.files[0];
@@ -91,7 +97,7 @@ export default function EditComplementModal({
       return;
     }
 
-    updateOption(id, { imageUrl: json.url });
+    updateOption(id, { image: json.url });
   }
 
   // ==========================================================
@@ -101,60 +107,49 @@ export default function EditComplementModal({
     if (!value) return "0,00";
     const only = value.replace(/\D/g, "");
     if (!only) return "0,00";
-    return (parseInt(only) / 100).toFixed(2).replace(".", ",");
+    const cents = (parseInt(only) / 100).toFixed(2);
+    return cents.replace(".", ",");
   }
 
-  // aceita string "3,50" ou "3.5" ou number
-  function toNumber(val: string | number | undefined | null) {
-    if (val === undefined || val === null) return 0;
-    const s = typeof val === "number" ? String(val) : val;
-    // remove pontos de milhar e transforma vírgula em ponto decimal
-    const normalized = String(s).replace(/\./g, "").replace(",", ".");
-    const num = Number(normalized);
+  function toNumber(val: string) {
+    const num = Number(val.replace(",", "."));
     return isNaN(num) ? 0 : num;
   }
 
   // ==========================================================
-  // SALVAR
+  // SALVAR (PATCH)
   // ==========================================================
-  // substitua somente a função handleSave do EditComplementModal
-function handleSave() {
-  if (!title.trim()) {
-    alert("Título obrigatório");
-    return;
+  function handleSave() {
+    if (!title.trim()) {
+      alert("Título obrigatório");
+      return;
+    }
+
+    const payload = {
+      id: complement.id,
+      name: title,
+      description,
+      type,
+      required,
+
+      min: minChoose ? Number(minChoose) : 0,
+      max: maxChoose ? Number(maxChoose) : 1,
+
+      active: complement.active,
+
+      options: options.map((opt) => ({
+        id: opt.id,
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        imageUrl: opt.image || null,
+        description: opt.description || "",
+      })),
+    };
+
+    onSave(payload);
+    onClose();
   }
-
-  // monta o payload com os nomes que o backend espera (name, min, max, options)
-  const payload = {
-    id: complement.id,
-    name: title,
-    description: description || "",
-    type,
-    required: !!required,
-    min: minChoose ? Number(minChoose) : 0,
-    max: maxChoose ? Number(maxChoose) : 1,
-    active: complement.active,
-    // usa o estado local "options" (não "updated" nem outra variável)
-    options: options.map((opt: any) => ({
-      id: opt.id,
-      name: opt.name,
-      price: toNumber(opt.price),
-      active: opt.active ?? true,
-      imageUrl: opt.imageUrl || null,
-      description: opt.description || "",
-    })),
-  };
-
-  // debug rápido para checar o que vai ser enviado
-  console.log("[EditComplementModal] payload ->", payload);
-
-  // chama a função onSave (a Page faz o PATCH)
-  onSave(payload);
-
-  // fecha o modal
-  onClose();
-}
-
 
   // ==========================================================
   // LAYOUT
@@ -162,7 +157,6 @@ function handleSave() {
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[820px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
-
         <h2 className="text-xl font-semibold mb-4">Editar complemento</h2>
 
         <label className="block font-medium mb-1">Título *</label>
@@ -180,7 +174,6 @@ function handleSave() {
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        {/* Tipo / Required / Min / Max */}
         <div className="flex gap-3 mb-3">
           <div>
             <label className="block font-medium mb-1">Tipo</label>
@@ -223,7 +216,7 @@ function handleSave() {
           </div>
         </div>
 
-        {/* OPÇÕES */}
+        {/* LISTA DE OPÇÕES */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button
@@ -238,7 +231,6 @@ function handleSave() {
           {options.map((opt) => (
             <div key={opt.id} className="border rounded-lg p-3 flex gap-3 items-start">
               <div className="flex-1">
-
                 <input
                   className="w-full border rounded p-2 mb-2"
                   placeholder="Nome da opção"
@@ -274,13 +266,12 @@ function handleSave() {
                 />
               </div>
 
-              {/* IMAGEM */}
               <div className="flex flex-col items-end gap-2">
                 <label className="text-xs text-gray-600">Imagem</label>
 
                 <div className="w-20 h-20 border rounded-md overflow-hidden mb-1">
-                  {opt.imageUrl ? (
-                    <img src={opt.imageUrl} className="w-full h-full object-cover" />
+                  {opt.image ? (
+                    <img src={opt.image} className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-400 text-xs">
                       sem imagem
@@ -294,7 +285,9 @@ function handleSave() {
                   <input
                     type="checkbox"
                     checked={opt.active}
-                    onChange={(e) => updateOption(opt.id, { active: e.target.checked })}
+                    onChange={(e) =>
+                      updateOption(opt.id, { active: e.target.checked })
+                    }
                   />
                   <span className="text-sm">Ativo</span>
 
