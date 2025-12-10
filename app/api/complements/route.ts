@@ -89,7 +89,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
     const { id, name, description, required, min, max, active, type } = body;
-    const options = Array.isArray(body.options) ? body.options : [];
+    const options = Array.isArray(body.options) ? body.options : undefined;
 
     if (!id) {
       return NextResponse.json(
