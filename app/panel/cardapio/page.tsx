@@ -82,7 +82,7 @@ export default function CardapioPage() {
               name: i.name,
               price: i.price ?? 0,
               active: i.active ?? true,
-              image: i.imageUrl || null,
+              imageUrl: i.imageUrl || null,
               description: i.description || "",
             })) || [],
         }));
@@ -130,30 +130,46 @@ export default function CardapioPage() {
   // ==========================
   // SALVAR NOVO COMPLEMENTO
   // ==========================
-  async function saveNewComplement(newComp: any) {
+  // Substitua sua função saveNewComplement por esta (cole ela inteira)
+async function saveNewComplement(newComp: any) {
+  try {
+    console.log("[saveNewComplement] payload =>", newComp);
+
+    const res = await fetch("/api/complements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newComp.title,
+        description: newComp.description,
+        type: newComp.type,
+        required: newComp.required,
+        min: newComp.minChoose,
+        max: newComp.maxChoose,
+        options: newComp.options || [],
+      }),
+    });
+
+    // log raw status / headers
+    console.log("[saveNewComplement] status:", res.status, res.statusText);
+    const text = await res.text().catch(() => null);
+    let created = null;
     try {
-      const res = await fetch("/api/complements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newComp.title,
-          description: newComp.description,
-          type: newComp.type,
-          required: newComp.required,
-          min: newComp.minChoose,
-          max: newComp.maxChoose,
-          options: newComp.options || [],
-        }),
-      });
+      created = text ? JSON.parse(text) : null;
+    } catch (e) {
+      console.warn("[saveNewComplement] response is not json:", text);
+    }
+    console.log("[saveNewComplement] response body:", created ?? text);
 
-      const created = await res.json();
+    if (!res.ok) {
+      // mostra erro detalhado pro dev
+      alert(
+        "Erro ao criar complemento. Veja console (Network + this message) para detalhes."
+      );
+      return;
+    }
 
-      if (!res.ok) {
-        alert("Erro ao criar complemento");
-        return;
-      }
-
-      // ADICIONA NA UI SEM RELOAD
+    // Se o backend retornou o objeto criado, adiciona na UI
+    if (created && created.id) {
       setComplements((prev) => [
         ...prev,
         {
@@ -176,10 +192,47 @@ export default function CardapioPage() {
             })) || [],
         },
       ]);
-    } catch (err) {
-      alert("Erro ao salvar complemento");
+      // sucesso visual, mas vamos garantir recarregando do servidor
+    } else {
+      console.warn("[saveNewComplement] backend não retornou created.id");
     }
+
+    // FORÇA recarregamento da lista do backend para garantir que o DB tenha sido atualizado
+    try {
+      const reload = await fetch("/api/complements", { cache: "no-store" });
+      const data = await reload.json();
+      const formatted = Array.isArray(data)
+        ? data.map((g: any) => ({
+            id: g.id,
+            title: g.name,
+            description: g.description || "",
+            type: g.type || "multiple",
+            required: g.required,
+            minChoose: g.min,
+            maxChoose: g.max,
+            active: g.active ?? true,
+            options:
+              g.items?.map((i: any) => ({
+                id: i.id,
+                name: i.name,
+                price: i.price ?? 0,
+                active: i.active ?? true,
+                image: i.imageUrl || null,
+                description: i.description || "",
+              })) || [],
+          }))
+        : [];
+      setComplements(formatted);
+      console.log("[saveNewComplement] reload sucesso, itens:", formatted.length);
+    } catch (err) {
+      console.error("[saveNewComplement] erro no reload:", err);
+    }
+  } catch (err) {
+    console.error("Erro salvar complemento:", err);
+    alert("Erro ao salvar complemento (ver console).");
   }
+}
+
 
   function openCreateComplement() {
     setNewComplementOpen(true);
