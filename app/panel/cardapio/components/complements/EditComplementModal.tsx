@@ -127,7 +127,7 @@ export default function EditComplementModal({
 
     const payload = {
       id: complement.id,
-      name: title,
+      title,
       description,
       type,
       required,
