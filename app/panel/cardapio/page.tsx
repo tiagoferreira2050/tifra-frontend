@@ -13,8 +13,6 @@ import NewComplementModal from "./components/complements/NewComplementModal";
 import EditComplementModal from "./components/complements/EditComplementModal";
 
 import { Search, Plus } from "lucide-react";
-
-// 📦 IndexedDB
 import { dbSave } from "./storage/db";
 
 export default function CardapioPage() {
@@ -32,9 +30,9 @@ export default function CardapioPage() {
 
   const [newProductOpen, setNewProductOpen] = useState(false);
 
-  // ======================================================
+  // ==========================
   // CARREGAR CATEGORIAS
-  // ======================================================
+  // ==========================
   useEffect(() => {
     async function loadData() {
       try {
@@ -53,7 +51,6 @@ export default function CardapioPage() {
         setCategories(formatted);
         setSelectedCategoryId(formatted[0]?.id || null);
       } catch (error) {
-        console.error("Erro ao carregar categorias:", error);
         setCategories([]);
       }
     }
@@ -61,9 +58,9 @@ export default function CardapioPage() {
     loadData();
   }, []);
 
-  // ======================================================
+  // ==========================
   // CARREGAR COMPLEMENTOS
-  // ======================================================
+  // ==========================
   useEffect(() => {
     async function loadComplements() {
       try {
@@ -99,9 +96,9 @@ export default function CardapioPage() {
     loadComplements();
   }, []);
 
-  // ======================================================
+  // ==========================
   // SALVAR NOVO PRODUTO
-  // ======================================================
+  // ==========================
   function handleSaveProduct(categoryId: string, newProduct: any) {
     setCategories((prev) =>
       prev.map((cat) =>
@@ -114,9 +111,9 @@ export default function CardapioPage() {
     dbSave("products", newProduct);
   }
 
-  // ======================================================
+  // ==========================
   // ATUALIZAR PRODUTO
-  // ======================================================
+  // ==========================
   function handleUpdateProduct(updatedProduct: any) {
     setCategories((prev) =>
       prev.map((cat) => ({
@@ -130,9 +127,9 @@ export default function CardapioPage() {
     dbSave("products", updatedProduct);
   }
 
-  // ======================================================
+  // ==========================
   // SALVAR NOVO COMPLEMENTO
-  // ======================================================
+  // ==========================
   async function saveNewComplement(newComp: any) {
     try {
       const res = await fetch("/api/complements", {
@@ -156,8 +153,30 @@ export default function CardapioPage() {
         return;
       }
 
+      // ADICIONA NA UI SEM RELOAD
+      setComplements((prev) => [
+        ...prev,
+        {
+          id: created.id,
+          title: created.name,
+          description: created.description || "",
+          type: created.type,
+          required: created.required,
+          minChoose: created.min,
+          maxChoose: created.max,
+          active: created.active,
+          options:
+            created.items?.map((i: any) => ({
+              id: i.id,
+              name: i.name,
+              price: i.price,
+              active: i.active,
+              image: i.imageUrl || null,
+              description: i.description || "",
+            })) || [],
+        },
+      ]);
     } catch (err) {
-      console.error("Erro salvar complemento:", err);
       alert("Erro ao salvar complemento");
     }
   }
@@ -171,9 +190,9 @@ export default function CardapioPage() {
     setEditComplementOpen(true);
   }
 
-  // ======================================================
+  // ==========================
   // SALVAR EDIÇÃO DO COMPLEMENTO
-  // ======================================================
+  // ==========================
   async function saveEditedComplement(updated: any) {
     try {
       const payload = {
@@ -197,7 +216,7 @@ export default function CardapioPage() {
 
       const backup = [...complements];
 
-      // ----- ATUALIZAÇÃO DIRETA NO PAINEL -----
+      // Atualiza imediatamente no painel
       const optimistic = complements.map((g: any) =>
         g.id === updated.id
           ? {
@@ -223,7 +242,7 @@ export default function CardapioPage() {
 
       setComplements(optimistic);
 
-      // ----- PATCH PARA O BACKEND -----
+      // PATCH backend
       const res = await fetch("/api/complements", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -235,26 +254,17 @@ export default function CardapioPage() {
         alert("Erro ao atualizar complemento.");
         return;
       }
-
-      // ❌ REMOVIDO — esse bloco sobrescrevia a UI e apagava os itens novos
-      /*
-      const server = await res.json();
-      ...
-      */
-
     } catch (err) {
-      console.error("Erro inesperado ao salvar edição de complemento:", err);
       alert("Erro inesperado ao salvar complemento.");
     }
   }
 
-  // ======================================================
+  // ==========================
   // LAYOUT
-  // ======================================================
+  // ==========================
   return (
     <>
       <div className="flex w-full h-full p-4 gap-4">
-        {/* LEFT — CATEGORIAS */}
         <div className="w-1/3 bg-white rounded-lg border shadow-sm p-4 overflow-y-auto">
           <CategoryManager
             categories={categories}
@@ -267,7 +277,6 @@ export default function CardapioPage() {
         </div>
 
         <div className="flex-1 bg-white rounded-lg border shadow-sm p-4">
-          {/* TABS */}
           <div className="flex border-b mb-4 gap-6">
             {["produtos", "complementos", "promocoes"].map((tab) => (
               <button
@@ -284,7 +293,6 @@ export default function CardapioPage() {
             ))}
           </div>
 
-          {/* SEARCH */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center border rounded-md px-2 w-1/2">
               <Search size={18} className="text-gray-400" />
@@ -306,7 +314,6 @@ export default function CardapioPage() {
             )}
           </div>
 
-          {/* LISTAGEM */}
           {activeTab === "produtos" && (
             <ProductList
               categories={categories}
@@ -334,7 +341,6 @@ export default function CardapioPage() {
         </div>
       </div>
 
-      {/* MODAIS */}
       <NewProductModal
         open={newProductOpen}
         onClose={() => setNewProductOpen(false)}
