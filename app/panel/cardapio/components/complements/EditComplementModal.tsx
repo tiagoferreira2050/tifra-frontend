@@ -118,39 +118,39 @@ export default function EditComplementModal({
   // SALVAR
   // ==========================================================
   function handleSave() {
-  if (!title.trim()) {
-    alert("Título obrigatório");
-    return;
+    if (!title.trim()) {
+      alert("Título obrigatório");
+      return;
+    }
+
+    const payload = {
+      id: complement.id,
+
+      // nomes que o backend espera
+      name: title,
+      description,
+      type,
+      required,
+
+      min: minChoose ? Number(minChoose) : undefined,
+      max: maxChoose ? Number(maxChoose) : undefined,
+      active: complement.active,
+
+      options: options.map((opt: any) => ({
+        id: opt.id,
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        imageUrl: opt.imageUrl || null,
+        description: opt.description || "",
+      })),
+    };
+
+    console.log("EDIT PAYLOAD ENVIADO:", payload);
+
+    onSave(payload);
+    onClose();
   }
-
-  const payload = {
-    id: complement.id,
-
-    // nomes que o backend espera
-    name: title,
-    description,
-    type,
-    required,
-
-    min: minChoose ? Number(minChoose) : 0,
-    max: maxChoose ? Number(maxChoose) : 1,
-    active: complement.active,
-
-    options: options.map((opt: any) => ({
-      id: opt.id,
-      name: opt.name,
-      price: toNumber(opt.price),
-      active: opt.active,
-      imageUrl: opt.imageUrl || null,
-      description: opt.description || "",
-    })),
-  };
-
-  console.log("EDIT PAYLOAD ENVIADO:", payload);
-
-  onSave(payload);
-  onClose();
-}
 
   // ==========================================================
   // LAYOUT

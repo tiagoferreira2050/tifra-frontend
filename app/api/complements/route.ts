@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2) Criar itens — corrigido (SEM createMany)
+    // 2) Criar itens — criamos um a um para garantir hooks / triggers corretos
     if (Array.isArray(options) && options.length > 0) {
       for (const opt of options) {
         await prisma.complement.create({
@@ -95,7 +95,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
     const { id, name, description, required, min, max, active, type } = body;
-    const options = Array.isArray(body.options) ? body.options : [];
+    const options = Array.isArray(body.options) ? body.options : undefined;
 
     if (!id) {
       return NextResponse.json(
@@ -104,68 +104,75 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // 1) Atualiza grupo
-    await prisma.complementGroup.update({
-      where: { id },
-      data: {
-        name,
-        description: description ?? "",
-        required: !!required,
-        min: min !== undefined ? Number(min) : 0,
-        max: max !== undefined ? Number(max) : 1,
-        active: active ?? true,
-        type: typeof type === "string" ? type : "multiple",
-      },
-    });
+    // --- 1) Atualiza apenas os campos realmente enviados ---
+    const groupData: any = {};
+    if (name !== undefined) groupData.name = name;
+    if (description !== undefined) groupData.description = description;
+    if (required !== undefined) groupData.required = !!required;
+    if (min !== undefined) groupData.min = Number(min);
+    if (max !== undefined) groupData.max = Number(max);
+    if (active !== undefined) groupData.active = !!active;
+    if (type !== undefined) groupData.type = type;
 
-    // 2) Atualizar / Criar itens novos
-    for (const opt of options) {
-      const isNew =
-        !opt.id ||
-        typeof opt.id !== "string" ||
-        opt.id.startsWith("opt-");
-
-      const payload = {
-        name: opt.name,
-        price: opt.price !== undefined ? Number(opt.price) : 0,
-        active: opt.active ?? true,
-        imageUrl: opt.imageUrl || opt.image || null,
-        description: opt.description || "",
-      };
-
-      if (isNew) {
-        await prisma.complement.create({
-          data: {
-            groupId: id,
-            ...payload,
-          },
-        });
-      } else {
-        await prisma.complement.update({
-          where: { id: opt.id },
-          data: payload,
-        });
-      }
+    // Se groupData estiver com alguma propriedade, atualiza
+    if (Object.keys(groupData).length > 0) {
+      await prisma.complementGroup.update({
+        where: { id },
+        data: groupData,
+      });
     }
 
-    // 3) Remover itens apagados pelo usuário
-    const existing = await prisma.complement.findMany({
-      where: { groupId: id },
-      select: { id: true },
-    });
+    // --- 2) Atualizar / Criar itens (se options foi enviado) ---
+    if (Array.isArray(options)) {
+      for (const opt of options) {
+        const isNew =
+          !opt.id ||
+          typeof opt.id !== "string" ||
+          String(opt.id).startsWith("opt-");
 
-    const payloadIds = options
-      .filter((o) => o.id && !String(o.id).startsWith("opt-"))
-      .map((o) => o.id);
+        const payload = {
+          name: opt.name,
+          price: opt.price !== undefined ? Number(opt.price) : 0,
+          active: opt.active ?? true,
+          imageUrl: opt.imageUrl || opt.image || null,
+          description: opt.description || "",
+        };
 
-    const toDelete = existing
-      .map((i) => i.id)
-      .filter((realId) => !payloadIds.includes(realId));
+        if (isNew) {
+          await prisma.complement.create({
+            data: {
+              groupId: id,
+              ...payload,
+            },
+          });
+        } else {
+          // atualiza item existente (se existir)
+          await prisma.complement.update({
+            where: { id: opt.id },
+            data: payload,
+          });
+        }
+      }
 
-    if (toDelete.length > 0) {
-      await prisma.complement.deleteMany({
-        where: { id: { in: toDelete } },
+      // --- 3) Remover itens apagados pelo usuário (somente se options foi enviado) ---
+      const existing = await prisma.complement.findMany({
+        where: { groupId: id },
+        select: { id: true },
       });
+
+      const payloadIds = options
+        .filter((o: any) => o.id && !String(o.id).startsWith("opt-"))
+        .map((o: any) => o.id);
+
+      const toDelete = existing
+        .map((i) => i.id)
+        .filter((realId) => !payloadIds.includes(realId));
+
+      if (toDelete.length > 0) {
+        await prisma.complement.deleteMany({
+          where: { id: { in: toDelete } },
+        });
+      }
     }
 
     const updated = await prisma.complementGroup.findUnique({

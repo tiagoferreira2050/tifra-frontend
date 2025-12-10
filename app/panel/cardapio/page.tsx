@@ -61,39 +61,41 @@ export default function CardapioPage() {
   // ==========================
   // CARREGAR COMPLEMENTOS
   // ==========================
-  useEffect(() => {
-    async function loadComplements() {
-      try {
-        const res = await fetch("/api/complements", { cache: "no-store" });
-        const data = await res.json();
+  async function loadComplementsFromServer() {
+    try {
+      const res = await fetch("/api/complements", { cache: "no-store" });
+      const data = await res.json();
 
-        const formatted = data.map((g: any) => ({
-          id: g.id,
-          title: g.name,
-          description: g.description || "",
-          type: g.type || "multiple",
-          required: g.required,
-          minChoose: g.min,
-          maxChoose: g.max,
-          active: g.active ?? true,
-          options:
-            g.items?.map((i: any) => ({
-              id: i.id,
-              name: i.name,
-              price: i.price ?? 0,
-              active: i.active ?? true,
-              imageUrl: i.imageUrl || null,
-              description: i.description || "",
-            })) || [],
-        }));
+      const formatted = Array.isArray(data)
+        ? data.map((g: any) => ({
+            id: g.id,
+            title: g.name,
+            description: g.description || "",
+            type: g.type || "multiple",
+            required: g.required,
+            minChoose: g.min,
+            maxChoose: g.max,
+            active: g.active ?? true,
+            options:
+              g.items?.map((i: any) => ({
+                id: i.id,
+                name: i.name,
+                price: i.price ?? 0,
+                active: i.active ?? true,
+                imageUrl: i.imageUrl || null,
+                description: i.description || "",
+              })) || [],
+          }))
+        : [];
 
-        setComplements(formatted);
-      } catch (err) {
-        console.error("Erro ao carregar complementos:", err);
-      }
+      setComplements(formatted);
+    } catch (err) {
+      console.error("Erro ao carregar complementos:", err);
     }
+  }
 
-    loadComplements();
+  useEffect(() => {
+    loadComplementsFromServer();
   }, []);
 
   // ==========================
@@ -130,109 +132,47 @@ export default function CardapioPage() {
   // ==========================
   // SALVAR NOVO COMPLEMENTO
   // ==========================
-  // Substitua sua função saveNewComplement por esta (cole ela inteira)
-async function saveNewComplement(newComp: any) {
-  try {
-    console.log("[saveNewComplement] payload =>", newComp);
-
-    const res = await fetch("/api/complements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newComp.title,
-        description: newComp.description,
-        type: newComp.type,
-        required: newComp.required,
-        min: newComp.minChoose,
-        max: newComp.maxChoose,
-        options: newComp.options || [],
-      }),
-    });
-
-    // log raw status / headers
-    console.log("[saveNewComplement] status:", res.status, res.statusText);
-    const text = await res.text().catch(() => null);
-    let created = null;
+  async function saveNewComplement(newComp: any) {
     try {
-      created = text ? JSON.parse(text) : null;
-    } catch (e) {
-      console.warn("[saveNewComplement] response is not json:", text);
-    }
-    console.log("[saveNewComplement] response body:", created ?? text);
+      console.log("[saveNewComplement] payload =>", newComp);
 
-    if (!res.ok) {
-      // mostra erro detalhado pro dev
-      alert(
-        "Erro ao criar complemento. Veja console (Network + this message) para detalhes."
-      );
-      return;
-    }
+      const res = await fetch("/api/complements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newComp.title,
+          description: newComp.description,
+          type: newComp.type,
+          required: newComp.required,
+          min: newComp.minChoose,
+          max: newComp.maxChoose,
+          options: newComp.options || [],
+        }),
+      });
 
-    // Se o backend retornou o objeto criado, adiciona na UI
-    if (created && created.id) {
-      setComplements((prev) => [
-        ...prev,
-        {
-          id: created.id,
-          title: created.name,
-          description: created.description || "",
-          type: created.type,
-          required: created.required,
-          minChoose: created.min,
-          maxChoose: created.max,
-          active: created.active,
-          options:
-            created.items?.map((i: any) => ({
-              id: i.id,
-              name: i.name,
-              price: i.price,
-              active: i.active,
-              image: i.imageUrl || null,
-              description: i.description || "",
-            })) || [],
-        },
-      ]);
-      // sucesso visual, mas vamos garantir recarregando do servidor
-    } else {
-      console.warn("[saveNewComplement] backend não retornou created.id");
-    }
+      const text = await res.text().catch(() => null);
+      let created = null;
+      try {
+        created = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.warn("[saveNewComplement] response is not json:", text);
+      }
 
-    // FORÇA recarregamento da lista do backend para garantir que o DB tenha sido atualizado
-    try {
-      const reload = await fetch("/api/complements", { cache: "no-store" });
-      const data = await reload.json();
-      const formatted = Array.isArray(data)
-        ? data.map((g: any) => ({
-            id: g.id,
-            title: g.name,
-            description: g.description || "",
-            type: g.type || "multiple",
-            required: g.required,
-            minChoose: g.min,
-            maxChoose: g.max,
-            active: g.active ?? true,
-            options:
-              g.items?.map((i: any) => ({
-                id: i.id,
-                name: i.name,
-                price: i.price ?? 0,
-                active: i.active ?? true,
-                image: i.imageUrl || null,
-                description: i.description || "",
-              })) || [],
-          }))
-        : [];
-      setComplements(formatted);
-      console.log("[saveNewComplement] reload sucesso, itens:", formatted.length);
+      console.log("[saveNewComplement] status:", res.status, res.statusText);
+      console.log("[saveNewComplement] response body:", created ?? text);
+
+      if (!res.ok) {
+        alert("Erro ao criar complemento. Veja console para mais detalhes.");
+        return;
+      }
+
+      // recarrega do servidor para garantir consistência
+      await loadComplementsFromServer();
     } catch (err) {
-      console.error("[saveNewComplement] erro no reload:", err);
+      console.error("Erro salvar complemento:", err);
+      alert("Erro ao salvar complemento (ver console).");
     }
-  } catch (err) {
-    console.error("Erro salvar complemento:", err);
-    alert("Erro ao salvar complemento (ver console).");
   }
-}
-
 
   function openCreateComplement() {
     setNewComplementOpen(true);
@@ -251,25 +191,27 @@ async function saveNewComplement(newComp: any) {
       const payload = {
         id: updated.id,
         name: updated.title,
-        description: updated.description ?? "",
-        required: updated.required ?? false,
-        min: updated.minChoose ? Number(updated.minChoose) : 0,
-        max: updated.maxChoose ? Number(updated.maxChoose) : 1,
-        active: updated.active,
-        type: updated.type,
-        options: updated.options.map((opt: any) => ({
-          id: opt.id,
-          name: opt.name,
-          price: Number(opt.price ?? 0),
-          active: opt.active,
-          imageUrl: opt.imageUrl || opt.image || null,
-          description: opt.description || "",
-        })),
+        description: updated.description ?? undefined,
+        required: updated.required ?? undefined,
+        min: updated.minChoose !== undefined ? Number(updated.minChoose) : undefined,
+        max: updated.maxChoose !== undefined ? Number(updated.maxChoose) : undefined,
+        active: updated.active !== undefined ? updated.active : undefined,
+        type: updated.type !== undefined ? updated.type : undefined,
+        options: Array.isArray(updated.options)
+          ? updated.options.map((opt: any) => ({
+              id: opt.id,
+              name: opt.name,
+              price: Number(opt.price ?? 0),
+              active: opt.active,
+              imageUrl: opt.imageUrl || opt.image || null,
+              description: opt.description || "",
+            }))
+          : undefined,
       };
 
       const backup = [...complements];
 
-      // Atualiza imediatamente no painel
+      // Atualiza imediatamente no painel (optimistic)
       const optimistic = complements.map((g: any) =>
         g.id === updated.id
           ? {
@@ -281,12 +223,12 @@ async function saveNewComplement(newComp: any) {
               minChoose: updated.minChoose,
               maxChoose: updated.maxChoose,
               active: updated.active,
-              options: updated.options.map((o: any) => ({
+              options: (updated.options || []).map((o: any) => ({
                 id: o.id,
                 name: o.name,
                 price: Number(o.price ?? 0),
                 active: o.active,
-                image: o.imageUrl || o.image || null,
+                imageUrl: o.imageUrl || o.image || null,
                 description: o.description || "",
               })),
             }
@@ -307,7 +249,11 @@ async function saveNewComplement(newComp: any) {
         alert("Erro ao atualizar complemento.");
         return;
       }
+
+      // garantir estado real do servidor
+      await loadComplementsFromServer();
     } catch (err) {
+      console.error("Erro inesperado ao salvar edição de complemento:", err);
       alert("Erro inesperado ao salvar complemento.");
     }
   }
@@ -318,6 +264,7 @@ async function saveNewComplement(newComp: any) {
   return (
     <>
       <div className="flex w-full h-full p-4 gap-4">
+        {/* LEFT — CATEGORIAS */}
         <div className="w-1/3 bg-white rounded-lg border shadow-sm p-4 overflow-y-auto">
           <CategoryManager
             categories={categories}
@@ -330,6 +277,7 @@ async function saveNewComplement(newComp: any) {
         </div>
 
         <div className="flex-1 bg-white rounded-lg border shadow-sm p-4">
+          {/* TABS */}
           <div className="flex border-b mb-4 gap-6">
             {["produtos", "complementos", "promocoes"].map((tab) => (
               <button
@@ -346,6 +294,7 @@ async function saveNewComplement(newComp: any) {
             ))}
           </div>
 
+          {/* SEARCH */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center border rounded-md px-2 w-1/2">
               <Search size={18} className="text-gray-400" />
@@ -367,6 +316,7 @@ async function saveNewComplement(newComp: any) {
             )}
           </div>
 
+          {/* LISTAGEM */}
           {activeTab === "produtos" && (
             <ProductList
               categories={categories}
@@ -394,6 +344,7 @@ async function saveNewComplement(newComp: any) {
         </div>
       </div>
 
+      {/* MODAIS */}
       <NewProductModal
         open={newProductOpen}
         onClose={() => setNewProductOpen(false)}
