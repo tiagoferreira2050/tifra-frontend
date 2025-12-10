@@ -201,68 +201,114 @@ export default function CardapioPage() {
   // ======================================================
   // SALVAR EDIÇÃO DO COMPLEMENTO
   // ======================================================
-  async function saveEditedComplement(updated: any) {
-    try {
-      const payload = {
-        id: updated.id,
-        name: updated.title,
-        description: updated.description ?? "",
-        required: updated.required,
-        min: updated.minChoose ? Number(updated.minChoose) : 0,
-        max: updated.maxChoose ? Number(updated.maxChoose) : 1,
-        active: updated.active,
-        type: updated.type,
-        options: updated.options.map((opt: any) => ({
-  id: opt.id,
-  name: opt.name,
-  price: Number(opt.price ?? 0),
-  active: opt.active,
-  imageUrl: opt.imageUrl || opt.image || null,
-  description: opt.description || "",
-})),
- };
+  // Substitua apenas esta função no CardapioPage
+async function saveEditedComplement(updated: any) {
+  try {
+    // --- 1) Monta o payload que vamos enviar ao backend ---
+    const payload = {
+      id: updated.id,
+      name: updated.title,
+      description: updated.description ?? "",
+      required: updated.required ?? false,
+      min: updated.minChoose ? Number(updated.minChoose) : 0,
+      max: updated.maxChoose ? Number(updated.maxChoose) : 1,
+      active: updated.active,
+      type: updated.type,
+      options: updated.options.map((opt: any) => ({
+        id: opt.id,
+        name: opt.name,
+        price: Number(opt.price ?? 0),
+        active: opt.active,
+        imageUrl: opt.imageUrl || opt.image || null,
+        description: opt.description || "",
+      })),
+    };
 
-      const res = await fetch("/api/complements", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    // --- 2) Criar cópia do estado atual para possível rollback ---
+    const backup = [...complements];
 
-      if (!res.ok) {
-        alert("Erro ao atualizar complemento");
-        return;
-      }
+    // --- 3) Atualização imediata na UI (optimistic update) ---
+    const optimistic = complements.map((g: any) =>
+      g.id === updated.id
+        ? {
+            ...g,
+            title: updated.title,
+            description: updated.description ?? "",
+            type: updated.type,
+            required: updated.required,
+            minChoose: updated.minChoose,
+            maxChoose: updated.maxChoose,
+            active: updated.active,
+            options: updated.options.map((o: any) => ({
+              id: o.id,
+              name: o.name,
+              price: Number(o.price ?? 0),
+              active: o.active,
+              image: o.imageUrl || o.image || null,
+              description: o.description || "",
+            })),
+          }
+        : g
+    );
 
-      // Recarrega lista
-      const reload = await fetch("/api/complements", { cache: "no-store" });
-      const data = await reload.json();
+    setComplements(optimistic);
 
-      const formatted = data.map((g: any) => ({
-        id: g.id,
-        title: g.name,
-        description: g.description || "",
-        type: g.type || "multiple",
-        required: g.required,
-        minChoose: g.min,
-        maxChoose: g.max,
-        active: g.active,
-        options:
-  g.items?.map((i: any) => ({
-    id: i.id,
-    name: i.name,
-    price: i.price ?? 0,
-    active: i.active ?? true,
-    image: i.imageUrl || i.image || null, // <- garante compatibilidade
-    description: i.description || "",
-  })) || [],
-      }));
+    // --- 4) Envia o PATCH para o backend (ainda fazemos a requisição) ---
+    const res = await fetch("/api/complements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      setComplements(formatted);
-    } catch (err) {
-      console.error("Erro ao atualizar complemento:", err);
-      alert("Erro ao atualizar complemento");
+    if (!res.ok) {
+      // rollback em caso de erro
+      setComplements(backup);
+      const text = await res.text().catch(() => "");
+      console.error("Erro ao atualizar complemento (PATCH):", res.status, text);
+      alert("Erro ao atualizar complemento (o painel foi restaurado).");
+      return;
     }
+
+    // --- 5) Se quiser, atualiza com o que o backend retornou (opcional) ---
+    // Tenta ler resposta e atualizar UI com dados do servidor
+    try {
+      const server = await res.json();
+      if (server) {
+        const formatted = (Array.isArray(server) ? server : [server]).map((g: any) => ({
+          id: g.id,
+          title: g.name,
+          description: g.description || "",
+          type: g.type || "multiple",
+          required: g.required,
+          minChoose: g.min,
+          maxChoose: g.max,
+          active: g.active,
+          options:
+            g.items?.map((i: any) => ({
+              id: i.id,
+              name: i.name,
+              price: i.price ?? 0,
+              active: i.active ?? true,
+              image: i.imageUrl || i.image || null,
+              description: i.description || "",
+            })) || [],
+        }));
+
+        // Se o backend retornou um grupo (ou lista), atualiza o complemento específico
+        setComplements((prev) =>
+          prev.map((c) => (c.id === formatted[0].id ? formatted[0] : c))
+        );
+      }
+    } catch (err) {
+      // se não deu pra parsear JSON, não faz nada (UI já está atualizada)
+      console.warn("Resposta do PATCH não é JSON ou não foi parseada.", err);
+    }
+  } catch (err) {
+    console.error("Erro inesperado ao salvar edição de complemento:", err);
+    alert("Erro inesperado ao salvar complemento. Tente novamente.");
   }
+}
+
 
   // ======================================================
   // LAYOUT
