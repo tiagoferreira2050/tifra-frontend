@@ -55,18 +55,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2) Criar itens
+    // 2) Criar itens — corrigido (SEM createMany)
     if (Array.isArray(options) && options.length > 0) {
-      await prisma.complement.createMany({
-        data: options.map((opt: any) => ({
-          groupId: group.id,
-          name: opt.name,
-          price: opt.price !== undefined ? Number(opt.price) : 0,
-          active: opt.active ?? true,
-          imageUrl: opt.imageUrl || null,
-          description: opt.description || "",
-        })),
-      });
+      for (const opt of options) {
+        await prisma.complement.create({
+          data: {
+            groupId: group.id,
+            name: opt.name,
+            price: opt.price !== undefined ? Number(opt.price) : 0,
+            active: opt.active ?? true,
+            imageUrl: opt.imageUrl || null,
+            description: opt.description || "",
+          },
+        });
+      }
     }
 
     const result = await prisma.complementGroup.findUnique({
@@ -116,53 +118,49 @@ export async function PATCH(req: Request) {
       },
     });
 
-    
-    // 2) Atualizar / Criar itens
-for (const opt of options) {
+    // 2) Atualizar / Criar itens novos
+    for (const opt of options) {
+      const isNew =
+        !opt.id ||
+        typeof opt.id !== "string" ||
+        opt.id.startsWith("opt-");
 
-  // Item novo NÃO tem id real do banco
-  const isNew =
-    !opt.id ||
-    typeof opt.id !== "string" ||
-    opt.id.startsWith("opt-");
+      const payload = {
+        name: opt.name,
+        price: opt.price !== undefined ? Number(opt.price) : 0,
+        active: opt.active ?? true,
+        imageUrl: opt.imageUrl || opt.image || null,
+        description: opt.description || "",
+      };
 
-  const payload = {
-    name: opt.name,
-    price: opt.price !== undefined ? Number(opt.price) : 0,
-    active: opt.active ?? true,
-    imageUrl: opt.imageUrl || opt.image || null,
-    description: opt.description || "",
-  };
+      if (isNew) {
+        await prisma.complement.create({
+          data: {
+            groupId: id,
+            ...payload,
+          },
+        });
+      } else {
+        await prisma.complement.update({
+          where: { id: opt.id },
+          data: payload,
+        });
+      }
+    }
 
-  if (isNew) {
-    await prisma.complement.create({
-      data: {
-        groupId: id,
-        ...payload,
-      },
-    });
-  } else {
-    await prisma.complement.update({
-      where: { id: opt.id },
-      data: payload,
-    });
-  }
-}
-
-
-    // 3) Remover itens excluídos
-    const existingItemIds = await prisma.complement.findMany({
+    // 3) Remover itens apagados pelo usuário
+    const existing = await prisma.complement.findMany({
       where: { groupId: id },
       select: { id: true },
     });
 
     const payloadIds = options
-      .filter((opt) => opt.id && !String(opt.id).startsWith("opt-"))
-      .map((opt) => opt.id);
+      .filter((o) => o.id && !String(o.id).startsWith("opt-"))
+      .map((o) => o.id);
 
-    const toDelete = existingItemIds
+    const toDelete = existing
       .map((i) => i.id)
-      .filter((id) => !payloadIds.includes(id));
+      .filter((realId) => !payloadIds.includes(realId));
 
     if (toDelete.length > 0) {
       await prisma.complement.deleteMany({
