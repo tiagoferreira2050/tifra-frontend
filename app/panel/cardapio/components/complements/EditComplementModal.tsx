@@ -50,11 +50,14 @@ export default function EditComplementModal({
   // ==========================================================
   // GERENCIAR OPÇÕES
   // ==========================================================
+  // ==========================================
+  // ADICIONAR ITEM
+  // ==========================================
   function addOption() {
     setOptions((prev) => [
       ...prev,
       {
-        id: "opt-" + crypto.randomUUID(),
+        id: "opt-" + Date.now(),
         name: "",
         price: "0,00",
         active: true,
@@ -66,15 +69,15 @@ export default function EditComplementModal({
   }
 
   function updateOption(id: string, patch: any) {
-    setOptions((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, ...patch } : o))
-    );
+    setOptions((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
   }
 
   function removeOption(id: string) {
     setOptions((prev) => prev.filter((o) => o.id !== id));
   }
 
+
+  
   // ==========================================================
   // UPLOAD IMAGEM
   // ==========================================================
