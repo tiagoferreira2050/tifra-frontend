@@ -41,7 +41,7 @@ export default function EditComplementModal({
             : "0,00",
         active: o.active ?? true,
         pdv: o.pdv || "",
-        image: o.image || o.imageUrl || null,
+        imageUrl: o.imageUrl || o.image || null, // 🔥 PADRONIZADO
         description: o.description || "",
       }))
     );
@@ -50,19 +50,16 @@ export default function EditComplementModal({
   // ==========================================================
   // GERENCIAR OPÇÕES
   // ==========================================================
-  // ==========================================
-  // ADICIONAR ITEM
-  // ==========================================
   function addOption() {
     setOptions((prev) => [
       ...prev,
       {
-        id: "opt-" + Date.now(),
+        id: "opt-" + crypto.randomUUID(),
         name: "",
         price: "0,00",
         active: true,
         pdv: "",
-        image: null,
+        imageUrl: null, // 🔥 PADRONIZADO
         description: "",
       },
     ]);
@@ -76,8 +73,6 @@ export default function EditComplementModal({
     setOptions((prev) => prev.filter((o) => o.id !== id));
   }
 
-
-  
   // ==========================================================
   // UPLOAD IMAGEM
   // ==========================================================
@@ -96,7 +91,7 @@ export default function EditComplementModal({
       return;
     }
 
-    updateOption(id, { image: json.url });
+    updateOption(id, { imageUrl: json.url }); // 🔥 PADRONIZADO
   }
 
   // ==========================================================
@@ -136,7 +131,7 @@ export default function EditComplementModal({
         name: opt.name,
         price: toNumber(opt.price),
         active: opt.active,
-        imageUrl: opt.image || null,
+        imageUrl: opt.imageUrl || null, // 🔥 PADRONIZADO
         description: opt.description || "",
       })),
     };
@@ -249,9 +244,7 @@ export default function EditComplementModal({
                     className="border rounded p-2 w-36"
                     placeholder="PDV"
                     value={opt.pdv}
-                    onChange={(e) =>
-                      updateOption(opt.id, { pdv: e.target.value })
-                    }
+                    onChange={(e) => updateOption(opt.id, { pdv: e.target.value })}
                   />
                 </div>
 
@@ -270,8 +263,8 @@ export default function EditComplementModal({
                 <label className="text-xs text-gray-600">Imagem</label>
 
                 <div className="w-20 h-20 border rounded-md overflow-hidden mb-1">
-                  {opt.image ? (
-                    <img src={opt.image} className="w-full h-full object-cover" />
+                  {opt.imageUrl ? (
+                    <img src={opt.imageUrl} className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-400 text-xs">
                       sem imagem
