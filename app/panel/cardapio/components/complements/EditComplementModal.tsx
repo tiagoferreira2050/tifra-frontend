@@ -118,24 +118,23 @@ export default function EditComplementModal({
     }
 
     const payload = {
-  id: complement.id,
-  name: title, // <-- CORRIGIDO
-  description,
-  type,
-  required,
-  min: minChoose ? Number(minChoose) : null,  // <-- CORRIGIDO
-  max: maxChoose ? Number(maxChoose) : null,  // <-- CORRIGIDO
-  active: complement.active,
-  options: options.map((opt: any) => ({
-    id: opt.id,
-    name: opt.name,
-    price: toNumber(opt.price),
-    active: opt.active,
-    imageUrl: opt.imageUrl || null,
-    description: opt.description || "",
-  })),
-};
-
+      id: complement.id,
+      title,
+      description,
+      type,
+      required,
+      minChoose: minChoose ? Number(minChoose) : null,
+      maxChoose: maxChoose ? Number(maxChoose) : null,
+      active: complement.active,
+      options: options.map((opt: any) => ({
+        id: opt.id,
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        imageUrl: opt.imageUrl || null, // 🔥 PADRONIZADO
+        description: opt.description || "",
+      })),
+    };
 
     onSave(payload);
     onClose();
