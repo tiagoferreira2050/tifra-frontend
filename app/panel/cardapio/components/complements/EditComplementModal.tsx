@@ -106,8 +106,10 @@ export default function EditComplementModal({
   }
 
   function toNumber(val: string) {
-    return Number(val.replace(",", ".")) || 0;
-  }
+  if (!val) return 0;
+  return Number(val.replace(".", "").replace(",", ".")) || 0;
+}
+
 
   // ==========================================================
   // SALVAR
