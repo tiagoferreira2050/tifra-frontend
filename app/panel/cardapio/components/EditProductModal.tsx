@@ -72,7 +72,7 @@ export default function EditProductModal({
     setPortionUnit(product.portion?.unit || "un");
     setServes(product.serves || "");
     setHighlight(product.highlight || "");
-    setImage(product.image || null);
+    setImage(product.imageUrl || null);
     setClassifications(product.classifications || []);
 
   }, [product?.id]);
@@ -310,15 +310,23 @@ if (isNaN(numericPrice) || numericPrice <= 0) {
         />
 
         {/* IMAGEM */}
-        <label className="block font-medium mb-1">Imagem</label>
-        <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4">
-          {image ? (
-            <img src={image} className="h-full object-cover rounded" />
-          ) : (
-            <p className="text-gray-400">Arraste ou clique para enviar</p>
-          )}
-          <input type="file" className="mt-2" onChange={handleImageUpload} />
-        </div>
+<label className="block font-medium mb-1">Imagem</label>
+<div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+
+  {image ? (
+    <img src={image} className="h-full object-cover rounded" />
+  ) : (
+    <p className="text-gray-400">Arraste ou clique para enviar</p>
+  )}
+
+  <input
+    type="file"
+    accept="image/*"
+    className="absolute inset-0 opacity-0 cursor-pointer"
+    onChange={handleImageUpload}
+  />
+</div>
+
 
         {/* DESTAQUE */}
         <label className="block font-medium mb-1">Destaque</label>
