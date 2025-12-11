@@ -13,8 +13,8 @@ export async function POST(req: Request) {
       complements // array de GROUP IDs
     } = await req.json();
 
-    // VALIDATION (aceitando preço 0)
-    if (!name || priceInCents == null || isNaN(priceInCents) || !categoryId || !storeId) {
+    // VALIDATION
+    if (!name || priceInCents === undefined || !categoryId || !storeId) {
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
         { status: 400 }
@@ -23,12 +23,10 @@ export async function POST(req: Request) {
 
     const price = priceInCents / 100;
 
-    // garante array válido e remove duplicados
     const uniqueComplements = Array.isArray(complements)
       ? [...new Set(complements)]
       : [];
 
-    // CREATE PRODUCT
     const product = await prisma.product.create({
       data: {
         name,
@@ -41,7 +39,7 @@ export async function POST(req: Request) {
         productComplements: {
           create: uniqueComplements.map((groupId: string, index: number) => ({
             groupId,
-            order: index,   // mantém ordem correta
+            order: index,
             active: true,
           })),
         },
@@ -53,7 +51,7 @@ export async function POST(req: Request) {
           include: {
             group: {
               include: {
-                items: true, // retorna os itens do grupo
+                items: true,
               },
             },
           },

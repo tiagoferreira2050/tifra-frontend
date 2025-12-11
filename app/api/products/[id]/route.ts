@@ -3,6 +3,47 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
+// GET — Buscar produto completo (INCLUINDO COMPLEMENTOS)
+// ===================================================
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        productComplements: {
+          orderBy: { order: "asc" },
+          include: {
+            group: {
+              include: { items: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      return NextResponse.json(
+        { error: "Produto não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Erro GET /products/[id]:", error);
+    return NextResponse.json(
+      { error: "Erro ao buscar produto" },
+      { status: 500 }
+    );
+  }
+}
+
+// ===================================================
 // PATCH — Atualizar produto + complements (groups)
 // ===================================================
 export async function PATCH(
@@ -23,9 +64,6 @@ export async function PATCH(
       complements = [], // IDs dos grupos
     } = body;
 
-    // ======================
-    // FORMATAR CAMPOS
-    // ======================
     const price =
       priceInCents !== undefined && priceInCents !== null
         ? priceInCents / 100
@@ -35,9 +73,6 @@ export async function PATCH(
       ? [...new Set(complements)]
       : [];
 
-    // ======================
-    // ATUALIZAR PRODUTO
-    // ======================
     await prisma.product.update({
       where: { id },
       data: {
@@ -50,9 +85,6 @@ export async function PATCH(
       },
     });
 
-    // ======================
-    // ATUALIZAR COMPLEMENTOS
-    // ======================
     await prisma.productComplement.deleteMany({
       where: { productId: id },
     });
@@ -68,9 +100,6 @@ export async function PATCH(
       });
     }
 
-    // ======================
-    // RETORNAR PRODUTO COMPLETO
-    // ======================
     const updated = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -86,7 +115,6 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
-
   } catch (error) {
     console.error("Erro PATCH /products/[id]:", error);
     return NextResponse.json(
