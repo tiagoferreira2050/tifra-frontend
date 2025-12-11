@@ -3,25 +3,113 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ===================================================
-// PATCH - atualizar campos do produto
+// PATCH — Atualizar produto + complements (groups)
 // ===================================================
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // agora params é Promise — precisa de await
     const { id } = await context.params;
+    const body = await req.json();
 
-    const data = await req.json();
+    const {
+      name,
+      description,
+      priceInCents,
+      categoryId,
+      pdv,
+      imageUrl,
+      portion,
+      serves,
+      highlight,
+      discount,
+      classifications,
+      complements = [], // array de groupIds
+    } = body;
 
-    const updated = await prisma.product.update({
+    // ======================
+    // FORMATAR CAMPOS
+    // ======================
+    const price =
+      priceInCents !== undefined && priceInCents !== null
+        ? priceInCents / 100
+        : undefined;
+
+    const uniqueComplements = Array.isArray(complements)
+      ? [...new Set(complements)]
+      : [];
+
+    // ======================
+    // ATUALIZAR PRODUTO
+    // ======================
+    await prisma.product.update({
       where: { id },
-      data,
+      data: {
+        name,
+        description,
+        categoryId,
+        pdv,
+        serves,
+        highlight,
+        imageUrl: imageUrl || null,
+        classifications: classifications || [],
+        price: price ?? undefined,
+        portion: portion
+          ? {
+              value: portion.value,
+              unit: portion.unit,
+            }
+          : null,
+        discount: discount
+          ? {
+              percent: discount.percent,
+              price: discount.price,
+            }
+          : null,
+      },
+    });
+
+    // ======================
+    // ATUALIZAR COMPLEMENTOS
+    // ======================
+
+    // ❗ CORREÇÃO CRÍTICA — nome certo do model é productComplement
+    await prisma.productComplement.deleteMany({
+      where: { productId: id },
+    });
+
+    if (uniqueComplements.length > 0) {
+      await prisma.productComplement.createMany({
+        data: uniqueComplements.map((groupId: string, order: number) => ({
+          productId: id,
+          groupId,
+          order,
+          active: true,
+        })),
+      });
+    }
+
+    // ======================
+    // RETORNAR PRODUTO COMPLETO
+    // ======================
+    const updated = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        productComplements: {
+          orderBy: { order: "asc" },
+          include: {
+            group: {
+              include: {
+                items: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return NextResponse.json(updated);
-
   } catch (error) {
     console.error("Erro PATCH /products/[id]:", error);
     return NextResponse.json(
@@ -32,7 +120,7 @@ export async function PATCH(
 }
 
 // ===================================================
-// DELETE - remover produto
+// DELETE — Remover produto
 // ===================================================
 export async function DELETE(
   req: NextRequest,
@@ -46,7 +134,6 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-
   } catch (error) {
     console.error("Erro DELETE /products/[id]:", error);
     return NextResponse.json(
