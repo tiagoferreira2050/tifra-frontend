@@ -14,11 +14,10 @@ export default function SortableItem({
   onToggle,
   onEdit,
   onDelete,
-  onDuplicate
+  onDuplicate,
 }: any) {
-
-  // VOLTA o sortable normal (não desabilitado!)
-  const { attributes, listeners, setNodeRef, transform, transition } =
+  // Mantém sortable funcionando corretamente
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -27,8 +26,10 @@ export default function SortableItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.6 : 1,
   };
 
+  // Fecha o menu ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: any) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -43,23 +44,25 @@ export default function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      onClick={onSelect}  
-      className={`border rounded-lg p-3 flex items-center justify-between bg-white hover:bg-gray-50 shadow-sm cursor-pointer 
+      onClick={onSelect}
+      className={`border rounded-lg p-3 flex items-center justify-between bg-white hover:bg-gray-50 
+        shadow-sm cursor-pointer transition
         ${isSelected ? "border-red-500 bg-red-50" : ""}`}
     >
-
-      {/* DRAG HANDLE — aqui ficam os listeners */}
+      {/* DRAG HANDLE */}
       <div
         {...attributes}
         {...listeners}
-        onClick={(e) => e.stopPropagation()}  
+        onClick={(e) => e.stopPropagation()}
         className="cursor-grab active:cursor-grabbing text-gray-400"
       >
         <GripVertical size={20} />
       </div>
 
-      <span className="flex-1 ml-3 text-sm">{name}</span>
+      {/* NOME */}
+      <span className="flex-1 ml-3 text-sm select-none">{name}</span>
 
+      {/* ATIVO / INATIVO */}
       <label
         onClick={(e) => e.stopPropagation()}
         className="inline-flex items-center cursor-pointer mr-3"
@@ -72,20 +75,21 @@ export default function SortableItem({
         />
         <div
           className={`w-10 h-5 rounded-full p-1 flex items-center transition 
-          ${active ? "bg-red-500" : "bg-gray-300"}`}
+            ${active ? "bg-red-500" : "bg-gray-300"}`}
         >
           <div
             className={`bg-white w-4 h-4 rounded-full shadow transform transition 
-            ${active ? "translate-x-5" : ""}`}
+              ${active ? "translate-x-5" : ""}`}
           />
         </div>
       </label>
 
+      {/* MENU LATERAL */}
       <div className="relative" ref={menuRef}>
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setMenuOpen(!menuOpen);
+            setMenuOpen((prev) => !prev);
           }}
           className="text-gray-500 hover:text-gray-700"
         >
