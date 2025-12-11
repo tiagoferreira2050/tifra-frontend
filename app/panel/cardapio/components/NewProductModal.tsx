@@ -61,13 +61,32 @@ export default function NewProductModal({
     );
   }
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    const url = URL.createObjectURL(file);
-    setImage(url);
+  // PREVIEW local
+  const previewUrl = URL.createObjectURL(file);
+  setImage(previewUrl);
+
+  // UPLOAD REAL para Cloudinary (ou sua rota interna)
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const upload = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await upload.json();
+
+  if (data?.url) {
+    setImage(data.url); // Agora imagem final salva no banco
+  } else {
+    alert("Erro ao enviar imagem");
   }
+}
+
 
   // ============================================================
   // SALVAR PRODUTO (API)
@@ -188,7 +207,29 @@ export default function NewProductModal({
             value={price}
             onChange={(e) => setPrice(formatCurrency(e.target.value))}
           />
-        </div>
+        
+        {/* IMAGEM */}
+<label className="block font-medium mb-1">Imagem</label>
+
+<div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+
+  {image ? (
+    <img
+      src={image}
+      className="h-full object-cover rounded"
+    />
+  ) : (
+    <p className="text-gray-400">Arraste ou clique para enviar</p>
+  )}
+
+  <input
+    type="file"
+    accept="image/*"
+    className="absolute inset-0 opacity-0 cursor-pointer"
+    onChange={handleImageUpload}
+  />
+</div>
+
 
         {/* PORÇÃO, SERVE, IMAGEM, DESTAQUE, CLASSIFICAÇÕES... */}
         {/* 🔥 Tudo mantido exatamente como estava no seu arquivo */}
