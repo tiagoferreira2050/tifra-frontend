@@ -323,18 +323,20 @@ const [editingProduct, setEditingProduct] = useState(null);
 
           {/* LISTAGEM */}
           {activeTab === "produtos" && (
-            <ProductList
-  categories={categories}
-  setCategories={setCategories}
-  selectedCategoryId={selectedCategoryId}
-  search={search}
-  complements={complements}
-  onUpdateProduct={handleUpdateProduct}
-  onEditProduct={(product: any) => {
-    setEditingProduct(product);
-    setEditProductOpen(true);
-  }}
-/>
+  <ProductList
+    categories={categories}
+    setCategories={setCategories}
+    selectedCategoryId={selectedCategoryId}
+    search={search}
+    complements={complements}
+    onUpdateProduct={handleUpdateProduct}
+    onEditProduct={(product: any) => {
+      setEditingProduct(product);
+      setEditProductOpen(true);
+    }}
+  />
+)}
+
 
 
           {activeTab === "complementos" && (
