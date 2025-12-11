@@ -55,9 +55,15 @@ model Product {
   createdAt          DateTime            @default(now())
   storeId            String
   active             Boolean             @default(true)
+
+  order Int @default(0)
+
+
   category           Category            @relation(fields: [categoryId], references: [id])
   store              Store               @relation(fields: [storeId], references: [id])
   productComplements ProductComplement[]
+
+  
 
   @@index([categoryId])
   @@index([storeId])

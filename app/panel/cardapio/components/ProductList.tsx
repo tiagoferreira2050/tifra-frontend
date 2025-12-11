@@ -79,17 +79,28 @@ export default function ProductList({
   );
 
   function handleDragEnd(event: any) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
 
-    const oldIndex = products.findIndex((p: any) => p.id === active.id);
-    const newIndex = products.findIndex((p: any) => p.id === over.id);
+  const oldIndex = products.findIndex((p: any) => p.id === active.id);
+  const newIndex = products.findIndex((p: any) => p.id === over.id);
 
-    if (oldIndex === -1 || newIndex === -1) return;
+  if (oldIndex === -1 || newIndex === -1) return;
 
-    const reordered = arrayMove(products, oldIndex, newIndex);
-    updateProducts(reordered);
-  }
+  // Atualiza localmente
+  const reordered = arrayMove(products, oldIndex, newIndex);
+  updateProducts(reordered);
+
+  // 🔥 Salvar no servidor
+  fetch("/api/products/reorder", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productIds: reordered.map((p: any) => p.id),
+    }),
+  });
+}
+
 
   // =====================================================
   // RENDER

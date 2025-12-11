@@ -61,9 +61,11 @@ export async function PATCH(
       categoryId,
       pdv,
       imageUrl,
-      complements = [], // IDs dos grupos
+      active, // ✅ agora aceita active
+      complements = [],
     } = body;
 
+    // preço seguro
     const price =
       priceInCents !== undefined && priceInCents !== null
         ? priceInCents / 100
@@ -73,18 +75,23 @@ export async function PATCH(
       ? [...new Set(complements)]
       : [];
 
+    // 🔥 ATUALIZAÇÃO SEGURA: só envia campos definidos
+    const updateData: any = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (pdv !== undefined) updateData.pdv = pdv;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl; // NÃO apaga mais
+    if (price !== undefined) updateData.price = price;
+    if (active !== undefined) updateData.active = active; // ✅ salva active no banco
+
     await prisma.product.update({
       where: { id },
-      data: {
-        name,
-        description,
-        categoryId,
-        pdv,
-        imageUrl: imageUrl || null,
-        price: price ?? undefined,
-      },
+      data: updateData,
     });
 
+    // COMPLEMENTS (permanece igual)
     await prisma.productComplement.deleteMany({
       where: { productId: id },
     });
@@ -100,6 +107,7 @@ export async function PATCH(
       });
     }
 
+    // Retorna produto atualizado
     const updated = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -115,6 +123,7 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
+
   } catch (error) {
     console.error("Erro PATCH /products/[id]:", error);
     return NextResponse.json(

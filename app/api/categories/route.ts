@@ -10,12 +10,15 @@ export async function GET() {
   try {
     const categories = await prisma.category.findMany({
       orderBy: [
-        { order: "asc" },     
-        { createdAt: "asc" }, 
+        { order: "asc" },
+        { createdAt: "asc" },
       ],
       include: {
         products: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [
+            { order: "asc" },
+            { createdAt: "asc" },
+          ],
         },
       },
     });
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
                 description: p.description ?? null,
                 imageUrl: p.imageUrl ?? null,
                 active: p.active ?? true,
-                storeId: storeId,    // ✔️ obrigatório
+                storeId: storeId,
               })),
             }
           : undefined,
