@@ -20,12 +20,7 @@ export async function PATCH(
       categoryId,
       pdv,
       imageUrl,
-      portion,
-      serves,
-      highlight,
-      discount,
-      classifications,
-      complements = [], // array de groupIds
+      complements = [], // IDs dos grupos
     } = body;
 
     // ======================
@@ -50,31 +45,14 @@ export async function PATCH(
         description,
         categoryId,
         pdv,
-        serves,
-        highlight,
         imageUrl: imageUrl || null,
-        classifications: classifications || [],
         price: price ?? undefined,
-        portion: portion
-          ? {
-              value: portion.value,
-              unit: portion.unit,
-            }
-          : null,
-        discount: discount
-          ? {
-              percent: discount.percent,
-              price: discount.price,
-            }
-          : null,
       },
     });
 
     // ======================
     // ATUALIZAR COMPLEMENTOS
     // ======================
-
-    // ❗ CORREÇÃO CRÍTICA — nome certo do model é productComplement
     await prisma.productComplement.deleteMany({
       where: { productId: id },
     });
@@ -100,9 +78,7 @@ export async function PATCH(
           orderBy: { order: "asc" },
           include: {
             group: {
-              include: {
-                items: true,
-              },
+              include: { items: true },
             },
           },
         },
@@ -110,6 +86,7 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
+
   } catch (error) {
     console.error("Erro PATCH /products/[id]:", error);
     return NextResponse.json(
@@ -142,6 +119,3 @@ export async function DELETE(
     );
   }
 }
-
-
-

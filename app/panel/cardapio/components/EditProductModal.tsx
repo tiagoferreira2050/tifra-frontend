@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ProductComplementsManager from "./ui/ProductComplementsManager";
 
 export default function EditProductModal({
@@ -9,47 +9,27 @@ export default function EditProductModal({
   product,
   categories,
   onSave,
-  globalComplements = [],
+  complements: globalComplements = [],
 }: any) {
-  if (!open) return null;
+  if (!open || !product) return null;
 
-  if (!product) {
-    return (
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 shadow">Carregando produto…</div>
-      </div>
-    );
-  }
-
-  // ======================================================================
-  // STATES
-  // ======================================================================
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
-  const [hasDiscount, setHasDiscount] = useState(false);
-  const [discountPercent, setDiscountPercent] = useState("");
-  const [discountPrice, setDiscountPrice] = useState("");
 
-  const [portionValue, setPortionValue] = useState("");
-  const [portionUnit, setPortionUnit] = useState("un");
-  const [serves, setServes] = useState("");
   const [highlight, setHighlight] = useState("");
-  const [image, setImage] = useState<any>(null);
-  const [classifications, setClassifications] = useState([] as string[]);
+  const [image, setImage] = useState<string | null>(null);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
-  const initializedRef = useRef(false);
+  const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
 
-  // ======================================================================
-  // CARREGA OS DADOS DO PRODUTO AO ABRIR
-  // ======================================================================
+  // ============================================================
+  // CARREGAR PRODUTO AO ABRIR
+  // ============================================================
   useEffect(() => {
-    if (!product?.id) return;
-
-    initializedRef.current = false;
+    if (!product) return;
 
     setName(product.name || "");
     setDescription(product.description || "");
@@ -59,144 +39,116 @@ export default function EditProductModal({
     setPrice(
       typeof product.price === "number"
         ? product.price.toFixed(2).replace(".", ",")
-        : product.price || "0,00"
+        : "0,00"
     );
 
-    setHasDiscount(!!product.discount);
-    setDiscountPercent(product.discount?.percent ? String(product.discount.percent) : "");
-    setDiscountPrice(
-      product.discount?.price ? String(product.discount.price).replace(".", ",") : ""
-    );
-
-    setPortionValue(product.portion?.value || "");
-    setPortionUnit(product.portion?.unit || "un");
-    setServes(product.serves || "");
-    setHighlight(product.highlight || "");
     setImage(product.imageUrl || null);
-    setClassifications(product.classifications || []);
 
-  }, [product?.id]);
+    setSelectedComplements(
+      Array.isArray(product.productComplements)
+        ? product.productComplements.map((pc: any) => ({
+            complementId: pc.groupId,
+          }))
+        : []
+    );
 
-  // ======================================================================
-  // INICIALIZA COMPLEMENTOS APENAS UMA VEZ
-  // ======================================================================
+  }, [product]);
+
   useEffect(() => {
-    if (!product?.id || !open) return;
-    if (initializedRef.current) return;
+    setGlobalComplementsState(globalComplements || []);
+  }, [globalComplements]);
 
-    let mapped: any[] = [];
-
-    if (
-  Array.isArray(product.productComplements) &&
-  product.productComplements.length > 0
-) {
-  mapped = product.productComplements.map((pc: any, index: number) => ({
-    complementId: pc.groupId,  // ⬅️ agora sempre correto
-    active: pc.active ?? true,
-    order: pc.order ?? index,
-  }));
-}
-
-
-    setSelectedComplements(mapped);
-    initializedRef.current = true;
-  }, [product?.id, open, globalComplements]);
-
-  // ======================================================================
+  // ============================================================
   // HELPERS
-  // ======================================================================
+  // ============================================================
   function formatCurrency(value: string) {
-    if (!value) return "0,00";
     const onlyNums = value.replace(/\D/g, "");
     if (!onlyNums) return "0,00";
-    const cents = (parseInt(onlyNums) / 100).toFixed(2);
-    return cents.replace(".", ",");
+    return (parseInt(onlyNums) / 100).toFixed(2).replace(".", ",");
   }
 
   function toNumber(val: string) {
-    const num = Number(String(val).replace(",", "."));
-    return isNaN(num) ? 0 : num;
+    const n = Number(val.replace(",", "."));
+    return isNaN(n) ? 0 : n;
   }
 
-  useEffect(() => {
-    if (!hasDiscount) return;
-    const base = toNumber(price);
-    const pct = Number(discountPercent);
-    if (!pct || base <= 0) return;
-    setDiscountPrice((base - (base * pct) / 100).toFixed(2).replace(".", ","));
-  }, [discountPercent, price]);
-
-  useEffect(() => {
-    if (!hasDiscount) return;
-    const base = toNumber(price);
-    const desc = toNumber(discountPrice);
-    if (desc > 0 && desc < base) {
-      const pct = Math.round(100 - (desc / base) * 100);
-      setDiscountPercent(String(pct));
-    }
-  }, [discountPrice]);
-
-  function toggleClassification(val: string) {
-    setClassifications((prev) =>
-      prev.includes(val) ? prev.filter((c) => c !== val) : [...prev, val]
-    );
-  }
-
-  function handleImageUpload(e: any) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setImage(URL.createObjectURL(file));
+    if (!file) return;
+
+    const preview = URL.createObjectURL(file);
+    setImage(preview);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const upload = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await upload.json();
+    if (data?.url) {
+      setImage(data.url);
+    } else {
+      alert("Erro ao enviar imagem");
+    }
   }
 
-  // ======================================================================
-  // SALVAR PRODUTO
-  // ======================================================================
-  function handleSave() {
+  // ============================================================
+  // SALVAR NO BANCO (PATCH)
+  // ============================================================
+  async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
     if (!description.trim()) return alert("Descrição obrigatória");
 
-    const numericPrice = Number(price.replace(",", "."));
-if (isNaN(numericPrice) || numericPrice <= 0) {
-  return alert("Preço inválido");
-}
+    const numericPrice = toNumber(price);
+    if (numericPrice <= 0) return alert("Preço inválido");
 
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          priceInCents: Math.round(numericPrice * 100),
+          categoryId,
+          pdv,
+          imageUrl: image,
+          complements: selectedComplements.map((c: any) => c.complementId),
+        }),
+      });
 
-    const updated = {
-      ...product,
-      name,
-      description,
-      categoryId,
-      pdv,
-      price: numericPrice,
-      portion: portionValue ? { value: portionValue, unit: portionUnit } : null,
-      serves,
-      highlight,
-      image,
-      discount: hasDiscount
-        ? {
-            percent: Number(discountPercent),
-            price: toNumber(discountPrice),
-          }
-        : null,
-      classifications,
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Erro ao salvar: ${data.error || res.status}`);
+        return;
+      }
 
-      // ✅ ENVIA APENAS OS IDs DOS GRUPOS DE COMPLEMENTO
-      complements: selectedComplements.map((c: any) => c.complementId),
-    };
+      alert("Produto atualizado!");
+      const updated = await res.json();
 
-    onSave(updated);
-    onClose();
+      if (onSave) onSave(updated);
+      onClose();
+    } catch (err) {
+      console.error("Erro ao salvar produto:", err);
+      alert("Erro ao conectar ao servidor");
+    }
   }
 
-  // ======================================================================
+  // ============================================================
   // UI
-  // ======================================================================
+  // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
 
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>
 
-        {/* CAMPOS */}
+        {/* NOME */}
         <label className="block font-medium mb-1">Nome *</label>
         <input
           className="w-full border rounded-md p-2 mb-4"
@@ -204,6 +156,7 @@ if (isNaN(numericPrice) || numericPrice <= 0) {
           onChange={(e) => setName(e.target.value)}
         />
 
+        {/* DESCRIÇÃO */}
         <label className="block font-medium mb-1">Descrição *</label>
         <textarea
           className="w-full border rounded-md p-2 mb-4"
@@ -212,6 +165,7 @@ if (isNaN(numericPrice) || numericPrice <= 0) {
           onChange={(e) => setDescription(e.target.value)}
         />
 
+        {/* CATEGORIA */}
         <label className="block font-medium mb-1">Categoria *</label>
         <select
           className="w-full border rounded-md p-2 mb-4"
@@ -226,17 +180,16 @@ if (isNaN(numericPrice) || numericPrice <= 0) {
         </select>
 
         {/* COMPLEMENTOS */}
-        <label className="block font-medium mb-1 mt-3">Complementos do produto</label>
+        <label className="block font-medium mb-1 mt-3">Complementos</label>
+
         <ProductComplementsManager
           productComplements={selectedComplements}
           setProductComplements={setSelectedComplements}
-          globalComplements={globalComplements}
-          openGlobalCreate={() => {}}
-          openGlobalEdit={() => {}}
+          globalComplements={globalComplementsState}
         />
 
         {/* PDV */}
-        <label className="block font-medium mb-1">Código PDV</label>
+        <label className="block font-medium mb-1">Código PDV (opcional)</label>
         <input
           className="w-full border rounded-md p-2 mb-4"
           value={pdv}
@@ -245,121 +198,36 @@ if (isNaN(numericPrice) || numericPrice <= 0) {
 
         {/* PREÇO */}
         <label className="block font-medium mb-1">Preço *</label>
-        <div className="flex items-center gap-3">
-          <input
-            className="border rounded-md p-2 w-full"
-            value={price}
-            onChange={(e) => setPrice(formatCurrency(e.target.value))}
-          />
-          <label className="flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={hasDiscount}
-              onChange={(e) => setHasDiscount(e.target.checked)}
-            />
-            Desconto
-          </label>
-        </div>
-
-        {hasDiscount && (
-          <div className="flex gap-3 mt-3 mb-4">
-            <input
-              className="border rounded-md p-2 w-1/2"
-              placeholder="%"
-              value={discountPercent}
-              onChange={(e) => setDiscountPercent(e.target.value)}
-            />
-            <input
-              className="border rounded-md p-2 w-1/2"
-              placeholder="Preço com desconto"
-              value={discountPrice}
-              onChange={(e) => setDiscountPrice(formatCurrency(e.target.value))}
-            />
-          </div>
-        )}
-
-        {/* PORÇÃO */}
-        <label className="block font-medium mb-1">Porção</label>
-        <div className="flex gap-2 mb-4">
-          <input
-            className="border rounded-md p-2 w-1/2"
-            placeholder="Valor"
-            value={portionValue}
-            onChange={(e) => setPortionValue(e.target.value)}
-          />
-          <select
-            className="border rounded-md p-2 w-1/2"
-            value={portionUnit}
-            onChange={(e) => setPortionUnit(e.target.value)}
-          >
-            <option value="ml">ml</option>
-            <option value="l">l</option>
-            <option value="g">g</option>
-            <option value="kg">kg</option>
-            <option value="un">un</option>
-            <option value="cm">cm</option>
-          </select>
-        </div>
-
-        {/* SERVE ATÉ */}
-        <label className="block font-medium mb-1">Serve até</label>
         <input
-          className="w-full border rounded-md p-2 mb-4"
-          value={serves}
-          onChange={(e) => setServes(e.target.value)}
+          className="border rounded-md p-2 w-full mb-4"
+          value={price}
+          onChange={(e) => setPrice(formatCurrency(e.target.value))}
         />
 
         {/* IMAGEM */}
-<label className="block font-medium mb-1">Imagem</label>
-<div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+        <label className="block font-medium mb-1">Imagem</label>
 
-  {image ? (
-    <img src={image} className="h-full object-cover rounded" />
-  ) : (
-    <p className="text-gray-400">Arraste ou clique para enviar</p>
-  )}
+        <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+          {image ? (
+            <img src={image} className="h-full object-cover rounded" />
+          ) : (
+            <p className="text-gray-400">Arraste ou clique para enviar</p>
+          )}
 
-  <input
-    type="file"
-    accept="image/*"
-    className="absolute inset-0 opacity-0 cursor-pointer"
-    onChange={handleImageUpload}
-  />
-</div>
-
-
-        {/* DESTAQUE */}
-        <label className="block font-medium mb-1">Destaque</label>
-        <select
-          className="w-full border rounded-md p-2 mb-4"
-          value={highlight}
-          onChange={(e) => setHighlight(e.target.value)}
-        >
-          <option value="">Nenhum</option>
-          <option value="recomendado">Recomendado</option>
-          <option value="novidade">Novidade</option>
-        </select>
-
-        {/* CLASSIFICAÇÕES */}
-        <label className="block font-medium mb-2">Classificações</label>
-        <div className="grid grid-cols-2 gap-2 mb-6">
-          {["Vegano", "Zero Lactose", "Zero Açúcar", "Orgânico"].map((c) => (
-            <label key={c} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={classifications.includes(c)}
-                onChange={() => toggleClassification(c)}
-              />
-              {c}
-            </label>
-          ))}
+          <input
+            type="file"
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={handleImageUpload}
+          />
         </div>
 
         {/* BOTÕES */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 mt-6">
           <button className="px-4 py-2 bg-gray-200 rounded-md" onClick={onClose}>
             Cancelar
           </button>
+
           <button
             className="px-4 py-2 bg-red-600 text-white rounded-md"
             onClick={handleSave}
