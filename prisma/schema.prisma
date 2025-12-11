@@ -97,6 +97,12 @@ model ProductComplement {
   productId    String
   complementId String?
   groupId      String
+
+  // 🔥 ADICIONAR ESTE CAMPO
+  order        Int             @default(0)
+
+  active       Boolean         @default(true)
+
   complement   Complement?     @relation(fields: [complementId], references: [id])
   group        ComplementGroup @relation(fields: [groupId], references: [id])
   product      Product         @relation(fields: [productId], references: [id])
