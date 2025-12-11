@@ -333,8 +333,9 @@ const [editingProduct, setEditingProduct] = useState(null);
   onEditProduct={(product: any) => {
     setEditingProduct(product);
     setEditProductOpen(true);
-            />
-          )}
+  }}
+/>
+
 
           {activeTab === "complementos" && (
             <ComplementManager
