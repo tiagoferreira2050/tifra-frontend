@@ -29,16 +29,16 @@ export default function ProductItem({
   const hasDiscount = product.discount && product.discount.price;
 
   // =====================================================
-  // 🔥 NOVO — PEGAR OS TÍTULOS DOS COMPLEMENTOS DO PRODUTO
+  // 🔥 PEGAR TÍTULOS CORRETOS DOS COMPLEMENTOS
   // =====================================================
   const complementTitles =
-    Array.isArray(product.complements) && product.complements.length > 0
-      ? product.complements
+    Array.isArray(product.productComplements) &&
+    product.productComplements.length > 0
+      ? product.productComplements
           .map((pc: any) => {
-            const comp = complements.find(
-              (c: any) => c.id === (pc.complementId || pc.id)
-            );
-            return comp ? comp.title : null;
+            // pc.groupId é o ID CORRETO do grupo
+            const group = complements.find((c: any) => c.id === pc.groupId);
+            return group ? group.name : null;
           })
           .filter(Boolean)
           .join(", ")

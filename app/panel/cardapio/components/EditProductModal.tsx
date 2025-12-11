@@ -44,10 +44,14 @@ export default function EditProductModal({
 
     setImage(product.imageUrl || null);
 
+    // 🔥 CORREÇÃO: adicionar "id: pc.groupId" para dnd-kit
     setSelectedComplements(
       Array.isArray(product.productComplements)
-        ? product.productComplements.map((pc: any) => ({
+        ? product.productComplements.map((pc: any, index: number) => ({
             complementId: pc.groupId,
+            id: pc.groupId,           // NECESSÁRIO para o dnd e para o Manager reconhecer
+            order: pc.order ?? index, // mantém ordem
+            active: pc.active ?? true,
           }))
         : []
     );
@@ -118,6 +122,8 @@ export default function EditProductModal({
           categoryId,
           pdv,
           imageUrl: image,
+
+          // 🔥 Enviar SOMENTE IDs dos grupos
           complements: selectedComplements.map((c: any) => c.complementId),
         }),
       });
