@@ -115,7 +115,7 @@ export default function NewProductModal({
 
         // 👇 ADICIONADOS - ESSENCIAL
         imageUrl: image || null,
-        complements: selectedComplements.map((c: any) => c.id),
+        complements: selectedComplements.map((c: any) => c.complementId),
       }),
     });
 
