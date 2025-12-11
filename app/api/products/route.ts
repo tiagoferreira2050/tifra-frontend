@@ -9,12 +9,12 @@ export async function POST(req: Request) {
       priceInCents, 
       categoryId, 
       storeId,
-      imageUrl,           // ADICIONADO
-      complements         // ADICIONADO (array de complement IDs)
+      imageUrl,
+      complements // array de GROUP IDs
     } = await req.json();
 
-    // VALIDATION
-    if (!name || !priceInCents || !categoryId || !storeId) {
+    // VALIDATION (aceitando preço 0)
+    if (!name || priceInCents === undefined || !categoryId || !storeId) {
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
         { status: 400 }
@@ -22,6 +22,11 @@ export async function POST(req: Request) {
     }
 
     const price = priceInCents / 100;
+
+    // garante array válido e remove duplicados
+    const uniqueComplements = Array.isArray(complements)
+      ? [...new Set(complements)]
+      : [];
 
     // CREATE PRODUCT
     const product = await prisma.product.create({
@@ -33,19 +38,26 @@ export async function POST(req: Request) {
         storeId,
         imageUrl: imageUrl || null,
 
-        // RELACIONAMENTO COM COMPLEMENTS
         productComplements: {
-          create: complements?.length
-            ? complements.map((complementId: string) => ({
-                complementId,
-              }))
-            : [],
+          create: uniqueComplements.map((groupId: string, index: number) => ({
+            groupId,
+            order: index,   // mantém ordem correta
+            active: true,
+          })),
         },
       },
 
-      // RETORNO DO PRODUTO COM COMPLEMENTOS
       include: {
-        productComplements: true,
+        productComplements: {
+          orderBy: { order: "asc" },
+          include: {
+            group: {
+              include: {
+                items: true, // retorna os itens do grupo
+              },
+            },
+          },
+        },
       },
     });
 

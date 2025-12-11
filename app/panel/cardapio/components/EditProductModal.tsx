@@ -32,6 +32,7 @@ export default function EditProductModal({
   const [hasDiscount, setHasDiscount] = useState(false);
   const [discountPercent, setDiscountPercent] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
+
   const [portionValue, setPortionValue] = useState("");
   const [portionUnit, setPortionUnit] = useState("un");
   const [serves, setServes] = useState("");
@@ -39,7 +40,6 @@ export default function EditProductModal({
   const [image, setImage] = useState<any>(null);
   const [classifications, setClassifications] = useState([] as string[]);
 
-  // COMPLEMENTOS
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const initializedRef = useRef(false);
 
@@ -78,7 +78,7 @@ export default function EditProductModal({
   }, [product?.id]);
 
   // ======================================================================
-  // INICIALIZA COMPLEMENTOS UMA ÚNICA VEZ
+  // INICIALIZA COMPLEMENTOS APENAS UMA VEZ
   // ======================================================================
   useEffect(() => {
     if (!product?.id || !open) return;
@@ -94,41 +94,9 @@ export default function EditProductModal({
       }));
     }
 
-    if (mapped.length === 0) {
-      try {
-        let inferred = [];
-
-        if (globalComplements.length > 0) {
-          inferred = globalComplements.filter(
-            (g: any) => Array.isArray(g.productIds) && g.productIds.includes(product.id)
-          );
-
-          if (inferred.length === 0 && product.categoryId) {
-            inferred = globalComplements.filter(
-              (g: any) => g.categoryId == product.categoryId
-            );
-          }
-        }
-
-        if (inferred.length > 0) {
-          mapped = inferred.map((c: any, index: number) => ({
-            complementId: c.id,
-            active: true,
-            order: index,
-          }));
-        }
-      } catch (err) {
-        console.error("Erro ao inferir complementos:", err);
-      }
-    }
-
     setSelectedComplements(mapped);
     initializedRef.current = true;
   }, [product?.id, open, globalComplements]);
-
-  useEffect(() => {
-    if (!open) initializedRef.current = false;
-  }, [open]);
 
   // ======================================================================
   // HELPERS
@@ -185,14 +153,6 @@ export default function EditProductModal({
     const numericPrice = toNumber(price);
     if (numericPrice <= 0) return alert("Preço inválido");
 
-    const fullComplements = selectedComplements
-      .map((c: any) =>
-        globalComplements.find(
-          (gc: any) => gc.id === c.complementId || gc.id === c.id
-        )
-      )
-      .filter(Boolean);
-
     const updated = {
       ...product,
       name,
@@ -211,7 +171,9 @@ export default function EditProductModal({
           }
         : null,
       classifications,
-      complements: fullComplements,
+
+      // ✅ ENVIA APENAS OS IDs DOS GRUPOS DE COMPLEMENTO
+      complements: selectedComplements.map((c: any) => c.complementId),
     };
 
     onSave(updated);
@@ -224,6 +186,7 @@ export default function EditProductModal({
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>
 
         {/* CAMPOS */}
