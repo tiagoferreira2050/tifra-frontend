@@ -134,16 +134,25 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    await prisma.product.delete({
+    // 1️⃣ Remove complementos ligados ao produto
+    await prisma.productComplement.deleteMany({
+      where: { productId: id },
+    });
+
+    // 2️⃣ Agora pode remover o produto sem erro de FK
+    const deleted = await prisma.product.delete({
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deleted });
+
   } catch (error) {
     console.error("Erro DELETE /products/[id]:", error);
+
     return NextResponse.json(
-      { error: "Erro ao excluir produto" },
+      { error: "Erro ao excluir produto", details: error.message },
       { status: 500 }
     );
   }
 }
+

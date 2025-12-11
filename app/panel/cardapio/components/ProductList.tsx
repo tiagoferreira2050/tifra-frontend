@@ -27,19 +27,29 @@ export default function ProductList({
   complements,
   onUpdateProduct,
 }: any) {
+
+  // =====================================================
+  // STATE
+  // =====================================================
   const [editingProduct, setEditingProduct] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  // Categoria selecionada
   const selectedCategory = categories.find(
     (c: any) => c.id === selectedCategoryId
   );
 
+  // Lista de produtos
   const products = selectedCategory?.products ?? [];
 
+  // Filtro por nome
   const filtered = products.filter((p: any) =>
     (p.name || "").toLowerCase().includes((search || "").toLowerCase())
   );
 
+  // =====================================================
+  // ATUALIZA LISTA LOCAL DE PRODUTOS
+  // =====================================================
   function updateProducts(newList: any[]) {
     setCategories((prev: any[]) =>
       prev.map((c: any) =>
@@ -48,6 +58,9 @@ export default function ProductList({
     );
   }
 
+  // =====================================================
+  // SALVAR EDIÇÃO DO PRODUTO
+  // =====================================================
   function handleSaveEditedProduct(updated: any) {
     updateProducts(
       products.map((p: any) => (p.id === updated.id ? updated : p))
@@ -56,6 +69,9 @@ export default function ProductList({
     if (onUpdateProduct) onUpdateProduct(updated);
   }
 
+  // =====================================================
+  // DRAG & DROP CONFIG
+  // =====================================================
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -75,9 +91,14 @@ export default function ProductList({
     updateProducts(reordered);
   }
 
+  // =====================================================
+  // RENDER
+  // =====================================================
   return (
     <>
       <div className="flex flex-col gap-4">
+        
+        {/* ===================== DRAG ZONE ===================== */}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -93,7 +114,8 @@ export default function ProductList({
                 id={prod.id}
                 product={prod}
                 complements={complements}
-                
+
+                // ===================== TOGGLE ACTIVE =====================
                 onToggle={async () => {
                   const newActive = !prod.active;
 
@@ -110,24 +132,38 @@ export default function ProductList({
                   });
                 }}
 
+                // ===================== DELETE =====================
                 onDelete={async () => {
-                  updateProducts(products.filter((p: any) => p.id !== prod.id));
+                  try {
+                    const res = await fetch(`/api/products/${prod.id}`, {
+                      method: "DELETE",
+                    });
 
-                  await fetch(`/api/products/${prod.id}`, {
-                    method: "DELETE",
-                  });
+                    if (!res.ok) {
+                      alert("Erro ao excluir produto.");
+                      return;
+                    }
+
+                    // Só remove local após confirmação do backend
+                    updateProducts(
+                      products.filter((p: any) => p.id !== prod.id)
+                    );
+
+                  } catch (err) {
+                    console.error("Erro ao excluir:", err);
+                    alert("Falha ao excluir produto.");
+                  }
                 }}
 
+                // ===================== EDIT =====================
                 onEdit={async (p: any) => {
                   try {
-                    // 🔥 Buscar produto COMPLETO no servidor
                     const res = await fetch(`/api/products/${p.id}`, {
                       cache: "no-store",
                     });
 
                     const fullProduct = await res.json();
 
-                    // 🔥 Garantir que os complementos venham no formato do modal
                     const normalized = Array.isArray(fullProduct.productComplements)
                       ? fullProduct.productComplements.map(
                           (pc: any, index: number) => ({
@@ -144,6 +180,7 @@ export default function ProductList({
                     });
 
                     setEditOpen(true);
+
                   } catch (err) {
                     console.error("Erro ao carregar produto completo:", err);
                     alert("Erro ao carregar produto completo");
@@ -154,6 +191,7 @@ export default function ProductList({
           </SortableContext>
         </DndContext>
 
+        {/* ===================== EMPTY LIST ===================== */}
         {filtered.length === 0 && (
           <p className="text-gray-500 text-center py-6">
             Nenhum produto encontrado.
@@ -161,6 +199,7 @@ export default function ProductList({
         )}
       </div>
 
+      {/* ===================== MODAL EDIT ===================== */}
       <EditProductModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
