@@ -9,9 +9,9 @@ export default function EditProductModal({
   product,
   categories,
   onSave,
-  complements: globalComplements = [],
+  globalComplements = [],
 }: any) {
-  if (!open || !product);
+  if (!open || !product) return null;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

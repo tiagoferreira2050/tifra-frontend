@@ -213,12 +213,12 @@ export default function ProductList({
       </div>
 
       <EditProductModal
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        product={editingProduct}
-        categories={categories}
-        onSave={handleSaveEditedProduct}
-        globalComplements={complements}
+  open={editOpen}
+  onClose={() => setEditOpen(false)}
+  product={editingProduct}
+  categories={categories}
+  complements={complements}   // 🔥 CORREÇÃO AQUI
+  onSave={handleSaveEditedProduct}
       />
     </>
   );

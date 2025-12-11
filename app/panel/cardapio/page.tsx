@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import CategoryManager from "./components/CategoryManager";
 import ProductList from "./components/ProductList";
 import NewProductModal from "./components/NewProductModal";
+import EditProductModal from "./components/EditProductModal";
 
 // COMPONENTES (COMPLEMENTOS)
 import ComplementManager from "./components/complements/ComplementManager";
@@ -18,6 +19,10 @@ import { dbSave } from "./storage/db";
 export default function CardapioPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
+
+const [editProductOpen, setEditProductOpen] = useState(false);
+const [editingProduct, setEditingProduct] = useState(null);
+
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -319,12 +324,15 @@ export default function CardapioPage() {
           {/* LISTAGEM */}
           {activeTab === "produtos" && (
             <ProductList
-              categories={categories}
-              setCategories={setCategories}
-              selectedCategoryId={selectedCategoryId}
-              search={search}
-              complements={complements}
-              onUpdateProduct={handleUpdateProduct}
+  categories={categories}
+  setCategories={setCategories}
+  selectedCategoryId={selectedCategoryId}
+  search={search}
+  complements={complements}
+  onUpdateProduct={handleUpdateProduct}
+  onEditProduct={(product: any) => {
+    setEditingProduct(product);
+    setEditProductOpen(true);
             />
           )}
 
@@ -353,6 +361,16 @@ export default function CardapioPage() {
         onSave={handleSaveProduct}
         complements={complements}
       />
+
+      <EditProductModal
+  open={editProductOpen}
+  onClose={() => setEditProductOpen(false)}
+  product={editingProduct}
+  categories={categories}
+  complements={complements}   // 🔥 ESSENCIAL
+  onSave={handleUpdateProduct}
+/>
+
 
       <NewComplementModal
         open={newComplementOpen}
