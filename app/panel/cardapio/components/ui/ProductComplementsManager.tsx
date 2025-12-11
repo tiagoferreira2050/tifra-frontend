@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -27,11 +27,7 @@ export default function ProductComplementsManager({
   const [localSearch, setLocalSearch] = useState("");
   const [showPicker, setShowPicker] = useState(false);
 
-  useEffect(() => {
-  setProductComplements(
-    Array.isArray(productComplements) ? [...productComplements] : []
-  );
-}, [productComplements]);
+  // ❗ REMOVEU O USEEFFECT QUE CAUSAVA TODOS OS BUGS
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -41,13 +37,12 @@ export default function ProductComplementsManager({
     })
   );
 
-  // ❗ REMOVIDO O USEEFFECT QUE BUGAVA O SISTEMA
-  // productComplements agora entra direto sem sobrescrever o pai
-
+  // Normalização segura
   const normalized = Array.isArray(productComplements)
     ? productComplements
     : [];
 
+  // FILTRO DO PICKER
   const filteredGlobal = useMemo(() => {
     const term = (localSearch || "").toLowerCase();
     if (!term) return globalComplements || [];
@@ -63,6 +58,7 @@ export default function ProductComplementsManager({
     });
   }, [globalComplements, localSearch]);
 
+  // ➕ ADICIONAR COMPLEMENTO
   function addComplement(globalId: string) {
     setProductComplements((prev: any[]) => {
       const arr = Array.isArray(prev) ? prev : [];
@@ -77,16 +73,19 @@ export default function ProductComplementsManager({
         },
       ];
     });
+
     setShowPicker(false);
     setLocalSearch("");
   }
 
+  // 🗑 REMOVER COMPLEMENTO
   function removeComplement(complementId: string) {
     setProductComplements((prev: any[]) =>
       prev.filter((c: any) => c.complementId !== complementId)
     );
   }
 
+  // 🔄 ATIVAR / DESATIVAR COMPLEMENTO
   function toggleActive(complementId: string) {
     setProductComplements((prev: any[]) =>
       prev.map((c: any) =>
@@ -95,6 +94,7 @@ export default function ProductComplementsManager({
     );
   }
 
+  // ↕️ DRAG & DROP
   function handleDragEnd(event: any) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -112,6 +112,7 @@ export default function ProductComplementsManager({
     });
   }
 
+  // ITEM DA LISTA
   function Row({ item }: { item: any }) {
     const id = item.complementId;
     const global = globalComplements.find((g: any) => g.id === id) || {};
@@ -122,17 +123,10 @@ export default function ProductComplementsManager({
     return (
       <div
         ref={setNodeRef}
-        style={{
-          transform: CSS.Transform.toString(transform),
-          transition,
-        }}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
         className="border rounded-lg p-3 bg-white shadow-sm flex items-start gap-3"
       >
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab p-2 text-gray-400"
-        >
+        <div {...attributes} {...listeners} className="cursor-grab p-2 text-gray-400">
           <GripVertical size={18} />
         </div>
 
@@ -230,11 +224,7 @@ export default function ProductComplementsManager({
         </div>
       )}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={normalized.map((n: any) => n.complementId)}
           strategy={verticalListSortingStrategy}
