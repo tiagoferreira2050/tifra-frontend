@@ -167,17 +167,23 @@ export default function ProductList({
                     }
 
                     if (Array.isArray(merged.complements)) {
-                      merged = {
-                        ...merged,
-                        complements: merged.complements.map(
-                          (c: any, index: number) => ({
-                            complementId: c.complementId || c.id || c,
-                            active: c.active ?? true,
-                            order: c.order ?? index,
-                          })
-                        ),
-                      };
-                    }
+  merged = {
+    ...merged,
+    complements: merged.complements.map((c: any, index: number) => {
+      const complementId =
+        c?.complementId ||
+        c?.id ||
+        (typeof c === "string" || typeof c === "number" ? c : null);
+
+      return {
+        complementId,
+        active: c?.active ?? true,
+        order: c?.order ?? index,
+      };
+    }),
+  };
+}
+
 
                     setEditingProduct(merged);
                     setEditOpen(true);

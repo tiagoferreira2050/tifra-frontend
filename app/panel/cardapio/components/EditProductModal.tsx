@@ -46,14 +46,15 @@ export default function EditProductModal({
 
   // 🔥 CORREÇÃO AQUI
   setSelectedComplements(
-    Array.isArray(product.productComplements)
-      ? product.productComplements.map((pc: any, index: number) => ({
-          complementId: pc.groupId,
-          active: pc.active ?? true,
-          order: pc.order ?? index,
-        }))
-      : []
-  );
+  Array.isArray(product.complements)
+    ? product.complements.map((pc: any, index: number) => ({
+        complementId: pc.complementId, // ID CORRETO
+        active: pc.active ?? true,
+        order: pc.order ?? index,
+      }))
+    : []
+);
+
 
 }, [product]);
 
