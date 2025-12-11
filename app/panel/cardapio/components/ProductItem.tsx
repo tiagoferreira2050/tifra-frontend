@@ -84,7 +84,7 @@ export default function ProductItem({
 
         {/* IMAGE */}
         <img
-          src={product.image || "/placeholder-100.png"}
+          src={product.imageUrl || "/placeholder-100.png"}
           onError={(e) => (e.currentTarget.src = "/placeholder-100.png")}
           className="w-16 h-16 rounded-md object-cover shadow-sm"
           alt={product.name}
