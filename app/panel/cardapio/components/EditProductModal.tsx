@@ -19,7 +19,6 @@ export default function EditProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  const [highlight, setHighlight] = useState("");
   const [image, setImage] = useState<string | null>(null);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
@@ -28,37 +27,35 @@ export default function EditProductModal({
   // ============================================================
   // CARREGAR PRODUTO AO ABRIR
   // ============================================================
-    useEffect(() => {
-  if (!product) return;
+  useEffect(() => {
+    if (!product) return;
 
-  setName(product.name || "");
-  setDescription(product.description || "");
-  setCategoryId(product.categoryId || "");
-  setPdv(product.pdv || "");
+    setName(product.name || "");
+    setDescription(product.description || "");
+    setCategoryId(product.categoryId || "");
+    setPdv(product.pdv || "");
 
-  setPrice(
-    typeof product.price === "number"
-      ? product.price.toFixed(2).replace(".", ",")
-      : "0,00"
-  );
+    setPrice(
+      typeof product.price === "number"
+        ? product.price.toFixed(2).replace(".", ",")
+        : "0,00"
+    );
 
-  setImage(product.imageUrl || null);
+    setImage(product.imageUrl || null);
 
-  // 🔥 CORREÇÃO AQUI
-  setSelectedComplements(
-  Array.isArray(product.complements)
-    ? product.complements.map((pc: any, index: number) => ({
-        complementId: pc.complementId, // ID CORRETO
+    // 🔥 CORREÇÃO DEFINITIVA — LER DO BACKEND CORRETAMENTE
+    const raw = product.productComplements || [];
+
+    setSelectedComplements(
+      raw.map((pc: any, index: number) => ({
+        complementId: pc.groupId,
         active: pc.active ?? true,
         order: pc.order ?? index,
       }))
-    : []
-);
+    );
+  }, [product]);
 
-
-}, [product]);
-
-
+  // GLOBAL COMPLEMENTS
   useEffect(() => {
     setGlobalComplementsState(globalComplements || []);
   }, [globalComplements]);
@@ -187,7 +184,7 @@ export default function EditProductModal({
         </select>
 
         {/* COMPLEMENTOS */}
-        <label className="block font-medium mb-1 mt-3">Complementos</label>
+        <label className="block font-medium mb-1 mt-3">Complementos do produto</label>
 
         <ProductComplementsManager
           productComplements={selectedComplements}

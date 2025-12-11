@@ -370,9 +370,10 @@ const [editingProduct, setEditingProduct] = useState(null);
   onClose={() => setEditProductOpen(false)}
   product={editingProduct}
   categories={categories}
-  complements={complements}   // 🔥 ESSENCIAL
+  globalComplements={complements}   // AGORA SIM!
   onSave={handleUpdateProduct}
 />
+
 
 
       <NewComplementModal
