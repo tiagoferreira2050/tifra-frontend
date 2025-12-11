@@ -86,13 +86,17 @@ export default function EditProductModal({
 
     let mapped: any[] = [];
 
-    if (Array.isArray(product.complements) && product.complements.length > 0) {
-      mapped = product.complements.map((c: any, index: number) => ({
-        complementId: c.complementId || c.id || c,
-        active: c.active ?? true,
-        order: c.order ?? index,
-      }));
-    }
+    if (
+  Array.isArray(product.productComplements) &&
+  product.productComplements.length > 0
+) {
+  mapped = product.productComplements.map((pc: any, index: number) => ({
+    complementId: pc.groupId,  // ⬅️ agora sempre correto
+    active: pc.active ?? true,
+    order: pc.order ?? index,
+  }));
+}
+
 
     setSelectedComplements(mapped);
     initializedRef.current = true;
