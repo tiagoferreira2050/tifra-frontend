@@ -28,35 +28,35 @@ export default function EditProductModal({
   // ============================================================
   // CARREGAR PRODUTO AO ABRIR
   // ============================================================
-  useEffect(() => {
-    if (!product) return;
+    useEffect(() => {
+  if (!product) return;
 
-    setName(product.name || "");
-    setDescription(product.description || "");
-    setCategoryId(product.categoryId || "");
-    setPdv(product.pdv || "");
+  setName(product.name || "");
+  setDescription(product.description || "");
+  setCategoryId(product.categoryId || "");
+  setPdv(product.pdv || "");
 
-    setPrice(
-      typeof product.price === "number"
-        ? product.price.toFixed(2).replace(".", ",")
-        : "0,00"
-    );
+  setPrice(
+    typeof product.price === "number"
+      ? product.price.toFixed(2).replace(".", ",")
+      : "0,00"
+  );
 
-    setImage(product.imageUrl || null);
+  setImage(product.imageUrl || null);
 
-    // 🔥 CORREÇÃO: adicionar "id: pc.groupId" para dnd-kit
-    setSelectedComplements(
-      Array.isArray(product.productComplements)
-        ? product.productComplements.map((pc: any, index: number) => ({
-            complementId: pc.groupId,
-            id: pc.groupId,           // NECESSÁRIO para o dnd e para o Manager reconhecer
-            order: pc.order ?? index, // mantém ordem
-            active: pc.active ?? true,
-          }))
-        : []
-    );
+  // 🔥 CORREÇÃO AQUI
+  setSelectedComplements(
+    Array.isArray(product.productComplements)
+      ? product.productComplements.map((pc: any, index: number) => ({
+          complementId: pc.groupId,
+          active: pc.active ?? true,
+          order: pc.order ?? index,
+        }))
+      : []
+  );
 
-  }, [product]);
+}, [product]);
+
 
   useEffect(() => {
     setGlobalComplementsState(globalComplements || []);
