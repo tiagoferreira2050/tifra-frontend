@@ -52,7 +52,10 @@ model Product {
   category    Category   @relation(fields: [categoryId], references: [id])
   store       Store      @relation(fields: [storeId], references: [id])
 
-  complementGroups ComplementGroup[]
+  complementGroups     ComplementGroup[]
+
+  // 👉 RELACIONAMENTO NOVO
+  productComplements   ProductComplement[]
 
   @@index([categoryId])
   @@index([storeId])
@@ -94,11 +97,29 @@ model Complement {
   active      Boolean  @default(true)
   imageUrl    String?
 
-  description String?   // ✅ ADICIONADA AQUI
-
+  description String?
   createdAt   DateTime @default(now())
 
   group       ComplementGroup @relation(fields: [groupId], references: [id])
 
+  // 👉 RELACIONAMENTO NOVO
+  productComplements ProductComplement[]
+
   @@index([groupId])
+}
+
+//
+// 🔥 NOVA TABELA PIVÔ — SEM QUEBRAR NADA EXISTENTE
+//
+model ProductComplement {
+  id           String   @id @default(uuid())
+  productId    String
+  complementId String
+
+  product      Product    @relation(fields: [productId], references: [id])
+  complement   Complement @relation(fields: [complementId], references: [id])
+
+  @@unique([productId, complementId])
+  @@index([productId])
+  @@index([complementId])
 }

@@ -3,7 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { name, description, priceInCents, categoryId, storeId } = await req.json();
+    const { 
+      name, 
+      description, 
+      priceInCents, 
+      categoryId, 
+      storeId,
+      imageUrl,           // ADICIONADO
+      complements         // ADICIONADO (array de complement IDs)
+    } = await req.json();
 
     // VALIDATION
     if (!name || !priceInCents || !categoryId || !storeId) {
@@ -15,7 +23,7 @@ export async function POST(req: Request) {
 
     const price = priceInCents / 100;
 
-    // CREATE
+    // CREATE PRODUCT
     const product = await prisma.product.create({
       data: {
         name,
@@ -23,6 +31,21 @@ export async function POST(req: Request) {
         price,
         categoryId,
         storeId,
+        imageUrl: imageUrl || null,
+
+        // RELACIONAMENTO COM COMPLEMENTS
+        productComplements: {
+          create: complements?.length
+            ? complements.map((complementId: string) => ({
+                complementId,
+              }))
+            : [],
+        },
+      },
+
+      // RETORNO DO PRODUTO COM COMPLEMENTOS
+      include: {
+        productComplements: true,
       },
     });
 
@@ -39,4 +62,3 @@ export async function POST(req: Request) {
     );
   }
 }
-// deploy test

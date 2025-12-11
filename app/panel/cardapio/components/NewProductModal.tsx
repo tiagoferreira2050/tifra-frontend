@@ -93,53 +93,53 @@ export default function NewProductModal({
   // SALVAR PRODUTO (API)
   // ============================================================
   async function handleSave() {
-    if (!name.trim()) return alert("Nome obrigatório");
-    if (!description.trim()) return alert("Descrição obrigatória");
-    if (!categoryId) return alert("Selecione uma categoria");
+  if (!name.trim()) return alert("Nome obrigatório");
+  if (!description.trim()) return alert("Descrição obrigatória");
+  if (!categoryId) return alert("Selecione uma categoria");
 
-    const numericPrice = toNumber(price);
-    if (numericPrice <= 0) return alert("Preço inválido");
+  const numericPrice = toNumber(price);
+  if (numericPrice <= 0) return alert("Preço inválido");
 
-    try {
-      const res = await fetch("/api/products", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    name,
-    description,
-    priceInCents: Math.round(numericPrice * 100),
-    categoryId,
-    storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73", // 👈 ATUALIZADO
-  }),
-});
+  try {
+    const res = await fetch("/api/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        priceInCents: Math.round(numericPrice * 100),
+        categoryId,
+        storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
 
-      if (!res.ok) {
-        const data = await res.json();
-        alert(`Erro ao salvar: ${data.error || res.status}`);
-        return;
-      }
+        // 👇 ADICIONADOS - ESSENCIAL
+        imageUrl: image || null,
+        complements: selectedComplements.map((c: any) => c.id),
+      }),
+    });
 
-      alert("Produto salvo com sucesso!");
+    if (!res.ok) {
+      const data = await res.json();
+      alert(`Erro ao salvar: ${data.error || res.status}`);
+      return;
+    }
 
-// pega o produto criado
-const product = await res.json();
+    alert("Produto salvo com sucesso!");
 
-// atualiza estado no pai
-if (onSave) {
-  onSave(categoryId, product);
+    const product = await res.json();
+
+    if (onSave) {
+      onSave(categoryId, product);
+    }
+
+    onClose();
+  } catch (error) {
+    console.error("Erro ao salvar produto no banco:", error);
+    alert("Erro ao conectar ao servidor");
+  }
 }
 
-// fecha modal
-onClose();
-
-
-    } catch (error) {
-      console.error("Erro ao salvar produto no banco:", error);
-      alert("Erro ao conectar ao servidor");
-    }
-  }
 
   // ============================================================
   // UI
