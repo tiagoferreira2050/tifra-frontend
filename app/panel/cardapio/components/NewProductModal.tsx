@@ -62,31 +62,30 @@ export default function NewProductModal({
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-  const file = e.target.files?.[0];
-  if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  // PREVIEW local
-  const previewUrl = URL.createObjectURL(file);
-  setImage(previewUrl);
+    // PREVIEW local
+    const previewUrl = URL.createObjectURL(file);
+    setImage(previewUrl);
 
-  // UPLOAD REAL para Cloudinary (ou sua rota interna)
-  const formData = new FormData();
-  formData.append("file", file);
+    // UPLOAD REAL para Cloudinary (ou sua rota interna)
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const upload = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
+    const upload = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-  const data = await upload.json();
+    const data = await upload.json();
 
-  if (data?.url) {
-    setImage(data.url); // Agora imagem final salva no banco
-  } else {
-    alert("Erro ao enviar imagem");
+    if (data?.url) {
+      setImage(data.url); // Agora imagem final salva no banco
+    } else {
+      alert("Erro ao enviar imagem");
+    }
   }
-}
-
 
   // ============================================================
   // SALVAR PRODUTO (API)
@@ -113,7 +112,7 @@ export default function NewProductModal({
           storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
           imageUrl: image || null,
 
-          // ✅ PEGA SEMPRE O ID DO GRUPO (correto para seu sistema)
+          // envia só o ID do grupo
           complements: selectedComplements.map((c: any) => c.complementId),
         }),
       });
@@ -141,7 +140,7 @@ export default function NewProductModal({
   // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
-      <div className="bg-white rounded-2xl w-[750px] max-height-[90vh] overflow-y-auto p-6 shadow-xl">
+      <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
 
         <h2 className="text-xl font-semibold mb-6">Criar novo produto</h2>
 
@@ -201,39 +200,33 @@ export default function NewProductModal({
 
         {/* PREÇO */}
         <label className="block font-medium mb-1">Preço *</label>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-4">
           <input
             className="border rounded-md p-2 w-full"
             value={price}
             onChange={(e) => setPrice(formatCurrency(e.target.value))}
           />
-        
+        </div>
+
         {/* IMAGEM */}
-<label className="block font-medium mb-1">Imagem</label>
+        <label className="block font-medium mb-1">Imagem</label>
 
-<div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+        <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+          {image ? (
+            <img src={image} className="h-full object-cover rounded" />
+          ) : (
+            <p className="text-gray-400">Arraste ou clique para enviar</p>
+          )}
 
-  {image ? (
-    <img
-      src={image}
-      className="h-full object-cover rounded"
-    />
-  ) : (
-    <p className="text-gray-400">Arraste ou clique para enviar</p>
-  )}
+          <input
+            type="file"
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={handleImageUpload}
+          />
+        </div>
 
-  <input
-    type="file"
-    accept="image/*"
-    className="absolute inset-0 opacity-0 cursor-pointer"
-    onChange={handleImageUpload}
-  />
-</div>
-
-
-        {/* PORÇÃO, SERVE, IMAGEM, DESTAQUE, CLASSIFICAÇÕES... */}
-        {/* 🔥 Tudo mantido exatamente como estava no seu arquivo */}
-
+        {/* BOTÕES */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             className="px-4 py-2 bg-gray-200 rounded-md"
