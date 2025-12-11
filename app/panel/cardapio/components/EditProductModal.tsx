@@ -150,8 +150,11 @@ export default function EditProductModal({
     if (!name.trim()) return alert("Nome obrigatório");
     if (!description.trim()) return alert("Descrição obrigatória");
 
-    const numericPrice = toNumber(price);
-    if (numericPrice <= 0) return alert("Preço inválido");
+    const numericPrice = Number(price.replace(",", "."));
+if (isNaN(numericPrice) || numericPrice <= 0) {
+  return alert("Preço inválido");
+}
+
 
     const updated = {
       ...product,
@@ -184,7 +187,7 @@ export default function EditProductModal({
   // UI
   // ======================================================================
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
 
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>

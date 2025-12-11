@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     } = await req.json();
 
     // VALIDATION (aceitando preço 0)
-    if (!name || priceInCents === undefined || !categoryId || !storeId) {
+    if (!name || priceInCents == null || isNaN(priceInCents) || !categoryId || !storeId) {
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
         { status: 400 }

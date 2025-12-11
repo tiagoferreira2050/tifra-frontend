@@ -121,7 +121,7 @@ export default function NewProductModal({
   // UI
   // ============================================================
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-height-[90vh] overflow-y-auto p-6 shadow-xl">
 
         <h2 className="text-xl font-semibold mb-6">Criar novo produto</h2>
