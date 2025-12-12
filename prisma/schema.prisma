@@ -58,6 +58,7 @@ model Product {
 
   order Int @default(0)
 
+  pdv String? @default("")
 
   category           Category            @relation(fields: [categoryId], references: [id])
   store              Store               @relation(fields: [storeId], references: [id])
