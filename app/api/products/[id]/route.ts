@@ -76,7 +76,12 @@ export async function PATCH(
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (categoryId !== undefined) {
+  updateData.category = {
+    connect: { id: categoryId }
+  };
+}
+
     if (pdv !== undefined) updateData.pdv = pdv;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (price !== undefined) updateData.price = price;
