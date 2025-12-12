@@ -9,11 +9,14 @@ export default function ModalSelecionarComplementos({
   onClose,
   onAdd,
 }: any) {
+  // =====================================================
+  // 🔥 ESTADOS
+  // =====================================================
   const [qty, setQty] = useState(1);
   const [selected, setSelected] = useState<any>({});
 
   // =====================================================
-  // 🔥 RESET QUANDO ABRIR MODAL
+  // 🔥 RESET AO ABRIR O MODAL
   // =====================================================
   useEffect(() => {
     if (!open || !product) return;
@@ -26,13 +29,14 @@ export default function ModalSelecionarComplementos({
   const groups = product.complementItems ?? [];
 
   // =====================================================
-  // 🔥 LÓGICA DE SELEÇÃO
+  // 🔥 LÓGICA DE SELEÇÃO (CHECKBOX / RADIO)
   // =====================================================
   const toggleOption = (groupId: string, option: any, type: string) => {
     const group = groups.find((g: any) => g.id === groupId);
     const max = group?.maxChoose || null;
     const current = selected[groupId] || [];
 
+    // Impede seleção acima do limite
     if (
       max &&
       current.length >= max &&
@@ -45,18 +49,20 @@ export default function ModalSelecionarComplementos({
     setSelected((prev: any) => {
       const arr = prev[groupId] || [];
 
+      // Caso seja SINGLE (apenas 1)
       if (type === "single") {
         return { ...prev, [groupId]: [option.id] };
       }
 
+      // Remove se já existir
       if (arr.includes(option.id)) {
         return {
           ...prev,
-          // 🔥 **CORREÇÃO AQUI**
           [groupId]: arr.filter((id: string) => id !== option.id),
         };
       }
 
+      // Adiciona
       return {
         ...prev,
         [groupId]: [...arr, option.id],
@@ -65,7 +71,7 @@ export default function ModalSelecionarComplementos({
   };
 
   // =====================================================
-  // 🔥 TOTAL DO PRODUTO
+  // 🔥 CÁLCULO DE TOTAL
   // =====================================================
   const basePrice = product.discount
     ? Number(product.discount.price)
@@ -87,13 +93,15 @@ export default function ModalSelecionarComplementos({
   const finalPrice = (basePrice + totalComplements) * qty;
 
   // =====================================================
-  // 🔥 INTERFACE
+  // 🔥 INTERFACE (UI)
   // =====================================================
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-height-[90vh] overflow-y-auto shadow-lg">
 
-        {/* HEADER */}
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-lg font-semibold">{product.name}</h3>
@@ -105,7 +113,9 @@ export default function ModalSelecionarComplementos({
           </button>
         </div>
 
-        {/* LISTA DE COMPLEMENTOS */}
+        {/* =====================================================
+            LISTA DE COMPLEMENTOS
+        ===================================================== */}
         {groups.length === 0 && (
           <p className="text-gray-500 text-center mb-4">
             Este produto não possui complementos configurados.
@@ -156,18 +166,14 @@ export default function ModalSelecionarComplementos({
                           <input
                             type="radio"
                             checked={isChecked}
-                            onChange={() =>
-                              toggleOption(group.id, opt, type)
-                            }
+                            onChange={() => toggleOption(group.id, opt, type)}
                           />
                         ) : (
                           <input
                             type="checkbox"
                             checked={isChecked}
                             disabled={disabled}
-                            onChange={() =>
-                              toggleOption(group.id, opt, type)
-                            }
+                            onChange={() => toggleOption(group.id, opt, type)}
                           />
                         )}
 
@@ -187,7 +193,9 @@ export default function ModalSelecionarComplementos({
           );
         })}
 
-        {/* QUANTIDADE */}
+        {/* =====================================================
+            QUANTIDADE
+        ===================================================== */}
         <div className="flex items-center gap-4 my-4">
           <button
             className="px-3 py-1 border rounded"
@@ -204,18 +212,22 @@ export default function ModalSelecionarComplementos({
           </button>
         </div>
 
-        {/* TOTAL */}
+        {/* =====================================================
+            TOTAL
+        ===================================================== */}
         <p className="text-xl font-bold mb-4">
           Total: R$ {finalPrice.toFixed(2).replace(".", ",")}
         </p>
 
-        {/* BOTÕES */}
+        {/* =====================================================
+            BOTÕES
+        ===================================================== */}
         <div className="flex gap-3">
           <button
             onClick={() => {
               onAdd({
                 id: product.id + "-" + Date.now(),
-                productId: product.id,
+                productId: product.id, // 🔥 ESSENCIAL PARA SALVAR NO BANCO
                 name: product.name,
                 price: basePrice + totalComplements,
                 qty,
@@ -229,10 +241,7 @@ export default function ModalSelecionarComplementos({
             Adicionar ao pedido
           </button>
 
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-md"
-          >
+          <button onClick={onClose} className="px-4 py-2 border rounded-md">
             Cancelar
           </button>
         </div>
