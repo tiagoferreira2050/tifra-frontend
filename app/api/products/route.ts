@@ -72,3 +72,46 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+export async function GET() {
+  try {
+    const products = await prisma.product.findMany({
+      where: { active: true },
+      orderBy: { createdAt: "asc" },
+      include: {
+        category: true,
+        productComplements: {
+          include: {
+            group: {
+              include: {
+                items: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const normalized = products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description || "",
+      price: p.price,
+      imageUrl: p.imageUrl,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name || "",
+      complements: (p.productComplements || []).map((pc) => ({
+        groupId: pc.groupId,
+        groupName: pc.group?.name || "",
+        required: pc.group?.required || false,
+        options: pc.group?.items || [],
+      })),
+    }));
+
+    return NextResponse.json(normalized);
+  } catch (err) {
+    console.error("GET /products error:", err);
+    return NextResponse.error();
+  }
+}
