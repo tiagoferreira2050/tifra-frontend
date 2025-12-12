@@ -61,8 +61,9 @@ export async function PATCH(
       categoryId,
       pdv,
       imageUrl,
-      active, // ✅ agora aceita active
-      complements = [],
+      active, // já aceitava
+      // OBS: não atribuímos default [] aqui para distinguir "não enviado"
+      // complements,
     } = body;
 
     // preço seguro
@@ -71,43 +72,49 @@ export async function PATCH(
         ? priceInCents / 100
         : undefined;
 
-    const uniqueComplements = Array.isArray(complements)
-      ? [...new Set(complements)]
-      : [];
-
-    // 🔥 ATUALIZAÇÃO SEGURA: só envia campos definidos
+    // Build data only with provided fields
     const updateData: any = {};
-
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (categoryId !== undefined) updateData.categoryId = categoryId;
     if (pdv !== undefined) updateData.pdv = pdv;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl; // NÃO apaga mais
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (price !== undefined) updateData.price = price;
-    if (active !== undefined) updateData.active = active; // ✅ salva active no banco
+    if (active !== undefined) updateData.active = active;
 
+    // Atualiza produto (campos enviados)
     await prisma.product.update({
       where: { id },
       data: updateData,
     });
 
-    // COMPLEMENTS (permanece igual)
-    await prisma.productComplement.deleteMany({
-      where: { productId: id },
-    });
+    // ---- handling de complements: só mexer se o cliente enviou o campo `complements` ----
+    if (Object.prototype.hasOwnProperty.call(body, "complements")) {
+      const complements = body.complements;
+      const uniqueComplements = Array.isArray(complements)
+        ? [...new Set(complements)]
+        : [];
 
-    if (uniqueComplements.length > 0) {
-      await prisma.productComplement.createMany({
-        data: uniqueComplements.map((groupId: string, order: number) => ({
-          productId: id,
-          groupId,
-          order,
-          active: true,
-        })),
+      // remove antigos
+      await prisma.productComplement.deleteMany({
+        where: { productId: id },
       });
-    }
 
-    // Retorna produto atualizado
+      // cria novos apenas se houver
+      if (uniqueComplements.length > 0) {
+        await prisma.productComplement.createMany({
+          data: uniqueComplements.map((groupId: string, order: number) => ({
+            productId: id,
+            groupId,
+            order,
+            active: true,
+          })),
+        });
+      }
+    }
+    // -------------------------------------------------------------------------------
+
+    // Retorna produto atualizado com complements
     const updated = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -123,7 +130,6 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
-
   } catch (error) {
     console.error("Erro PATCH /products/[id]:", error);
     return NextResponse.json(
