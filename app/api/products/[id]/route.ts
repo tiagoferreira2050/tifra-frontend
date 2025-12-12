@@ -61,9 +61,7 @@ export async function PATCH(
       categoryId,
       pdv,
       imageUrl,
-      active, // já aceitava
-      // OBS: não atribuímos default [] aqui para distinguir "não enviado"
-      // complements,
+      active,
     } = body;
 
     // preço seguro
@@ -76,13 +74,17 @@ export async function PATCH(
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (categoryId !== undefined) {
-  updateData.category = {
-    connect: { id: categoryId }
-  };
-}
 
+    // 🔥 categoria agora é relation correta
+    if (categoryId !== undefined) {
+      updateData.category = {
+        connect: { id: categoryId },
+      };
+    }
+
+    // 🔥 PDV agora existe no banco
     if (pdv !== undefined) updateData.pdv = pdv;
+
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (price !== undefined) updateData.price = price;
     if (active !== undefined) updateData.active = active;
@@ -117,7 +119,6 @@ export async function PATCH(
         });
       }
     }
-    // -------------------------------------------------------------------------------
 
     // Retorna produto atualizado com complements
     const updated = await prisma.product.findUnique({
@@ -143,6 +144,7 @@ export async function PATCH(
     );
   }
 }
+
 
 // ===================================================
 // DELETE — Remover produto
