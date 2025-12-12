@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getMockOrders } from "../services/orderService";
 import OrderColumn from "./OrderColumn";
 
-/* Tipo Order local — compatível com OrderCard/OrderColumn etc. */
 type Order = {
   id: string;
   customer: string;
@@ -28,19 +26,33 @@ export default function OrderBoard({
   searchTerm?: string;
   externalOrders?: Order[];
 }) {
-  // <-- Correção mínima: cast do mock para any antes de usar como Order[]
-  const [internalOrders] = useState<Order[]>(
-    () => (getMockOrders() as any) || []
-  );
+  const [dbOrders, setDbOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const combinedOrders: Order[] = [...(externalOrders || []), ...internalOrders];
-
-  const [orders, setOrders] = useState<Order[]>(combinedOrders);
-
+  // 🔥 CARREGAR PEDIDOS REAIS DO BANCO
   useEffect(() => {
-    setOrders([...(externalOrders || []), ...internalOrders]);
-  }, [externalOrders, internalOrders]);
+    async function loadOrders() {
+      try {
+        const res = await fetch("/api/orders", { cache: "no-store" });
+        const data = await res.json();
 
+        setDbOrders(data || []);
+      } catch (err) {
+        console.error("Erro ao carregar pedidos:", err);
+      }
+    }
+
+    loadOrders();
+  }, []);
+
+  // 🔥 MERGE ENTRE PEDIDOS DO BANCO E EXTERNAL (NOVO PEDIDO MANUAL)
+  useEffect(() => {
+    setOrders([...(externalOrders || []), ...dbOrders]);
+  }, [externalOrders, dbOrders]);
+
+  // ---------------------------------------
+  // 🔥 FILTRO DE BUSCA (mantido igual)
+  // ---------------------------------------
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -61,6 +73,9 @@ export default function OrderBoard({
     );
   });
 
+  // ---------------------------------------
+  // 🔥 AÇÕES LOCAIS (mantidas como estão)
+  // ---------------------------------------
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
@@ -91,6 +106,9 @@ export default function OrderBoard({
     .filter((o) => o.status === "finished")
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
+  // ---------------------------------------
+  // 🔥 RENDERIZAÇÃO IDÊNTICA
+  // ---------------------------------------
   return (
     <div className="grid grid-cols-4 gap-5 px-5">
       <OrderColumn
