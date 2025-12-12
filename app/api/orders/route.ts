@@ -1,15 +1,25 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const {
-      customerName,
-      customerPhone,
-      customerAddress,
-      items,           // [{ productId, quantity, unitPrice, complements }]
-      paymentMethod,
-      deliveryFee,
-    } = body;
+    // 🔥 Ajuste para aceitar o payload do NovoPedidoDrawer
+    const customerName = body.customerName ?? body.customer;
+    const customerPhone = body.customerPhone ?? body.phone ?? "";
+    const customerAddress = body.customerAddress ?? body.address ?? "";
+    const paymentMethod = body.paymentMethod;
+    const deliveryFee = body.deliveryFee || 0;
+
+    // 🔥 Converter items do formato do Drawer para o formato da sua API
+    const items =
+      body.items?.map((it: any) => ({
+        productId: it.productId,
+        quantity: it.quantity ?? it.qty ?? 1,
+        unitPrice: it.unitPrice ?? it.price ?? 0,
+        complements: it.complements ?? it.selectedComplements ?? [],
+      })) ?? [];
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -56,7 +66,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 4️⃣ Criar itens do pedido
+    // 4️⃣ Criar itens no banco
     await prisma.$transaction(
       items.map((item: any) =>
         prisma.orderItem.create({
@@ -71,20 +81,18 @@ export async function POST(req: Request) {
       )
     );
 
-    // 5️⃣ Buscar pedido completo para retornar ao frontend
+    // 5️⃣ Buscar pedido completo
     const fullOrder = await prisma.order.findUnique({
       where: { id: order.id },
       include: {
         customer: true,
         items: {
-          include: {
-            product: true,
-          },
+          include: { product: true },
         },
       },
     });
 
-    // 6️⃣ Normalizar formato para o gestor
+    // 6️⃣ Normalizar para o painel
     const normalized = {
       id: fullOrder!.id,
       status: fullOrder!.status,
