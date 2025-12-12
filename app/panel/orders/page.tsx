@@ -1,16 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NovoPedidoDrawer from "./components/NovoPedidoDrawer";
 import OrderBoard from "./components/OrderBoard";
 import { Plus } from "lucide-react";
-import { Order } from "./services/orderTypes"; // 🔥 usa o tipo oficial
+import { Order } from "./services/orderTypes";
 
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]); // agora 100% compatível
+  const [orders, setOrders] = useState<Order[]>([]);
 
+  // =========================================================
+  // 🔥 CARREGAR PEDIDOS DO BANCO AO ABRIR A PÁGINA
+  // =========================================================
+  useEffect(() => {
+    async function loadOrders() {
+      try {
+        const res = await fetch("/api/orders", { cache: "no-store" });
+        const data = await res.json();
+        setOrders(data); // 🔥 agora os pedidos permanecem após atualizar
+      } catch (err) {
+        console.error("Erro ao buscar pedidos:", err);
+      }
+    }
+
+    loadOrders();
+  }, []);
+
+  // =========================================================
+  // 🔥 ADICIONAR NOVO PEDIDO NA LISTA LOCAL
+  // =========================================================
   function handleCreateOrder(newOrder: Order) {
     setOrders((prev) => [newOrder, ...prev]);
   }
@@ -52,7 +72,7 @@ export default function OrdersPage() {
       {/* QUADROS DE PEDIDOS */}
       <OrderBoard
         searchTerm={searchTerm}
-        externalOrders={orders}  // 🔥 agora os tipos batem
+        externalOrders={orders}
       />
 
       {/* DRAWER DO NOVO PEDIDO */}
