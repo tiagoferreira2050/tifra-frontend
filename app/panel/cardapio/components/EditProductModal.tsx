@@ -43,7 +43,6 @@ export default function EditProductModal({
 
     setImage(product.imageUrl || null);
 
-    // 🔥 CORREÇÃO DEFINITIVA — LER DO BACKEND CORRETAMENTE
     const raw = product.productComplements || [];
 
     setSelectedComplements(
@@ -108,6 +107,12 @@ export default function EditProductModal({
     if (numericPrice <= 0) return alert("Preço inválido");
 
     try {
+
+      // 🔥 Ordenar complementos antes de enviar para o backend
+      const complementsOrdered = [...selectedComplements].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      );
+
       const res = await fetch(`/api/products/${product.id}`, {
         method: "PATCH",
         headers: {
@@ -121,8 +126,8 @@ export default function EditProductModal({
           pdv,
           imageUrl: image,
 
-          // 🔥 Enviar SOMENTE IDs dos grupos
-          complements: selectedComplements.map((c: any) => c.complementId),
+          // 🔥 Enviar SOMENTE IDs dos grupos, e na ordem correta
+          complements: complementsOrdered.map((c: any) => c.complementId),
         }),
       });
 
@@ -243,5 +248,3 @@ export default function EditProductModal({
     </div>
   );
 }
-
-
