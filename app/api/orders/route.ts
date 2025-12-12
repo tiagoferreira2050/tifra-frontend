@@ -120,3 +120,48 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Erro ao criar pedido" }, { status: 500 });
   }
 }
+
+
+export async function GET() {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        customer: true,
+      },
+    });
+
+    const normalized = orders.map((o) => ({
+      id: o.id,
+      status: o.status,
+      total: o.total,
+      paymentMethod: o.paymentMethod,
+      createdAt: o.createdAt,
+
+      // Dados do cliente
+      customer: o.customer?.name || "",
+      phone: o.customer?.phone || "",
+      address: o.customer?.address || "",
+      shortAddress: o.customer?.address?.split(",")[0] || "",
+
+      // Itens
+      items: o.items.map((i) => ({
+        id: i.id,
+        quantity: i.quantity,
+        productName: i.product?.name,
+        productPrice: i.product?.price,
+        complements: i.complements || [],
+      })),
+    }));
+
+    return NextResponse.json(normalized);
+  } catch (err) {
+    console.error("GET /orders error", err);
+    return NextResponse.error();
+  }
+}
