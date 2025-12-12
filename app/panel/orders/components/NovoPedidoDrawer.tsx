@@ -39,30 +39,19 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
     let mounted = true;
 
     async function loadProducts() {
-      try {
-        // 🔥 CORREÇÃO — tipagem da chamada do DB
-        const categories = (await dbLoadAll("categories")) as any[];
-        if (!mounted || !categories) return;
+  try {
+    const res = await fetch("/api/products", { cache: "no-store" });
+    const data = await res.json();
 
-        const all = categories.flatMap((c: any) =>
-          c?.products?.map((p: any) => ({
-            ...p,
-            categoryName: c.name,
-            complements:
-              Array.isArray(p?.complements)
-                ? p.complements
-                : Array.isArray(p?.complementGroups)
-                ? p.complementGroups
-                : [],
-          })) || []
-        );
+    if (!mounted) return;
 
-        setAllProducts(all);
-      } catch (err) {
-        console.error("Erro ao carregar categorias:", err);
-        setAllProducts([]);
-      }
-    }
+    setAllProducts(data);
+  } catch (err) {
+    console.error("Erro ao carregar produtos:", err);
+    setAllProducts([]);
+  }
+}
+
 
     loadProducts();
     return () => {
@@ -234,55 +223,40 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
           <div className="grid grid-cols-3 gap-4">
             {filteredProducts.map((prod: any) => (
               <div
-                key={prod.id}
-                onClick={() => {
-                  console.log("PROD SELECIONADO >>>", prod);
+  key={prod.id}
+  onClick={() => {
+    console.log("PROD SELECIONADO >>>", prod);
 
-                  const complementItems =
-                    prod.complementGroups ??
-                    prod.complements ??
-                    prod.complement_items ??
-                    [];
+    const complementItems = prod.complements || [];
 
-                  setSelectedProduct({
-                    ...prod,
-                    complementItems,
-                  });
+    setSelectedProduct({
+      ...prod,
+      complementItems,
+    });
 
-                  setOpenProductModal(true);
-                }}
-                className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
-              >
-                <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">
-                  {prod.image && (
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
+    setOpenProductModal(true);
+  }}
+  className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
+>
+  <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">
+    {prod.imageUrl && (
+      <img
+        src={prod.imageUrl}
+        alt={prod.name}
+        className="w-full h-full object-cover"
+      />
+    )}
+  </div>
 
-                <p className="font-medium truncate">{prod.name}</p>
+  <p className="font-medium truncate">{prod.name}</p>
 
-                {prod.discount ? (
-                  <p className="text-sm text-red-600">
-                    R$ {Number(prod.discount.price)
-                      .toFixed(2)
-                      .replace(".", ",")}
-                    <span className="line-through text-gray-500 ml-1">
-                      R$ {Number(prod.price).toFixed(2).replace(".", ",")}
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    R$ {Number(prod.price).toFixed(2).replace(".", ",")}
-                  </p>
-                )}
+  <p className="text-sm text-gray-600">
+    R$ {Number(prod.price).toFixed(2).replace(".", ",")}
+  </p>
 
-                <p className="text-xs text-gray-400">{prod.categoryName}</p>
-              </div>
-            ))}
+  <p className="text-xs text-gray-400">{prod.categoryName}</p>
+</div>
+))}
 
             {filteredProducts.length === 0 && (
               <p className="text-gray-500 text-sm col-span-3 text-center">
