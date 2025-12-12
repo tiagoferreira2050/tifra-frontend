@@ -37,6 +37,47 @@ export default function CategoryManager({
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [isNew, setIsNew] = useState(false);
 
+  // -----------------------
+  // Normaliza produtos (garante imageUrl e outros campos)
+  // -----------------------
+  function normalizeCategory(cat: any) {
+    if (!cat) return cat;
+
+    const normProducts = Array.isArray(cat.products)
+      ? cat.products.map((p: any, idx: number) => ({
+          id: p.id,
+          name: p.name ?? "",
+          price: p.price ?? 0,
+          description: p.description ?? null,
+          imageUrl: p.imageUrl ?? p.image ?? null,
+          active: p.active === undefined ? true : p.active,
+          order: p.order ?? idx,
+          ...Object.keys(p).reduce((acc: any, k: string) => {
+            if (
+              ![
+                "id",
+                "name",
+                "price",
+                "description",
+                "imageUrl",
+                "image",
+                "active",
+                "order",
+              ].includes(k)
+            ) {
+              acc[k] = p[k];
+            }
+            return acc;
+          }, {}),
+        }))
+      : [];
+
+    return {
+      ...cat,
+      products: normProducts,
+    };
+  }
+
   // ========================================================
   // CREATE
   // ========================================================
@@ -61,12 +102,12 @@ export default function CategoryManager({
         return;
       }
 
-      const newCat = {
+      const newCat = normalizeCategory({
         id: data.id,
         name: data.name,
         active: true,
-        products: [],
-      };
+        products: data.products ?? [],
+      });
 
       setCategories((prev: any[]) => [...prev, newCat]);
       onSelectCategory(newCat.id);
@@ -111,25 +152,30 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // TOGGLE ACTIVE
+  // TOGGLE ACTIVE (correção definitiva — NÃO remove produtos)
   // ========================================================
   async function toggleActive(id: string) {
-    setCategories((prev: any[]) => {
-      const updated = prev.map((c: any) =>
+    // Atualiza visualmente SEM apagar produtos
+    setCategories((prev: any[]) =>
+      prev.map((c: any) =>
         c.id === id ? { ...c, active: !c.active } : c
-      );
+      )
+    );
 
-      const changed = updated.find((c: any) => c.id === id);
-      if (changed) {
-        fetch(`/api/categories/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ active: changed.active }),
-        }).catch((err) => console.error("Erro ao atualizar categoria:", err));
-      }
+    // Descobre o novo estado
+    const found = categories.find((c: any) => c.id === id);
+    const newActive = found ? !found.active : false;
 
-      return updated;
-    });
+    // Atualiza no backend
+    try {
+      await fetch(`/api/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: newActive }),
+      });
+    } catch (err) {
+      console.error("Erro ao atualizar categoria:", err);
+    }
   }
 
   // ========================================================
@@ -149,7 +195,7 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // SAVE ORDER NO BANCO
+  // SAVE ORDER
   // ========================================================
   async function handleSaveOrder() {
     try {
@@ -160,9 +206,7 @@ export default function CategoryManager({
 
       await fetch("/api/categories/order", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orders }),
       });
 
@@ -200,45 +244,53 @@ export default function CategoryManager({
     }
   }
 
-// ========================================================
-// DUPLICATE (ATUALIZADO)
-// ========================================================
-async function handleDuplicate(cat: any) {
-  try {
-    // monta payload
-    const payload = {
-      name: `${cat.name} (cópia)`,
-      storeId: STORE_ID,
-      products: cat.products || [],  
-    };
+  // ========================================================
+  // DUPLICATE (mantém imageUrl e produtos)
+  // ========================================================
+  async function handleDuplicate(cat: any) {
+    try {
+      const payload = {
+        name: `${cat.name} (cópia)`,
+        storeId: STORE_ID,
+        products: (cat.products || []).map((p: any) => ({
+          name: p.name,
+          price: p.price,
+          description: p.description,
+          imageUrl: p.imageUrl ?? p.image ?? null,
+          active: p.active,
+          order: p.order,
+        })),
+      };
 
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      const msg = await res.text();
-      console.error("Erro ao duplicar:", msg);
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error("Erro ao duplicar:", msg);
+        alert("Erro ao duplicar categoria");
+        return;
+      }
+
+      const createdRaw = await res.json();
+
+      const created = normalizeCategory({
+        id: createdRaw.id,
+        name: createdRaw.name,
+        active: createdRaw.active ?? true,
+        products: createdRaw.products ?? payload.products ?? [],
+      });
+
+      setCategories((prev: any[]) => [...prev, created]);
+      onSelectCategory(created.id);
+    } catch (err) {
+      console.error("Erro ao duplicar categoria:", err);
       alert("Erro ao duplicar categoria");
-      return;
     }
-
-    const created = await res.json();
-
-    // atualiza UI adicionando
-    setCategories((prev: any[]) => [...prev, created]);
-
-    // seleciona nova categoria
-    onSelectCategory(created.id);
-
-  } catch (err) {
-    console.error("Erro ao duplicar categoria:", err);
-    alert("Erro ao duplicar categoria");
   }
-}
-
 
   // ========================================================
   // UI
@@ -256,7 +308,6 @@ async function handleDuplicate(cat: any) {
         </button>
       </div>
 
-      {/* 🔥 SALVA NO BACKEND */}
       <button
         onClick={handleSaveOrder}
         className="bg-green-600 w-full text-white py-2 rounded-md font-medium"
@@ -285,7 +336,7 @@ async function handleDuplicate(cat: any) {
                 onToggle={toggleActive}
                 onEdit={() => handleEdit(cat)}
                 onDelete={() => handleDelete(cat.id)}
-                onDuplicate={() => handleDuplicate(cat)} 
+                onDuplicate={() => handleDuplicate(cat)}
               />
             ))}
           </div>
