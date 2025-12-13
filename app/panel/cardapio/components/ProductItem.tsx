@@ -29,16 +29,21 @@ export default function ProductItem({
   const hasDiscount = product.discount && product.discount.price;
 
   // =====================================================
-  // 🔥 PEGAR TÍTULOS CORRETOS DOS COMPLEMENTOS
+  // 🔥 CORREÇÃO — usar SEMPRE product.complements
   // =====================================================
   const complementTitles =
-    Array.isArray(product.productComplements) &&
-    product.productComplements.length > 0
-      ? product.productComplements
+    Array.isArray(product.complements) && product.complements.length > 0
+      ? product.complements
           .map((pc: any) => {
-            // pc.groupId é o ID CORRETO do grupo
-            const group = complements.find((c: any) => c.id === pc.groupId);
-            return group ? group.name : null;
+            const groupId =
+              pc.complementId || pc.groupId || pc.id || null;
+
+            if (!groupId) return null;
+
+            // encontrar no array global
+            const group = complements.find((c: any) => c.id === groupId);
+
+            return group ? group.title || group.name : null;
           })
           .filter(Boolean)
           .join(", ")

@@ -129,65 +129,63 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   }, [cep]);
 
   // 🔥 Criar pedido
-  function handleCreate() {
-    if (!customer.trim()) {
-      alert("Digite o nome do cliente");
+  async function handleCreate() {
+  if (!customer.trim()) {
+    alert("Digite o nome do cliente");
+    return;
+  }
+
+  // Monta o payload para enviar ao backend
+  const payload = {
+    customerName: customer,
+    customerPhone: phone,
+    customerAddress:
+      deliveryType === "entrega"
+        ? `${street}, ${number}${
+            complement ? " - " + complement : ""
+          } - ${neighborhood} - ${city} - ${stateUf} (CEP: ${cep})`
+        : "-",
+
+    items: items.map((it: any) => ({
+      productId: it.productId,   // ← precisa existir no objeto vindo do modal
+      quantity: it.qty,
+      unitPrice: it.price,
+      complements: it.complements || [],
+    })),
+
+    paymentMethod,
+    deliveryFee: deliveryType === "entrega" ? toNumber(deliveryFee) : 0,
+  };
+
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      alert("Erro ao criar pedido no servidor");
       return;
     }
 
-    const lastInternalId = localStorage.getItem("tifra_last_internal_order");
+    const savedOrder = await res.json(); // Pedido REAL que o backend criou
 
-    const newOrderId = generateOrderId({
-      source: "tifra",
-      lastInternalId,
-    });
+    // Atualiza o painel com o pedido vindo do banco
+    if (onCreate) onCreate(savedOrder);
 
-    localStorage.setItem("tifra_last_internal_order", newOrderId);
-
-    const itemsTotal = items.reduce(
-      (acc, it) => acc + Number(it.price) * it.qty,
-      0
-    );
-
-    const fee = toNumber(deliveryFee);
-    const total = itemsTotal + (deliveryType === "entrega" ? fee : 0);
-
-    const address =
-      deliveryType === "entrega"
-        ? `${street || "-"}, ${number || "-"}${
-            complement ? " - " + complement : ""
-          } - ${neighborhood || "-"} - ${city || "-"} - ${stateUf || "-"} (CEP: ${
-            cep || "-"
-          })`
-        : "-";
-
-    const newOrder = {
-      id: newOrderId,
-      customer,
-      phone,
-      deliveryType,
-      address,
-      shortAddress:
-        deliveryType === "entrega" ? `${street}, ${number}` : "-",
-      total,
-      createdAt: "Agora",
-      status: "analysis",
-      items,
-      paymentMethod,
-      changeFor: 0,
-      deliveryFee: deliveryType === "entrega" ? fee : 0,
-      isNewCustomer: false,
-      ordersCount: 1,
-    };
-
-    if (onCreate) onCreate(newOrder);
-
+    // Limpar e fechar o drawer
     onClose();
     setCustomer("");
     setPhone("");
-    setDeliveryType("entrega");
     setItems([]);
+    setDeliveryType("entrega");
+  } catch (err) {
+    console.error("Erro ao salvar pedido:", err);
+    alert("Falha ao salvar pedido no servidor.");
   }
+}
+
 
   // ────────────────────────────────────────────────
   // UI PRINCIPAL

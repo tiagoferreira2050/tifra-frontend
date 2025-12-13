@@ -131,10 +131,16 @@ export default function ProductList({
                   const newActive = !prod.active;
 
                   updateProducts(
-                    products.map((p: any) =>
-                      p.id === prod.id ? { ...p, active: newActive } : p
-                    )
-                  );
+  products.map((p: any) =>
+    p.id === prod.id
+      ? {
+          ...p,              // preserva TUDO
+          active: newActive // altera apenas active
+        }
+      : p
+  )
+);
+
 
                   await fetch(`/api/products/${prod.id}`, {
                     method: "PATCH",
