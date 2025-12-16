@@ -1,4 +1,3 @@
-export const dynamic = "force-dynamic";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -50,7 +49,7 @@ export default function CardapioPage() {
               name: cat.name,
               active: cat.active ?? true,
 
-              // 🔒 NORMALIZA PRODUTOS (EVITA CRASH NO BUILD)
+              // 🔒 NORMALIZA PRODUTOS (EVITA CRASH)
               products: Array.isArray(cat.products)
                 ? cat.products.map((p: any) => ({
                     ...p,
