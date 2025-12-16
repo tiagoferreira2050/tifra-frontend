@@ -48,8 +48,6 @@ export default function CardapioPage() {
               id: cat.id,
               name: cat.name,
               active: cat.active ?? true,
-
-              // 🔒 NORMALIZA PRODUTOS (EVITA CRASH)
               products: Array.isArray(cat.products)
                 ? cat.products.map((p: any) => ({
                     ...p,
@@ -68,7 +66,6 @@ export default function CardapioPage() {
         setSelectedCategoryId(formatted[0]?.id ?? null);
       } catch (error) {
         console.error("Erro ao carregar categorias:", error);
-        setCategories([]);
       }
     }
 
@@ -205,17 +202,6 @@ export default function CardapioPage() {
     } catch (err) {
       alert("Erro ao atualizar complemento.");
     }
-  }
-
-  // ==========================
-  // LOADING SAFE
-  // ==========================
-  if (categories.length === 0) {
-    return (
-      <div className="p-6 text-sm text-gray-500">
-        Carregando cardápio...
-      </div>
-    );
   }
 
   return (
