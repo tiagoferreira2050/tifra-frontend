@@ -5,13 +5,12 @@ export async function signInOrSignUp(email: string, password: string) {
     throw new Error("NEXT_PUBLIC_API_URL não configurada");
   }
 
-  // 🔐 LOGIN → backend seta cookie httpOnly (tifra_token)
+  // 🔐 LOGIN
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include", // 🔥 ESSENCIAL
     body: JSON.stringify({ email, password }),
   });
 
@@ -21,14 +20,22 @@ export async function signInOrSignUp(email: string, password: string) {
     throw new Error(data?.error || "Erro ao fazer login");
   }
 
-  // ❌ NÃO salva token
-  // ❌ NÃO retorna token
-  // cookie já foi criado pelo backend
+  /**
+   * ✅ COOKIE FUNCIONAL (SEM LOOP)
+   * Criado no domínio app.tifra.com.br
+   */
+  document.cookie = [
+    `tifra_token=${data.token}`,
+    "Path=/",
+    "Max-Age=604800", // 7 dias
+    "SameSite=Lax",
+  ].join("; ");
 
-  // 👤 BUSCA USUÁRIO USANDO COOKIE
+  // 👤 BUSCA USUÁRIO COM AUTH HEADER
   const userRes = await fetch(`${API_URL}/user`, {
-    method: "GET",
-    credentials: "include", // 🔥 ENVIA tifra_token automaticamente
+    headers: {
+      Authorization: `Bearer ${data.token}`,
+    },
   });
 
   const userData = await userRes.json();
