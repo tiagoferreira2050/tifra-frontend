@@ -1,40 +1,37 @@
-import { supabase } from "./supabaseClient";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function signInOrSignUp(email: string, password: string) {
-  // login normal
-  const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  if (!API_URL) {
+    throw new Error("API_URL não configurada");
+  }
+
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
   });
 
-  if (loginData?.user) {
-    console.log("LOGIN OK:", loginData.user);
-    return loginData.user;
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error || "Erro ao fazer login");
   }
 
-  // senha incorreta
-  if (loginError && loginError.message.toLowerCase().includes("invalid login credentials")) {
-    throw new Error("Senha incorreta.");
-  }
+  localStorage.setItem("tifra_token", data.token);
 
-  // verificar se usuário existe pelo admin
-  const { data: usersData } = await supabase.auth.admin.listUsers();
-  const exists = usersData.users.some(u => u.email === email);
-
-  if (exists) {
-    throw new Error("Senha incorreta.");
-  }
-
-  // criar usuário
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
+  const userRes = await fetch(`${API_URL}/user`, {
+    headers: {
+      Authorization: `Bearer ${data.token}`,
+    },
   });
 
-  if (signUpError) {
-    throw new Error(signUpError.message);
+  const userData = await userRes.json();
+
+  if (!userRes.ok) {
+    throw new Error("Erro ao buscar usuário");
   }
 
-  console.log("SIGNUP OK:", signUpData.user);
-  return signUpData.user;
+  return userData.user;
 }
