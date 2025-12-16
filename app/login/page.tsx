@@ -51,10 +51,12 @@ export default function LoginPage() {
       // ✅ APENAS BUSCA A LOJA EXISTENTE
       const store = await getStoreByUser(user.id)
 
+      // ✅ dados locais (ok)
       localStorage.setItem("tifra_user", JSON.stringify(user))
       localStorage.setItem("tifra_store", JSON.stringify(store))
 
-      document.cookie = `tifra_user=${user.id}; path=/; max-age=31536000`
+      // ❌ NÃO CRIA COOKIE AQUI
+      // auth é controlado SOMENTE pelo backend (tifra_token)
 
       window.location.href = "/panel"
 
