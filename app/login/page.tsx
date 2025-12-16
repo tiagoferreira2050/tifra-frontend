@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 
 import { useState } from "react"
 import { signInOrSignUp } from "@/lib/auth"
-import { ensureStoreExists } from "@/lib/store"
+import { getStoreByUser } from "@/lib/store"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -16,11 +16,10 @@ export default function LoginPage() {
 
       if (!email || !password) {
         alert("Preencha o e-mail e a senha.")
-        setLoading(false)
         return
       }
 
-      let user: any = null
+      let user: any
 
       try {
         user = await signInOrSignUp(email, password)
@@ -33,23 +32,24 @@ export default function LoginPage() {
 
         if (msg.includes("invalid login credentials")) {
           alert("Senha incorreta ❌")
-        } else if (msg.includes("user not found") || msg.includes("invalid email")) {
+        } else if (
+          msg.includes("user not found") ||
+          msg.includes("invalid email")
+        ) {
           alert("E-mail não encontrado ❌")
         } else {
           alert("Erro ao entrar: " + err.message)
         }
-
-        setLoading(false)
         return
       }
 
       if (!user?.id) {
         alert("Erro inesperado: usuário inválido.")
-        setLoading(false)
         return
       }
 
-      const store = await ensureStoreExists(user.id)
+      // ✅ APENAS BUSCA A LOJA EXISTENTE
+      const store = await getStoreByUser(user.id)
 
       localStorage.setItem("tifra_user", JSON.stringify(user))
       localStorage.setItem("tifra_store", JSON.stringify(store))
@@ -95,7 +95,7 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => window.location.href = "/signup"}
+          onClick={() => (window.location.href = "/signup")}
           className="w-full text-center text-blue-600 mt-2 underline"
         >
           Criar conta
