@@ -11,9 +11,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   async function handleLogin() {
-    try {
-      setLoading(true)
+    setLoading(true)
 
+    try {
       if (!email || !password) {
         alert("Preencha o e-mail e a senha.")
         return

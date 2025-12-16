@@ -26,19 +26,18 @@ export function middleware(req: NextRequest) {
   if (cleanHost.startsWith("app.")) {
     const token = req.cookies.get("tifra_token")?.value;
 
-    // ❌ NÃO LOGADO tentando acessar qualquer rota protegida
-    if (!token && url.pathname !== "/login") {
+    // 🔓 Login e signup sempre liberados
+    if (url.pathname === "/login" || url.pathname === "/signup") {
+      return NextResponse.next();
+    }
+
+    // ❌ NÃO LOGADO tentando acessar rota protegida
+    if (!token) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
-    // ✅ JÁ LOGADO tentando acessar /login → manda pro painel
-    if (token && url.pathname === "/login") {
-      url.pathname = "/panel";
-      return NextResponse.redirect(url);
-    }
-
-    // ✅ pode continuar normalmente
+    // ✅ LOGADO → acesso liberado
     return NextResponse.next();
   }
 
