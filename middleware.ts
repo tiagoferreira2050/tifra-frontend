@@ -2,17 +2,17 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const url = req.nextUrl.clone();
+  const { pathname } = req.nextUrl;
   const host = req.headers.get("host") || "";
+  const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // IGNORAR ARQUIVOS ESTÁTICOS / API
+  // IGNORAR TUDO QUE NÃO É PÁGINA
   // ===============================
   if (
-    url.pathname.startsWith("/_next") ||
-    url.pathname.startsWith("/api") ||
-    url.pathname.startsWith("/static") ||
-    url.pathname.includes(".")
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.includes(".")
   ) {
     return NextResponse.next();
   }
@@ -24,17 +24,18 @@ export function middleware(req: NextRequest) {
   // 🔐 PAINEL — app.tifra.com.br
   // ===============================
   if (cleanHost.startsWith("app.")) {
-    const token = req.cookies.get("tifra_token")?.value;
-
-    // 🔓 Login e signup sempre liberados
-    if (url.pathname === "/login" || url.pathname === "/signup") {
+    // 🔓 Rotas públicas do painel
+    if (pathname === "/login" || pathname === "/signup") {
+      // se já estiver logado, evita loop indo pro login
+      if (token) {
+        return NextResponse.redirect(new URL("/panel", req.url));
+      }
       return NextResponse.next();
     }
 
-    // ❌ NÃO LOGADO tentando acessar rota protegida
+    // ❌ NÃO LOGADO tentando acessar painel
     if (!token) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
     // ✅ LOGADO → acesso liberado
@@ -42,9 +43,12 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // DOMÍNIO RAIZ (tifra.com.br)
+  // DOMÍNIO RAIZ
   // ===============================
-  if (cleanHost === mainDomain || cleanHost === `www.${mainDomain}`) {
+  if (
+    cleanHost === mainDomain ||
+    cleanHost === `www.${mainDomain}`
+  ) {
     return NextResponse.next();
   }
 
@@ -52,13 +56,12 @@ export function middleware(req: NextRequest) {
   // SUBDOMÍNIO → LOJA PÚBLICA
   // ===============================
   const subdomain = cleanHost.split(".")[0];
+  const url = req.nextUrl.clone();
   url.pathname = `/store/${subdomain}`;
 
   return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
-  ],
+  matcher: ["/:path*"], // 🔥 matcher simples e seguro
 };
