@@ -18,8 +18,15 @@ export function middleware(req: NextRequest) {
   const cleanHost = host.split(":")[0];
   const mainDomain = "tifra.com.br";
 
-  // Ignorar painel
+  // 🔐 PAINEL (app.tifra.com.br)
   if (cleanHost.startsWith("app.")) {
+    const token = req.cookies.get("tifra_token")?.value;
+
+    if (!token && url.pathname !== "/login") {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next();
   }
 
@@ -28,10 +35,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Obter subdomínio
+  // Subdomínio → loja
   const subdomain = cleanHost.split(".")[0];
-
-  // rewrite
   url.pathname = `/store/${subdomain}`;
 
   return NextResponse.rewrite(url);
@@ -39,7 +44,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'
-  ]
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
+  ],
 };
-
