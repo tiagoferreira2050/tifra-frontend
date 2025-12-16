@@ -1,69 +1,70 @@
-"use client"
-export const dynamic = "force-dynamic"
+"use client";
+export const dynamic = "force-dynamic";
 
-import { useState } from "react"
-import { signInOrSignUp } from "@/lib/auth"
-import { getStoreByUser } from "@/lib/store"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInOrSignUp } from "@/lib/auth";
+import { getStoreByUser } from "@/lib/store";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    setLoading(true)
+    setLoading(true);
 
     try {
       if (!email || !password) {
-        alert("Preencha o e-mail e a senha.")
-        return
+        alert("Preencha o e-mail e a senha.");
+        return;
       }
 
-      let user: any
+      let user: any;
 
       try {
-        user = await signInOrSignUp(email, password)
+        user = await signInOrSignUp(email, password);
 
-        console.log("🧩 Usuário logado →", user)
-        console.log("🧩 user.id →", user?.id)
+        console.log("🧩 Usuário logado →", user);
+        console.log("🧩 user.id →", user?.id);
 
       } catch (err: any) {
-        const msg = err.message?.toLowerCase() || ""
+        const msg = err.message?.toLowerCase() || "";
 
         if (msg.includes("invalid login credentials")) {
-          alert("Senha incorreta ❌")
+          alert("Senha incorreta ❌");
         } else if (
           msg.includes("user not found") ||
           msg.includes("invalid email")
         ) {
-          alert("E-mail não encontrado ❌")
+          alert("E-mail não encontrado ❌");
         } else {
-          alert("Erro ao entrar: " + err.message)
+          alert("Erro ao entrar: " + err.message);
         }
-        return
+        return;
       }
 
       if (!user?.id) {
-        alert("Erro inesperado: usuário inválido.")
-        return
+        alert("Erro inesperado: usuário inválido.");
+        return;
       }
 
-      // ✅ APENAS BUSCA A LOJA EXISTENTE
-      const store = await getStoreByUser(user.id)
+      // ✅ busca a loja existente
+      const store = await getStoreByUser(user.id);
 
-      // ✅ dados locais (ok)
-      localStorage.setItem("tifra_user", JSON.stringify(user))
-      localStorage.setItem("tifra_store", JSON.stringify(store))
+      // ✅ dados locais (mantidos)
+      localStorage.setItem("tifra_user", JSON.stringify(user));
+      localStorage.setItem("tifra_store", JSON.stringify(store));
 
-      // ❌ NÃO CRIA COOKIE AQUI
-      // auth é controlado SOMENTE pelo backend (tifra_token)
-
-      window.location.href = "/panel"
+      // 🔥 REDIRECT CORRETO (SEM RELOAD DURO)
+      router.replace("/panel");
 
     } catch (err: any) {
-      alert("Erro ao entrar: " + err.message)
+      alert("Erro ao entrar: " + err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -97,12 +98,12 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => (window.location.href = "/signup")}
+          onClick={() => router.push("/signup")}
           className="w-full text-center text-blue-600 mt-2 underline"
         >
           Criar conta
         </button>
       </div>
     </div>
-  )
+  );
 }

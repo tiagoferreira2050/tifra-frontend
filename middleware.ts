@@ -7,7 +7,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // IGNORAR TUDO QUE NÃO É PÁGINA
+  // IGNORAR ARQUIVOS / API
   // ===============================
   if (
     pathname.startsWith("/_next") ||
@@ -24,21 +24,19 @@ export function middleware(req: NextRequest) {
   // 🔐 PAINEL — app.tifra.com.br
   // ===============================
   if (cleanHost.startsWith("app.")) {
-    // 🔓 Rotas públicas do painel
-    if (pathname === "/login" || pathname === "/signup") {
-      // se já estiver logado, evita loop indo pro login
-      if (token) {
-        return NextResponse.redirect(new URL("/panel", req.url));
-      }
+    const isPanelRoute = pathname.startsWith("/panel");
+    const isPublicRoute = pathname === "/login" || pathname === "/signup";
+
+    // 🔓 rotas públicas
+    if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // ❌ NÃO LOGADO tentando acessar painel
-    if (!token) {
+    // 🔐 proteger APENAS /panel
+    if (isPanelRoute && !token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // ✅ LOGADO → acesso liberado
     return NextResponse.next();
   }
 
@@ -53,7 +51,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // SUBDOMÍNIO → LOJA PÚBLICA
+  // SUBDOMÍNIO → LOJA
   // ===============================
   const subdomain = cleanHost.split(".")[0];
   const url = req.nextUrl.clone();
@@ -63,5 +61,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"], // 🔥 matcher simples e seguro
+  matcher: ["/:path*"],
 };
