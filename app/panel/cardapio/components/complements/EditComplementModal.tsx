@@ -131,12 +131,9 @@ export default function EditComplementModal({
       description,
       type,
       required,
-
       minChoose: minChoose ? Number(minChoose) : null,
       maxChoose: maxChoose ? Number(maxChoose) : null,
-
       active: complement.active,
-
       options: options.map((opt) => ({
         id: opt.id,
         name: opt.name,
@@ -216,7 +213,6 @@ export default function EditComplementModal({
           </div>
         </div>
 
-        {/* LISTA DE OPÇÕES */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button

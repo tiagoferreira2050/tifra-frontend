@@ -40,7 +40,6 @@ export default function ProductItem({
 
             if (!groupId) return null;
 
-            // encontrar no array global
             const group = complements.find((c: any) => c.id === groupId);
 
             return group ? group.title || group.name : null;
@@ -114,7 +113,6 @@ export default function ProductItem({
             </p>
           )}
 
-          {/* COMPLEMENTOS LISTADOS */}
           {complementTitles && (
             <p className="text-xs text-gray-500 mt-1 truncate">
               Complementos: {complementTitles}

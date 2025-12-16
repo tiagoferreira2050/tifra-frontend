@@ -107,7 +107,6 @@ export default function EditProductModal({
     if (numericPrice <= 0) return alert("Preço inválido");
 
     try {
-
       // 🔥 Ordenar complementos antes de enviar para o backend
       const complementsOrdered = [...selectedComplements].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
@@ -154,7 +153,6 @@ export default function EditProductModal({
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
-
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>
 
         {/* NOME */}
@@ -189,7 +187,9 @@ export default function EditProductModal({
         </select>
 
         {/* COMPLEMENTOS */}
-        <label className="block font-medium mb-1 mt-3">Complementos do produto</label>
+        <label className="block font-medium mb-1 mt-3">
+          Complementos do produto
+        </label>
 
         <ProductComplementsManager
           productComplements={selectedComplements}
@@ -198,7 +198,9 @@ export default function EditProductModal({
         />
 
         {/* PDV */}
-        <label className="block font-medium mb-1">Código PDV (opcional)</label>
+        <label className="block font-medium mb-1">
+          Código PDV (opcional)
+        </label>
         <input
           className="w-full border rounded-md p-2 mb-4"
           value={pdv}
@@ -220,7 +222,9 @@ export default function EditProductModal({
           {image ? (
             <img src={image} className="h-full object-cover rounded" />
           ) : (
-            <p className="text-gray-400">Arraste ou clique para enviar</p>
+            <p className="text-gray-400">
+              Arraste ou clique para enviar
+            </p>
           )}
 
           <input
@@ -233,7 +237,10 @@ export default function EditProductModal({
 
         {/* BOTÕES */}
         <div className="flex justify-end gap-3 mt-6">
-          <button className="px-4 py-2 bg-gray-200 rounded-md" onClick={onClose}>
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-md"
+            onClick={onClose}
+          >
             Cancelar
           </button>
 

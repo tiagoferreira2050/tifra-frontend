@@ -17,7 +17,6 @@ export default function CategoryList() {
 
   return (
     <div className="flex flex-col gap-3">
-
       {categories.map(cat => (
         <div
           key={cat.id}
@@ -56,7 +55,6 @@ export default function CategoryList() {
           </button>
         </div>
       ))}
-
     </div>
   );
 }

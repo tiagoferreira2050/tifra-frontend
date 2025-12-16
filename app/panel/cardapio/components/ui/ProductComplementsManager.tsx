@@ -224,7 +224,11 @@ export default function ProductComplementsManager({
         </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext
           items={normalized.map((n: any) => n.complementId)}
           strategy={verticalListSortingStrategy}

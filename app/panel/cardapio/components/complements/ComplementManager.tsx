@@ -38,67 +38,58 @@ export default function ComplementManager({
 
   // ---------------- TOGGLE ACTIVE + SALVAR NO BACKEND ----------------
   async function toggleActive(id: string) {
-  setComplements((prev: any[]) =>
-    prev.map((c) =>
-      c.id === id ? { ...c, active: !c.active } : c
-    )
-  );
+    setComplements((prev: any[]) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, active: !c.active } : c
+      )
+    );
 
-  const changed = complements.find((c) => c.id === id);
-  if (!changed) return;
+    const changed = complements.find((c) => c.id === id);
+    if (!changed) return;
 
-  try {
-    await fetch("/api/complements", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id,
-        active: !changed.active,
-      }),
-    });
-  } catch (err) {
-    console.error("Erro ao atualizar complemento:", err);
+    try {
+      await fetch("/api/complements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          active: !changed.active,
+        }),
+      });
+    } catch (err) {
+      console.error("Erro ao atualizar complemento:", err);
+    }
   }
-}
-
 
   // ---------------- DELETE (LOCAL) ----------------
   async function deleteComplement(id: string) {
-  if (!confirm("Deseja deletar este complemento?")) return;
+    if (!confirm("Deseja deletar este complemento?")) return;
 
-  // backup
-  const backup = complements;
+    const backup = complements;
 
-  // remove da UI
-  setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
+    setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
 
-  try {
-    const res = await fetch("/api/complements", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/complements", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
 
-    if (!res.ok) {
-      throw new Error("Falha no backend");
+      if (!res.ok) {
+        throw new Error("Falha no backend");
+      }
+
+    } catch (err) {
+      console.error("Erro ao deletar:", err);
+      setComplements(backup);
+      alert("Erro ao deletar complemento");
     }
-
-  } catch (err) {
-    console.error("Erro ao deletar:", err);
-
-    // rollback
-    setComplements(backup);
-
-    alert("Erro ao deletar complemento");
   }
-}
-
 
   // ---------------- UI ----------------
   return (
     <div className="flex flex-col gap-4 p-4">
-
-      {/* TÍTULO + BOTÃO */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Lista de complementos</h2>
 
@@ -110,7 +101,6 @@ export default function ComplementManager({
         </button>
       </div>
 
-      {/* BUSCA LOCAL */}
       <input
         type="text"
         placeholder="Pesquisar variações"
@@ -119,7 +109,6 @@ export default function ComplementManager({
         onChange={(e) => setLocalSearch(e.target.value)}
       />
 
-      {/* LISTA */}
       <div className="flex flex-col gap-4">
         {filtered.map((comp: any) => (
           <div
@@ -128,8 +117,6 @@ export default function ComplementManager({
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">
-
-                {/* Switch */}
                 <label className="inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -150,7 +137,6 @@ export default function ComplementManager({
                   </div>
                 </label>
 
-                {/* TÍTULO + DESCRIÇÃO */}
                 <div className="flex flex-col">
                   <strong className="text-sm">{comp.title}</strong>
 
@@ -162,7 +148,6 @@ export default function ComplementManager({
                 </div>
               </div>
 
-              {/* AÇÕES */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => onOpenEdit(comp)}
@@ -180,7 +165,6 @@ export default function ComplementManager({
               </div>
             </div>
 
-            {/* OPÇÕES */}
             <p className="text-xs text-gray-500 mt-1">
               {Array.isArray(comp.options) && comp.options.length > 0
                 ? comp.options.map((o: any) => o.name).join(", ")

@@ -18,6 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/api"; // 🔥 ÚNICA ADIÇÃO
 
 export default function CategoryManager({
   categories,
@@ -37,9 +38,6 @@ export default function CategoryManager({
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [isNew, setIsNew] = useState(false);
 
-  // -----------------------
-  // Normaliza produtos (garante imageUrl e outros campos)
-  // -----------------------
   function normalizeCategory(cat: any) {
     if (!cat) return cat;
 
@@ -86,21 +84,13 @@ export default function CategoryManager({
     if (!name) return;
 
     try {
-      const res = await fetch("/api/categories", {
+      const data = await apiFetch("/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           storeId: STORE_ID,
         }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert("Erro ao criar categoria!");
-        return;
-      }
 
       const newCat = normalizeCategory({
         id: data.id,
@@ -118,22 +108,12 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // EDIT (ABRIR MODAL)
-  // ========================================================
-  function handleEdit(category: any) {
-    setEditingCategory(category);
-    setIsNew(false);
-    setModalOpen(true);
-  }
-
-  // ========================================================
-  // EDITAR & SALVAR (NOME)
+  // EDITAR NOME
   // ========================================================
   async function handleSaveCategory(updated: any) {
     try {
-      await fetch(`/api/categories/${updated.id}`, {
+      await apiFetch(`/categories/${updated.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: updated.name }),
       });
 
@@ -152,25 +132,21 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // TOGGLE ACTIVE (correção definitiva — NÃO remove produtos)
+  // TOGGLE ACTIVE
   // ========================================================
   async function toggleActive(id: string) {
-    // Atualiza visualmente SEM apagar produtos
     setCategories((prev: any[]) =>
       prev.map((c: any) =>
         c.id === id ? { ...c, active: !c.active } : c
       )
     );
 
-    // Descobre o novo estado
     const found = categories.find((c: any) => c.id === id);
     const newActive = found ? !found.active : false;
 
-    // Atualiza no backend
     try {
-      await fetch(`/api/categories/${id}`, {
+      await apiFetch(`/categories/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: newActive }),
       });
     } catch (err) {
@@ -179,7 +155,7 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // DRAG AND DROP ORDER
+  // DRAG AND DROP
   // ========================================================
   function onDragEnd(event: any) {
     const { active, over } = event;
@@ -204,9 +180,8 @@ export default function CategoryManager({
         order: index,
       }));
 
-      await fetch("/api/categories/order", {
+      await apiFetch("/categories/order", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orders }),
       });
 
@@ -224,14 +199,9 @@ export default function CategoryManager({
     if (!confirm("Excluir essa categoria?")) return;
 
     try {
-      const res = await fetch(`/api/categories/${id}`, {
+      await apiFetch(`/categories/${id}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) {
-        alert("Erro ao excluir categoria!");
-        return;
-      }
 
       setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
 
@@ -245,7 +215,7 @@ export default function CategoryManager({
   }
 
   // ========================================================
-  // DUPLICATE (mantém imageUrl e produtos)
+  // DUPLICATE
   // ========================================================
   async function handleDuplicate(cat: any) {
     try {
@@ -262,20 +232,10 @@ export default function CategoryManager({
         })),
       };
 
-      const res = await fetch("/api/categories", {
+      const createdRaw = await apiFetch("/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        console.error("Erro ao duplicar:", msg);
-        alert("Erro ao duplicar categoria");
-        return;
-      }
-
-      const createdRaw = await res.json();
 
       const created = normalizeCategory({
         id: createdRaw.id,
@@ -334,7 +294,10 @@ export default function CategoryManager({
                 isSelected={selectedCategoryId === cat.id}
                 onSelect={() => onSelectCategory(cat.id)}
                 onToggle={toggleActive}
-                onEdit={() => handleEdit(cat)}
+                onEdit={() => {
+                  setEditingCategory(cat);
+                  setModalOpen(true);
+                }}
                 onDelete={() => handleDelete(cat.id)}
                 onDuplicate={() => handleDuplicate(cat)}
               />

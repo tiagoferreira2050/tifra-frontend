@@ -1,4 +1,3 @@
-// app/panel/cardapio/components/EditCategoryModal.tsx
 "use client";
 
 import {
@@ -21,23 +20,27 @@ export default function EditCategoryModal({
 }: any) {
   const [name, setName] = useState("");
 
-  // Carrega dados da categoria ao abrir (somente se estiver editando)
+  // ==========================
+  // CARREGAR DADOS AO ABRIR
+  // ==========================
   useEffect(() => {
     if (!isNew && category) {
       setName(category.name ?? "");
     } else {
-      setName(""); // limpeza ao criar novo
+      setName("");
     }
   }, [category, isNew]);
 
+  // ==========================
+  // SALVAR
+  // ==========================
   function handleSave() {
     if (!name.trim()) return;
 
     onSave({
-  ...category,
-  name,
-});
-
+      ...category,
+      name,
+    });
   }
 
   return (
@@ -45,7 +48,9 @@ export default function EditCategoryModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {isNew ? "Criar nova categoria" : `Editar categoria "${category?.name ?? ""}"`}
+            {isNew
+              ? "Criar nova categoria"
+              : `Editar categoria "${category?.name ?? ""}"`}
           </DialogTitle>
         </DialogHeader>
 

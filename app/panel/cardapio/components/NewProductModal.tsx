@@ -65,11 +65,9 @@ export default function NewProductModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // PREVIEW local
     const previewUrl = URL.createObjectURL(file);
     setImage(previewUrl);
 
-    // UPLOAD REAL para Cloudinary (ou sua rota interna)
     const formData = new FormData();
     formData.append("file", file);
 
@@ -81,7 +79,7 @@ export default function NewProductModal({
     const data = await upload.json();
 
     if (data?.url) {
-      setImage(data.url); // Agora imagem final salva no banco
+      setImage(data.url);
     } else {
       alert("Erro ao enviar imagem");
     }
@@ -112,7 +110,6 @@ export default function NewProductModal({
           storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
           imageUrl: image || null,
 
-          // envia só o ID do grupo
           complements: selectedComplements.map((c: any) => c.complementId),
         }),
       });
@@ -141,10 +138,8 @@ export default function NewProductModal({
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
-
         <h2 className="text-xl font-semibold mb-6">Criar novo produto</h2>
 
-        {/* NOME */}
         <label className="block font-medium mb-1">Nome do produto *</label>
         <input
           className="w-full border rounded-md p-2 mb-4"
@@ -152,7 +147,6 @@ export default function NewProductModal({
           onChange={(e) => setName(e.target.value)}
         />
 
-        {/* DESCRIÇÃO */}
         <label className="block font-medium mb-1">Descrição *</label>
         <textarea
           className="w-full border rounded-md p-2 mb-4"
@@ -161,7 +155,6 @@ export default function NewProductModal({
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        {/* CATEGORIA */}
         <label className="block font-medium mb-1">Categoria *</label>
         {Array.isArray(categories) && categories.length > 0 ? (
           <select
@@ -179,8 +172,9 @@ export default function NewProductModal({
           <p className="text-red-500 mb-4">Nenhuma categoria encontrada</p>
         )}
 
-        {/* COMPLEMENTOS */}
-        <label className="block font-medium mb-1 mt-3">Complementos do produto</label>
+        <label className="block font-medium mb-1 mt-3">
+          Complementos do produto
+        </label>
 
         <ProductComplementsManager
           productComplements={selectedComplements}
@@ -190,34 +184,29 @@ export default function NewProductModal({
           openGlobalEdit={() => {}}
         />
 
-        {/* PDV */}
-        <label className="block font-medium mb-1">Código PDV (opcional)</label>
+        <label className="block font-medium mb-1">
+          Código PDV (opcional)
+        </label>
         <input
           className="w-full border rounded-md p-2 mb-4"
           value={pdv}
           onChange={(e) => setPdv(e.target.value)}
         />
 
-        {/* PREÇO */}
         <label className="block font-medium mb-1">Preço *</label>
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            className="border rounded-md p-2 w-full"
-            value={price}
-            onChange={(e) => setPrice(formatCurrency(e.target.value))}
-          />
-        </div>
+        <input
+          className="border rounded-md p-2 w-full mb-4"
+          value={price}
+          onChange={(e) => setPrice(formatCurrency(e.target.value))}
+        />
 
-        {/* IMAGEM */}
         <label className="block font-medium mb-1">Imagem</label>
-
         <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
           {image ? (
             <img src={image} className="h-full object-cover rounded" />
           ) : (
             <p className="text-gray-400">Arraste ou clique para enviar</p>
           )}
-
           <input
             type="file"
             accept="image/*"
@@ -226,7 +215,6 @@ export default function NewProductModal({
           />
         </div>
 
-        {/* BOTÕES */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             className="px-4 py-2 bg-gray-200 rounded-md"

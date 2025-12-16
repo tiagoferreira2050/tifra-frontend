@@ -41,7 +41,6 @@ export default function CategoryItem({
       name={name}
       active={active}
       isSelected={isSelected}
-
       onSelect={handleSelect}
       onToggle={handleToggle}
       onEdit={onEdit}

@@ -94,29 +94,27 @@ export default function NewComplementModal({
   // SALVAR (POST)
   // ==========================================
   async function handleSave() {
-  if (!title.trim()) return alert("Título obrigatório");
+    if (!title.trim()) return alert("Título obrigatório");
 
-  // Envia os dados crus para o Page salvar
-  const payload = {
-    title,
-    description,
-    type,
-    required,
-    minChoose,
-    maxChoose,
-    options: options.map((opt) => ({
-      name: opt.name,
-      price: toNumber(opt.price),
-      active: opt.active,
-      imageUrl: opt.image || null,
-      description: opt.description || "",
-    })),
-  };
+    const payload = {
+      title,
+      description,
+      type,
+      required,
+      minChoose,
+      maxChoose,
+      options: options.map((opt) => ({
+        name: opt.name,
+        price: toNumber(opt.price),
+        active: opt.active,
+        imageUrl: opt.image || null,
+        description: opt.description || "",
+      })),
+    };
 
-  onSave(payload); // Page faz o POST e recarrega
-  onClose(); // Fecha o modal
-}
-
+    onSave(payload);
+    onClose();
+  }
 
   // ==========================================
   // LAYOUT
@@ -142,7 +140,6 @@ export default function NewComplementModal({
         />
 
         <div className="flex gap-3 mb-3">
-          {/* Tipo */}
           <div>
             <label className="block font-medium mb-1">Tipo</label>
             <select
@@ -156,7 +153,6 @@ export default function NewComplementModal({
             </select>
           </div>
 
-          {/* Obrigatório */}
           <div>
             <label className="block font-medium mb-1">Obrigatório</label>
             <div className="flex items-center gap-2">
@@ -169,7 +165,6 @@ export default function NewComplementModal({
             </div>
           </div>
 
-          {/* Min */}
           <div>
             <label className="block font-medium mb-1">Min</label>
             <input
@@ -179,7 +174,6 @@ export default function NewComplementModal({
             />
           </div>
 
-          {/* Max */}
           <div>
             <label className="block font-medium mb-1">Max</label>
             <input
@@ -190,7 +184,6 @@ export default function NewComplementModal({
           </div>
         </div>
 
-        {/* Opções */}
         <div className="mb-3 flex items-center justify-between">
           <strong>Opções</strong>
           <button
@@ -240,7 +233,6 @@ export default function NewComplementModal({
                 />
               </div>
 
-              {/* Imagem */}
               <div className="flex flex-col items-end gap-2">
                 <label className="text-xs text-gray-600">Imagem</label>
 
@@ -280,7 +272,6 @@ export default function NewComplementModal({
           ))}
         </div>
 
-        {/* Botões */}
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
