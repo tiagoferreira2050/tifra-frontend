@@ -48,7 +48,14 @@ export default function CardapioPage() {
               id: cat.id,
               name: cat.name,
               active: cat.active ?? true,
-              products: Array.isArray(cat.products) ? cat.products : [],
+
+              // 🔥 NORMALIZA PRODUTOS (EVITA ERRO DE BUILD)
+              products: Array.isArray(cat.products)
+                ? cat.products.map((p: any) => ({
+                    ...p,
+                    discount: p.discount ?? null,
+                  }))
+                : [],
             }))
           : [];
 
