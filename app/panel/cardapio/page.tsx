@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,7 +14,6 @@ import ComplementManager from "./components/complements/ComplementManager";
 import NewComplementModal from "./components/complements/NewComplementModal";
 import EditComplementModal from "./components/complements/EditComplementModal";
 
-import { Search, Plus } from "lucide-react";
 import { dbSave } from "./storage/db";
 
 export default function CardapioPage() {
@@ -21,9 +21,10 @@ export default function CardapioPage() {
   const [complements, setComplements] = useState<any[]>([]);
 
   const [editProductOpen, setEditProductOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<string | null>(null);
 
   const [newComplementOpen, setNewComplementOpen] = useState(false);
   const [editComplementOpen, setEditComplementOpen] = useState(false);
@@ -49,19 +50,25 @@ export default function CardapioPage() {
               name: cat.name,
               active: cat.active ?? true,
 
-              // 🔥 NORMALIZA PRODUTOS (EVITA ERRO DE BUILD)
+              // 🔒 NORMALIZA PRODUTOS (EVITA CRASH NO BUILD)
               products: Array.isArray(cat.products)
                 ? cat.products.map((p: any) => ({
                     ...p,
-                    discount: p.discount ?? null,
+                    discount: p?.discount ?? 0,
+                    price: p?.price ?? 0,
+                    active: p?.active ?? true,
+                    complements: Array.isArray(p?.complements)
+                      ? p.complements
+                      : [],
                   }))
                 : [],
             }))
           : [];
 
         setCategories(formatted);
-        setSelectedCategoryId(formatted[0]?.id || null);
+        setSelectedCategoryId(formatted[0]?.id ?? null);
       } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
         setCategories([]);
       }
     }
@@ -201,6 +208,17 @@ export default function CardapioPage() {
     }
   }
 
+  // ==========================
+  // LOADING SAFE
+  // ==========================
+  if (categories.length === 0) {
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Carregando cardápio...
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex w-full h-full p-4 gap-4">
@@ -210,7 +228,7 @@ export default function CardapioPage() {
             setCategories={setCategories}
             selectedCategoryId={selectedCategoryId}
             onSelectCategory={(id: string | null) =>
-              setSelectedCategoryId(id || "")
+              setSelectedCategoryId(id)
             }
           />
         </div>
