@@ -20,21 +20,36 @@ export default function NewProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 SEPARAÇÃO CORRETA
+  // 🔥 separação correta (igual complements)
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
 
+  // ============================================================
+  // RESET AO ABRIR
+  // ============================================================
   useEffect(() => {
-    if (open) setCategoryId(selectedCategoryId || "");
-  }, [selectedCategoryId, open]);
+    if (!open) return;
+
+    setName("");
+    setDescription("");
+    setPrice("0,00");
+    setPdv("");
+    setCategoryId(selectedCategoryId || "");
+    setImagePreview(null);
+    setImageUrl(null);
+    setSelectedComplements([]);
+  }, [open, selectedCategoryId]);
 
   useEffect(() => {
     setGlobalComplementsState(globalComplements || []);
   }, [globalComplements]);
 
+  // ============================================================
+  // HELPERS
+  // ============================================================
   function formatCurrency(value: string) {
     if (!value) return "0,00";
     const onlyNums = value.replace(/\D/g, "");
@@ -48,13 +63,13 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // ✅ UPLOAD DE IMAGEM (IGUAL COMPLEMENTOS)
+  // UPLOAD DE IMAGEM (PADRÃO COMPLEMENTS)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview local (NUNCA vai pro banco)
+    // preview local
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
 
@@ -81,7 +96,7 @@ export default function NewProductModal({
         return;
       }
 
-      // 🔥 URL REAL (CLOUDINARY)
+      // 🔥 somente URL real
       setImageUrl(data.url);
     } catch (err) {
       console.error("Erro upload imagem:", err);
@@ -100,6 +115,12 @@ export default function NewProductModal({
     const numericPrice = toNumber(price);
     if (numericPrice <= 0) return alert("Preço inválido");
 
+    // 🔒 blindagem final (igual complements)
+    const finalImageUrl =
+      typeof imageUrl === "string" && imageUrl.startsWith("http")
+        ? imageUrl
+        : null;
+
     try {
       const product = await apiFetch("/products", {
         method: "POST",
@@ -109,19 +130,14 @@ export default function NewProductModal({
           priceInCents: Math.round(numericPrice * 100),
           categoryId,
           storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
-
-          // 🔥 SOMENTE URL REAL
-          imageUrl: imageUrl || null,
-
+          imageUrl: finalImageUrl,
           complements: selectedComplements.map(
             (c: any) => c.complementId
           ),
         }),
       });
 
-  
-
-      if (onSave) onSave();
+      if (onSave) onSave(categoryId, product);
       onClose();
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);

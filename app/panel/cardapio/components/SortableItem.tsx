@@ -16,12 +16,20 @@ export default function SortableItem({
   onDelete,
   onDuplicate,
 }: any) {
-  // Mantém sortable funcionando corretamente
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  // =====================================================
+  // SORTABLE
+  // =====================================================
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<any>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -29,24 +37,34 @@ export default function SortableItem({
     opacity: isDragging ? 0.6 : 1,
   };
 
-  // Fecha o menu ao clicar fora
+  // =====================================================
+  // FECHAR MENU AO CLICAR FORA
+  // =====================================================
   useEffect(() => {
-    function handleClickOutside(e: any) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
         setMenuOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <div
       ref={setNodeRef}
       style={style}
-      onClick={onSelect}
-      className={`border rounded-lg p-3 flex items-center justify-between bg-white hover:bg-gray-50 
-        shadow-sm cursor-pointer transition
+      onClick={() => onSelect?.(id)}
+      className={`border rounded-lg p-3 flex items-center justify-between 
+        bg-white hover:bg-gray-50 shadow-sm cursor-pointer transition
         ${isSelected ? "border-red-500 bg-red-50" : ""}`}
     >
       {/* DRAG HANDLE */}
@@ -60,9 +78,11 @@ export default function SortableItem({
       </div>
 
       {/* NOME */}
-      <span className="flex-1 ml-3 text-sm select-none">{name}</span>
+      <span className="flex-1 ml-3 text-sm select-none">
+        {name || "Sem nome"}
+      </span>
 
-      {/* ATIVO / INATIVO */}
+      {/* TOGGLE ATIVO */}
       <label
         onClick={(e) => e.stopPropagation()}
         className="inline-flex items-center cursor-pointer mr-3"
@@ -70,21 +90,23 @@ export default function SortableItem({
         <input
           type="checkbox"
           className="sr-only"
-          checked={active}
-          onChange={() => onToggle(id)}
+          checked={!!active}
+          onChange={() => onToggle?.(id)}
         />
         <div
-          className={`w-10 h-5 rounded-full p-1 flex items-center transition 
-            ${active ? "bg-red-500" : "bg-gray-300"}`}
+          className={`w-10 h-5 rounded-full p-1 flex items-center transition ${
+            active ? "bg-red-500" : "bg-gray-300"
+          }`}
         >
           <div
-            className={`bg-white w-4 h-4 rounded-full shadow transform transition 
-              ${active ? "translate-x-5" : ""}`}
+            className={`bg-white w-4 h-4 rounded-full shadow transform transition ${
+              active ? "translate-x-5" : ""
+            }`}
           />
         </div>
       </label>
 
-      {/* MENU LATERAL */}
+      {/* MENU */}
       <div className="relative" ref={menuRef}>
         <button
           onClick={(e) => {
@@ -104,7 +126,7 @@ export default function SortableItem({
             <button
               onClick={() => {
                 setMenuOpen(false);
-                onEdit();
+                onEdit?.();
               }}
               className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
             >
@@ -114,7 +136,7 @@ export default function SortableItem({
             <button
               onClick={() => {
                 setMenuOpen(false);
-                onDuplicate();
+                onDuplicate?.();
               }}
               className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
             >
@@ -124,7 +146,7 @@ export default function SortableItem({
             <button
               onClick={() => {
                 setMenuOpen(false);
-                onDelete();
+                onDelete?.();
               }}
               className="block w-full text-left px-3 py-2 hover:bg-red-100 text-sm text-red-600"
             >

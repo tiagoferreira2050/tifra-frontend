@@ -16,62 +16,79 @@ import {
 import ProductItem from "./ProductItem";
 
 export default function ProductList({
-  categories,
+  categories = [],
   setCategories,
   selectedCategoryId,
   search = "",
   complements = [],
   onUpdateProduct,
-  onCreateProduct, // ✅ abre modal
+  onCreateProduct,
 }: any) {
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const selectedCategory = categories.find(
-    (c: any) => c.id === selectedCategoryId
-  );
+  // =====================================================
+  // CATEGORIA SELECIONADA (BLINDADA)
+  // =====================================================
+  const selectedCategory = Array.isArray(categories)
+    ? categories.find((c: any) => c.id === selectedCategoryId)
+    : null;
 
-  // 🔒 BLINDAGEM TOTAL: só produtos válidos
+  // =====================================================
+  // PRODUTOS VÁLIDOS
+  // =====================================================
   const products = Array.isArray(selectedCategory?.products)
     ? selectedCategory.products.filter(
         (p: any) => p && p.id && p.name
       )
     : [];
 
+  // =====================================================
+  // TOGGLE ATIVO (UI otimista)
+  // =====================================================
   function handleToggleProduct(productId: string) {
     setCategories((prev: any[]) =>
-      prev.map((cat) =>
+      prev.map((cat: any) =>
         cat.id !== selectedCategoryId
           ? cat
           : {
               ...cat,
-              products: cat.products.map((p: any) =>
-                p.id === productId
-                  ? { ...p, active: !p.active }
-                  : p
-              ),
+              products: Array.isArray(cat.products)
+                ? cat.products.map((p: any) =>
+                    p.id === productId
+                      ? { ...p, active: !p.active }
+                      : p
+                  )
+                : [],
             }
       )
     );
   }
 
+  // =====================================================
+  // DELETE (UI otimista)
+  // =====================================================
   function handleDeleteProduct(productId: string) {
     if (!confirm("Excluir este produto?")) return;
 
     setCategories((prev: any[]) =>
-      prev.map((cat) =>
+      prev.map((cat: any) =>
         cat.id !== selectedCategoryId
           ? cat
           : {
               ...cat,
-              products: cat.products.filter(
-                (p: any) => p.id !== productId
-              ),
+              products: Array.isArray(cat.products)
+                ? cat.products.filter(
+                    (p: any) => p.id !== productId
+                  )
+                : [],
             }
       )
     );
   }
 
-  // ❗ Nenhuma categoria selecionada
+  // =====================================================
+  // UI — SEM CATEGORIA
+  // =====================================================
   if (!selectedCategory) {
     return (
       <div className="text-gray-500 text-sm">
@@ -80,7 +97,9 @@ export default function ProductList({
     );
   }
 
-  // ✅ Categoria existe, mas NÃO tem produto
+  // =====================================================
+  // UI — CATEGORIA VAZIA
+  // =====================================================
   if (products.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -98,7 +117,9 @@ export default function ProductList({
     );
   }
 
-  // ✅ Categoria COM produtos (botão fixo)
+  // =====================================================
+  // UI — LISTA DE PRODUTOS
+  // =====================================================
   return (
     <div className="flex flex-col gap-4">
       <button
@@ -123,9 +144,13 @@ export default function ProductList({
                 id={product.id}
                 product={product}
                 complements={complements}
-                onEdit={() => onUpdateProduct(product)}
-                onDelete={() => handleDeleteProduct(product.id)}
-                onToggle={() => handleToggleProduct(product.id)}
+                onEdit={(p: any) => onUpdateProduct(p)}
+                onDelete={(id: string) =>
+                  handleDeleteProduct(id)
+                }
+                onToggle={(id: string) =>
+                  handleToggleProduct(id)
+                }
               />
             ))}
           </div>

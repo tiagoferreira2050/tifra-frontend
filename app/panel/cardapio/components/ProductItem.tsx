@@ -20,35 +20,61 @@ export default function ProductItem({
     transition,
   };
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
   function formatPrice(value: number | string | null | undefined) {
-    if (value === null || value === undefined) return "0,00";
     const num = Number(value);
     return isNaN(num) ? "0,00" : num.toFixed(2).replace(".", ",");
   }
 
-  // ✅ BLINDAGEM REAL DE DESCONTO
-  const discountPrice = product?.discount?.price ?? null;
-  const hasDiscount = typeof discountPrice === "number";
+  // =====================================================
+  // IMAGEM (BLINDADA)
+  // =====================================================
+  const imageSrc =
+    typeof product?.imageUrl === "string" && product.imageUrl.startsWith("http")
+      ? product.imageUrl
+      : "/placeholder-100.png";
 
   // =====================================================
-  // COMPLEMENTOS
+  // DESCONTO (SE EXISTIR)
   // =====================================================
+  const discountPrice =
+    typeof product?.discount?.price === "number"
+      ? product.discount.price
+      : null;
+
+  const hasDiscount = discountPrice !== null;
+
+  // =====================================================
+  // COMPLEMENTOS (PADRÃO COMPLEMENTS)
+  // =====================================================
+  const productComplementIds: string[] = Array.isArray(
+    product?.productComplements
+  )
+    ? product.productComplements.map((pc: any) => pc.groupId)
+    : Array.isArray(product?.complements)
+    ? product.complements.map(
+        (pc: any) => pc.groupId || pc.complementId
+      )
+    : [];
+
   const complementTitles =
-    Array.isArray(product?.complements) && product.complements.length > 0
-      ? product.complements
-          .map((pc: any) => {
-            const groupId =
-              pc.complementId || pc.groupId || pc.id || null;
-
-            if (!groupId) return null;
-
-            const group = complements.find((c: any) => c.id === groupId);
-            return group ? group.title || group.name : null;
+    productComplementIds.length > 0
+      ? productComplementIds
+          .map((groupId) => {
+            const group = complements.find(
+              (c: any) => c.id === groupId
+            );
+            return group?.title || group?.name || null;
           })
           .filter(Boolean)
           .join(", ")
       : null;
 
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <div
       ref={setNodeRef}
@@ -66,13 +92,13 @@ export default function ProductItem({
 
       {/* CONTEÚDO */}
       <div className="flex items-center gap-4 flex-1">
-        {/* ATIVO */}
+        {/* TOGGLE ATIVO */}
         <label className="inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
             className="sr-only"
             checked={!!product?.active}
-            onChange={onToggle}
+            onChange={() => onToggle?.(product.id)}
           />
           <div
             className={`w-10 h-5 rounded-full p-1 flex items-center transition-all ${
@@ -89,8 +115,10 @@ export default function ProductItem({
 
         {/* IMAGEM */}
         <img
-          src={product?.imageUrl || "/placeholder-100.png"}
-          onError={(e) => (e.currentTarget.src = "/placeholder-100.png")}
+          src={imageSrc}
+          onError={(e) =>
+            (e.currentTarget.src = "/placeholder-100.png")
+          }
           className="w-16 h-16 rounded-md object-cover shadow-sm"
           alt={product?.name || "Produto"}
         />
@@ -127,14 +155,14 @@ export default function ProductItem({
       {/* AÇÕES */}
       <div className="flex items-center gap-3 text-gray-600">
         <button
-          onClick={() => onEdit(product)}
+          onClick={() => onEdit?.(product)}
           className="p-2 hover:text-blue-600 transition"
         >
           <Pencil size={18} />
         </button>
 
         <button
-          onClick={onDelete}
+          onClick={() => onDelete?.(product.id)}
           className="p-2 hover:text-red-600 transition"
         >
           <Trash2 size={18} />

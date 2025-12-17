@@ -13,68 +13,68 @@ import ComplementManager from "./components/complements/ComplementManager";
 import NewComplementModal from "./components/complements/NewComplementModal";
 import EditComplementModal from "./components/complements/EditComplementModal";
 
-import { apiFetch } from "@/lib/api"; // ✅ ADIÇÃO NECESSÁRIA
+import { apiFetch } from "@/lib/api";
 
 export default function CardapioPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
 
+  const [newProductOpen, setNewProductOpen] = useState(false);
   const [editProductOpen, setEditProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-
-  const [selectedCategoryId, setSelectedCategoryId] =
-    useState<string | null>(null);
 
   const [newComplementOpen, setNewComplementOpen] = useState(false);
   const [editComplementOpen, setEditComplementOpen] = useState(false);
   const [editingComplement, setEditingComplement] = useState<any>(null);
 
-  const [activeTab, setActiveTab] = useState("produtos");
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"produtos" | "complementos" | "promocoes">("produtos");
   const [search, setSearch] = useState("");
 
-  const [newProductOpen, setNewProductOpen] = useState(false);
+  // ======================================================
+  // LOAD CATEGORIES + PRODUCTS (PADRONIZADO)
+  // ======================================================
+  async function loadCategories() {
+    try {
+      const data = await apiFetch("/categories");
 
-  // ==========================
-  // CARREGAR CATEGORIAS
-  // ==========================
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await apiFetch("/categories");
+      const formatted = Array.isArray(data)
+        ? data.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            active: cat.active ?? true,
+            products: Array.isArray(cat.products)
+              ? cat.products.map((p: any, index: number) => ({
+                  ...p,
+                  imageUrl: p.imageUrl || null,
+                  price: p.price ?? 0,
+                  active: p.active ?? true,
+                  discount: p.discount ?? null,
+                  productComplements: Array.isArray(p.productComplements)
+                    ? p.productComplements
+                    : [],
+                  order: p.order ?? index,
+                }))
+              : [],
+          }))
+        : [];
 
-        const formatted = Array.isArray(data)
-          ? data.map((cat: any) => ({
-              id: cat.id,
-              name: cat.name,
-              active: cat.active ?? true,
-              products: Array.isArray(cat.products)
-  ? cat.products.map((p: any) => ({
-      ...p,
-      imageUrl: p.imageUrl || null, // 🔥 LINHA QUE FALTAVA
-      discount: p?.discount ?? 0,
-      price: p?.price ?? 0,
-      active: p?.active ?? true,
-      complements: Array.isArray(p?.complements)
-        ? p.complements
-                      : [],
-                  }))
-                : [],
-            }))
-          : [];
-
-        setCategories(formatted);
-        setSelectedCategoryId(formatted[0]?.id ?? null);
-      } catch (error) {
-        console.error("Erro ao carregar categorias:", error);
-      }
+      setCategories(formatted);
+      setSelectedCategoryId(formatted[0]?.id ?? null);
+    } catch (err) {
+      console.error("Erro ao carregar categorias:", err);
     }
+  }
 
-    loadData();
+  useEffect(() => {
+    loadCategories();
   }, []);
 
-  // ==========================
-  // CARREGAR COMPLEMENTOS
-  // ==========================
+  // ======================================================
+  // LOAD COMPLEMENTS (JÁ ESTAVA CORRETO)
+  // ======================================================
   async function loadComplementsFromServer() {
     try {
       const data = await apiFetch("/complements");
@@ -111,101 +111,59 @@ export default function CardapioPage() {
     loadComplementsFromServer();
   }, []);
 
-  // ==========================
-  // SALVAR NOVO PRODUTO
-  // ==========================
- async function handleSaveProduct() {
-  try {
-    const data = await apiFetch("/categories");
-
-    const formatted = Array.isArray(data)
-      ? data.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          active: cat.active ?? true,
-          products: Array.isArray(cat.products)
-            ? cat.products.map((p: any) => ({
-                ...p,
-                price: p?.price ?? 0,
-                active: p?.active ?? true,
-                complements: Array.isArray(p?.productComplements)
-                  ? p.productComplements
-                  : [],
-              }))
-            : [],
-        }))
-      : [];
-
-    setCategories(formatted);
-    setSelectedCategoryId(formatted[0]?.id ?? null);
-  } catch (err) {
-    console.error("Erro ao recarregar produtos:", err);
+  // ======================================================
+  // SAVE PRODUCT (RELOAD SEGURO)
+  // ======================================================
+  async function handleSaveProduct() {
+    await loadCategories();
   }
-}
 
-  // ==========================
-  // ATUALIZAR PRODUTO
-  // ==========================
-  function handleUpdateProduct(updatedProduct: any) {
+  // ======================================================
+  // UPDATE PRODUCT (LOCAL)
+  // ======================================================
+  function handleUpdateProduct(updated: any) {
     setCategories((prev) =>
       prev.map((cat) => ({
         ...cat,
         products: cat.products.map((p: any) =>
-          p.id === updatedProduct.id ? updatedProduct : p
+          p.id === updated.id ? updated : p
         ),
       }))
     );
   }
 
-  // ==========================
-  // SALVAR NOVO COMPLEMENTO
-  // ==========================
+  // ======================================================
+  // COMPLEMENTS
+  // ======================================================
   async function saveNewComplement(newComp: any) {
-    try {
-      await apiFetch("/complements", {
-        method: "POST",
-        body: JSON.stringify({
-          name: newComp.title,
-          description: newComp.description,
-          type: newComp.type,
-          required: newComp.required,
-          min: newComp.minChoose,
-          max: newComp.maxChoose,
-          options: newComp.options || [],
-        }),
-      });
+    await apiFetch("/complements", {
+      method: "POST",
+      body: JSON.stringify({
+        name: newComp.title,
+        description: newComp.description,
+        type: newComp.type,
+        required: newComp.required,
+        min: newComp.minChoose,
+        max: newComp.maxChoose,
+        options: newComp.options || [],
+      }),
+    });
 
-      await loadComplementsFromServer();
-    } catch (err) {
-      alert("Erro ao salvar complemento.");
-    }
+    await loadComplementsFromServer();
   }
 
-  function openCreateComplement() {
-    setNewComplementOpen(true);
-  }
-
-  function openEditComplement(comp: any) {
-    setEditingComplement(comp);
-    setEditComplementOpen(true);
-  }
-
-  // ==========================
-  // SALVAR EDIÇÃO DO COMPLEMENTO
-  // ==========================
   async function saveEditedComplement(updated: any) {
-    try {
-      await apiFetch("/complements", {
-        method: "PATCH",
-        body: JSON.stringify(updated),
-      });
+    await apiFetch("/complements", {
+      method: "PATCH",
+      body: JSON.stringify(updated),
+    });
 
-      await loadComplementsFromServer();
-    } catch (err) {
-      alert("Erro ao atualizar complemento.");
-    }
+    await loadComplementsFromServer();
   }
 
+  // ======================================================
+  // UI
+  // ======================================================
   return (
     <>
       <div className="flex w-full h-full p-4 gap-4">
@@ -214,9 +172,7 @@ export default function CardapioPage() {
             categories={categories}
             setCategories={setCategories}
             selectedCategoryId={selectedCategoryId}
-            onSelectCategory={(id: string | null) =>
-              setSelectedCategoryId(id)
-            }
+            onSelectCategory={setSelectedCategoryId}
           />
         </div>
 
@@ -225,7 +181,7 @@ export default function CardapioPage() {
             {["produtos", "complementos", "promocoes"].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab as any)}
                 className={`pb-2 text-sm font-medium ${
                   activeTab === tab
                     ? "border-b-2 border-black text-black"
@@ -244,7 +200,10 @@ export default function CardapioPage() {
               selectedCategoryId={selectedCategoryId}
               search={search}
               complements={complements}
-              onUpdateProduct={handleUpdateProduct}
+              onUpdateProduct={(p: any) => {
+                setEditingProduct(p);
+                setEditProductOpen(true);
+              }}
               onCreateProduct={() => setNewProductOpen(true)}
             />
           )}
@@ -253,8 +212,11 @@ export default function CardapioPage() {
             <ComplementManager
               complements={complements}
               setComplements={setComplements}
-              onOpenCreate={openCreateComplement}
-              onOpenEdit={openEditComplement}
+              onOpenCreate={() => setNewComplementOpen(true)}
+              onOpenEdit={(c: any) => {
+                setEditingComplement(c);
+                setEditComplementOpen(true);
+              }}
               globalSearch={search}
             />
           )}

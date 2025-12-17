@@ -13,39 +13,17 @@ export default function CategoryItem({
   onToggle,
   onDuplicate,
 }: any) {
-
-  // =============================
-  // SELEÇÃO
-  // =============================
-  function handleSelect() {
-    if (onSelect) onSelect(id);
-  }
-
-  // =============================
-  // TOGGLE (frontend + backend é feito no pai)
-  // =============================
-  function handleToggle() {
-    if (onToggle) onToggle(id);
-  }
-
-  // =============================
-  // DUPLICAR (apenas chama o pai)
-  // =============================
-  function handleDuplicate() {
-    if (onDuplicate) onDuplicate();
-  }
-
   return (
     <SortableItem
       id={id}
       name={name}
-      active={active}
-      isSelected={isSelected}
-      onSelect={handleSelect}
-      onToggle={handleToggle}
+      active={!!active}
+      isSelected={!!isSelected}
+      onSelect={() => onSelect?.(id)}
+      onToggle={() => onToggle?.(id)}
       onEdit={onEdit}
       onDelete={onDelete}
-      onDuplicate={handleDuplicate}
+      onDuplicate={() => onDuplicate?.(id)}
     />
   );
 }

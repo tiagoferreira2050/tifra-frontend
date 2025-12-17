@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ProductComplementsManager from "./ui/ProductComplementsManager";
+import { apiFetch } from "@/lib/api";
 
 export default function EditProductModal({
   open,
@@ -19,7 +20,7 @@ export default function EditProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 SEPARAÇÃO CORRETA
+  // 🔥 PADRÃO FINAL
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ export default function EditProductModal({
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
 
   // ============================================================
-  // CARREGAR PRODUTO AO ABRIR
+  // LOAD PRODUCT
   // ============================================================
   useEffect(() => {
     if (!product) return;
@@ -43,7 +44,7 @@ export default function EditProductModal({
         : "0,00"
     );
 
-    // 🔥 imagem vinda do banco
+    // reset imagem
     setImageUrl(product.imageUrl || null);
     setImagePreview(null);
 
@@ -58,7 +59,6 @@ export default function EditProductModal({
     );
   }, [product]);
 
-  // GLOBAL COMPLEMENTS
   useEffect(() => {
     setGlobalComplementsState(globalComplements || []);
   }, [globalComplements]);
@@ -78,15 +78,13 @@ export default function EditProductModal({
   }
 
   // ============================================================
-  // UPLOAD DE IMAGEM (PADRÃO CORRETO)
+  // UPLOAD IMAGE (IGUAL NEW PRODUCT / COMPLEMENTS)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview local
-    const preview = URL.createObjectURL(file);
-    setImagePreview(preview);
+    setImagePreview(URL.createObjectURL(file));
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!API_URL) {
@@ -111,7 +109,6 @@ export default function EditProductModal({
         return;
       }
 
-      // 🔥 URL REAL (Cloudinary)
       setImageUrl(data.url);
     } catch (err) {
       console.error("Erro upload imagem:", err);
@@ -120,7 +117,7 @@ export default function EditProductModal({
   }
 
   // ============================================================
-  // SALVAR NO BANCO (PATCH)
+  // SAVE
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -134,41 +131,31 @@ export default function EditProductModal({
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
 
-      const res = await fetch(`/api/products/${product.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          priceInCents: Math.round(numericPrice * 100),
-          categoryId,
-          pdv,
+      const payload: any = {
+        name,
+        description,
+        priceInCents: Math.round(numericPrice * 100),
+        categoryId,
+        pdv,
+      };
 
-          // 🔥 SOMENTE URL REAL
-          ...(imageUrl ? { imageUrl } : {}),
-
-          complements: complementsOrdered.map(
-            (c: any) => c.complementId
-          ),
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        alert(`Erro ao salvar: ${data.error || res.status}`);
-        return;
+      if (imageUrl) payload.imageUrl = imageUrl;
+      if (complementsOrdered.length > 0) {
+        payload.complements = complementsOrdered.map(
+          (c: any) => c.complementId
+        );
       }
 
-      alert("Produto atualizado!");
-      const updated = await res.json();
+      const updated = await apiFetch(`/products/${product.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
 
       if (onSave) onSave(updated);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao salvar produto:", err);
-      alert("Erro ao conectar ao servidor");
+      alert(err?.message || "Erro ao salvar produto");
     }
   }
 
@@ -218,7 +205,7 @@ export default function EditProductModal({
           globalComplements={globalComplementsState}
         />
 
-        <label className="block font-medium mb-1">
+        <label className="block font-medium mb-1 mt-3">
           Código PDV (opcional)
         </label>
         <input
@@ -235,7 +222,7 @@ export default function EditProductModal({
         />
 
         <label className="block font-medium mb-1">Imagem</label>
-        <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+        <div className="border-2 border-dashed rounded-md flex items-center justify-center h-40 mb-4 relative cursor-pointer">
           {imagePreview || imageUrl ? (
             <img
               src={imagePreview || imageUrl}

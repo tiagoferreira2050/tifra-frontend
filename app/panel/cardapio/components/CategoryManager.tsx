@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import CategoryItem from "./CategoryItem";
 import EditCategoryModal from "./EditCategoryModal";
 
@@ -17,8 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import { useState } from "react";
-import { apiFetch } from "@/lib/api"; // 🔥 ÚNICA ADIÇÃO
+import { apiFetch } from "@/lib/api";
 
 export default function CategoryManager({
   categories,
@@ -36,43 +36,27 @@ export default function CategoryManager({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
-  const [isNew, setIsNew] = useState(false);
 
+  // ========================================================
+  // NORMALIZE
+  // ========================================================
   function normalizeCategory(cat: any) {
     if (!cat) return cat;
 
-    const normProducts = Array.isArray(cat.products)
-      ? cat.products.map((p: any, idx: number) => ({
-          id: p.id,
-          name: p.name ?? "",
-          price: p.price ?? 0,
-          description: p.description ?? null,
-          imageUrl: p.imageUrl ?? p.image ?? null,
-          active: p.active === undefined ? true : p.active,
-          order: p.order ?? idx,
-          ...Object.keys(p).reduce((acc: any, k: string) => {
-            if (
-              ![
-                "id",
-                "name",
-                "price",
-                "description",
-                "imageUrl",
-                "image",
-                "active",
-                "order",
-              ].includes(k)
-            ) {
-              acc[k] = p[k];
-            }
-            return acc;
-          }, {}),
-        }))
-      : [];
-
     return {
       ...cat,
-      products: normProducts,
+      products: Array.isArray(cat.products)
+        ? cat.products.map((p: any, idx: number) => ({
+            id: p.id,
+            name: p.name ?? "",
+            price: p.price ?? 0,
+            description: p.description ?? null,
+            imageUrl: p.imageUrl ?? p.image ?? null,
+            active: p.active ?? true,
+            order: p.order ?? idx,
+            ...p,
+          }))
+        : [],
     };
   }
 
@@ -86,29 +70,26 @@ export default function CategoryManager({
     try {
       const data = await apiFetch("/categories", {
         method: "POST",
-        body: JSON.stringify({
-          name,
-          storeId: STORE_ID,
-        }),
+        body: JSON.stringify({ name, storeId: STORE_ID }),
       });
 
-      const newCat = normalizeCategory({
+      const created = normalizeCategory({
         id: data.id,
         name: data.name,
         active: true,
         products: data.products ?? [],
       });
 
-      setCategories((prev: any[]) => [...prev, newCat]);
-      onSelectCategory(newCat.id);
+      setCategories((prev: any[]) => [...prev, created]);
+      onSelectCategory(created.id);
     } catch (err) {
       console.error(err);
-      alert("Erro ao criar categoria (servidor)");
+      alert("Erro ao criar categoria");
     }
   }
 
   // ========================================================
-  // EDITAR NOME
+  // EDIT
   // ========================================================
   async function handleSaveCategory(updated: any) {
     try {
@@ -123,10 +104,9 @@ export default function CategoryManager({
         )
       );
 
-      setEditingCategory(updated);
       setModalOpen(false);
     } catch (err) {
-      console.error("Erro ao salvar categoria:", err);
+      console.error(err);
       alert("Erro ao salvar categoria");
     }
   }
@@ -134,15 +114,17 @@ export default function CategoryManager({
   // ========================================================
   // TOGGLE ACTIVE
   // ========================================================
-  async function toggleActive(id: string) {
+  async function handleToggleActive(id: string) {
+    const current = categories.find((c: any) => c.id === id);
+    if (!current) return;
+
+    const newActive = !current.active;
+
     setCategories((prev: any[]) =>
       prev.map((c: any) =>
-        c.id === id ? { ...c, active: !c.active } : c
+        c.id === id ? { ...c, active: newActive } : c
       )
     );
-
-    const found = categories.find((c: any) => c.id === id);
-    const newActive = found ? !found.active : false;
 
     try {
       await apiFetch(`/categories/${id}`, {
@@ -150,24 +132,84 @@ export default function CategoryManager({
         body: JSON.stringify({ active: newActive }),
       });
     } catch (err) {
-      console.error("Erro ao atualizar categoria:", err);
+      console.error(err);
+      alert("Erro ao atualizar status");
     }
   }
 
   // ========================================================
-  // DRAG AND DROP
+  // DELETE
+  // ========================================================
+  async function handleDelete(id: string) {
+    if (!confirm("Excluir essa categoria?")) return;
+
+    try {
+      await apiFetch(`/categories/${id}`, { method: "DELETE" });
+
+      setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
+
+      if (selectedCategoryId === id) {
+        onSelectCategory(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao excluir categoria");
+    }
+  }
+
+  // ========================================================
+  // DUPLICATE
+  // ========================================================
+  async function handleDuplicate(id: string) {
+    const cat = categories.find((c: any) => c.id === id);
+    if (!cat) return;
+
+    try {
+      const payload = {
+        name: `${cat.name} (cópia)`,
+        storeId: STORE_ID,
+        products: (cat.products || []).map((p: any) => ({
+          name: p.name,
+          price: p.price,
+          description: p.description,
+          imageUrl: p.imageUrl ?? null,
+          active: p.active,
+          order: p.order,
+        })),
+      };
+
+      const createdRaw = await apiFetch("/categories", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      const created = normalizeCategory({
+        id: createdRaw.id,
+        name: createdRaw.name,
+        active: true,
+        products: createdRaw.products ?? payload.products,
+      });
+
+      setCategories((prev: any[]) => [...prev, created]);
+      onSelectCategory(created.id);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao duplicar categoria");
+    }
+  }
+
+  // ========================================================
+  // DRAG
   // ========================================================
   function onDragEnd(event: any) {
     const { active, over } = event;
-    if (!over) return;
+    if (!over || active.id === over.id) return;
 
-    if (active.id !== over.id) {
-      setCategories((prev: any[]) => {
-        const oldIndex = prev.findIndex((i) => i.id === active.id);
-        const newIndex = prev.findIndex((i) => i.id === over.id);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
+    setCategories((prev: any[]) => {
+      const oldIndex = prev.findIndex((i) => i.id === active.id);
+      const newIndex = prev.findIndex((i) => i.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   }
 
   // ========================================================
@@ -187,68 +229,8 @@ export default function CategoryManager({
 
       alert("Ordem salva com sucesso!");
     } catch (err) {
-      console.error("Erro ao salvar ordem:", err);
-      alert("Erro ao salvar ordem");
-    }
-  }
-
-  // ========================================================
-  // DELETE
-  // ========================================================
-  async function handleDelete(id: string) {
-    if (!confirm("Excluir essa categoria?")) return;
-
-    try {
-      await apiFetch(`/categories/${id}`, {
-        method: "DELETE",
-      });
-
-      setCategories((prev: any[]) => prev.filter((c) => c.id !== id));
-
-      if (selectedCategoryId === id) {
-        onSelectCategory(null);
-      }
-    } catch (err) {
       console.error(err);
-      alert("Erro ao excluir categoria (servidor)");
-    }
-  }
-
-  // ========================================================
-  // DUPLICATE
-  // ========================================================
-  async function handleDuplicate(cat: any) {
-    try {
-      const payload = {
-        name: `${cat.name} (cópia)`,
-        storeId: STORE_ID,
-        products: (cat.products || []).map((p: any) => ({
-          name: p.name,
-          price: p.price,
-          description: p.description,
-          imageUrl: p.imageUrl ?? p.image ?? null,
-          active: p.active,
-          order: p.order,
-        })),
-      };
-
-      const createdRaw = await apiFetch("/categories", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      const created = normalizeCategory({
-        id: createdRaw.id,
-        name: createdRaw.name,
-        active: createdRaw.active ?? true,
-        products: createdRaw.products ?? payload.products ?? [],
-      });
-
-      setCategories((prev: any[]) => [...prev, created]);
-      onSelectCategory(created.id);
-    } catch (err) {
-      console.error("Erro ao duplicar categoria:", err);
-      alert("Erro ao duplicar categoria");
+      alert("Erro ao salvar ordem");
     }
   }
 
@@ -292,14 +274,14 @@ export default function CategoryManager({
                 name={cat.name}
                 active={cat.active}
                 isSelected={selectedCategoryId === cat.id}
-                onSelect={() => onSelectCategory(cat.id)}
-                onToggle={toggleActive}
+                onSelect={onSelectCategory}
+                onToggle={handleToggleActive}
                 onEdit={() => {
                   setEditingCategory(cat);
                   setModalOpen(true);
                 }}
                 onDelete={() => handleDelete(cat.id)}
-                onDuplicate={() => handleDuplicate(cat)}
+                onDuplicate={handleDuplicate}
               />
             ))}
           </div>
@@ -311,7 +293,6 @@ export default function CategoryManager({
         onClose={() => setModalOpen(false)}
         category={editingCategory}
         onSave={handleSaveCategory}
-        isNew={isNew}
       />
     </div>
   );
