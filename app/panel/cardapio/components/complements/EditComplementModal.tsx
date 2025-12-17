@@ -44,7 +44,10 @@ export default function EditComplementModal({
       (complement.options || []).map((o: any) => ({
         id: o.id || "opt-" + Date.now(),
         name: o.name || "",
-        price: o.price !== undefined ? String(o.price).replace(".", ",") : "0,00",
+        price:
+  typeof o.price === "number"
+    ? o.price.toFixed(2).replace(".", ",")
+    : "0,00",
         active: o.active ?? true,
         pdv: o.pdv || "",
         image: o.imageUrl || null,
