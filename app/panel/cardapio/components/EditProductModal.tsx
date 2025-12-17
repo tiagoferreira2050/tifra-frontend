@@ -123,10 +123,15 @@ export default function EditProductModal({
           priceInCents: Math.round(numericPrice * 100),
           categoryId,
           pdv,
-          imageUrl: image,
 
-          // 🔥 Enviar SOMENTE IDs dos grupos, e na ordem correta
-          complements: complementsOrdered.map((c: any) => c.complementId),
+          // 🔥 SÓ envia imageUrl se for URL real (cloudinary)
+          ...(image && image.startsWith("http")
+            ? { imageUrl: image }
+            : {}),
+
+          complements: complementsOrdered.map(
+            (c: any) => c.complementId
+          ),
         }),
       });
 
@@ -155,7 +160,6 @@ export default function EditProductModal({
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>
 
-        {/* NOME */}
         <label className="block font-medium mb-1">Nome *</label>
         <input
           className="w-full border rounded-md p-2 mb-4"
@@ -163,7 +167,6 @@ export default function EditProductModal({
           onChange={(e) => setName(e.target.value)}
         />
 
-        {/* DESCRIÇÃO */}
         <label className="block font-medium mb-1">Descrição *</label>
         <textarea
           className="w-full border rounded-md p-2 mb-4"
@@ -172,7 +175,6 @@ export default function EditProductModal({
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        {/* CATEGORIA */}
         <label className="block font-medium mb-1">Categoria *</label>
         <select
           className="w-full border rounded-md p-2 mb-4"
@@ -186,7 +188,6 @@ export default function EditProductModal({
           ))}
         </select>
 
-        {/* COMPLEMENTOS */}
         <label className="block font-medium mb-1 mt-3">
           Complementos do produto
         </label>
@@ -197,7 +198,6 @@ export default function EditProductModal({
           globalComplements={globalComplementsState}
         />
 
-        {/* PDV */}
         <label className="block font-medium mb-1">
           Código PDV (opcional)
         </label>
@@ -207,7 +207,6 @@ export default function EditProductModal({
           onChange={(e) => setPdv(e.target.value)}
         />
 
-        {/* PREÇO */}
         <label className="block font-medium mb-1">Preço *</label>
         <input
           className="border rounded-md p-2 w-full mb-4"
@@ -215,18 +214,13 @@ export default function EditProductModal({
           onChange={(e) => setPrice(formatCurrency(e.target.value))}
         />
 
-        {/* IMAGEM */}
         <label className="block font-medium mb-1">Imagem</label>
-
         <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
           {image ? (
             <img src={image} className="h-full object-cover rounded" />
           ) : (
-            <p className="text-gray-400">
-              Arraste ou clique para enviar
-            </p>
+            <p className="text-gray-400">Arraste ou clique para enviar</p>
           )}
-
           <input
             type="file"
             accept="image/*"
@@ -235,7 +229,6 @@ export default function EditProductModal({
           />
         </div>
 
-        {/* BOTÕES */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             className="px-4 py-2 bg-gray-200 rounded-md"
