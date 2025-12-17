@@ -48,13 +48,14 @@ export default function CardapioPage() {
               name: cat.name,
               active: cat.active ?? true,
               products: Array.isArray(cat.products)
-                ? cat.products.map((p: any) => ({
-                    ...p,
-                    discount: p?.discount ?? 0,
-                    price: p?.price ?? 0,
-                    active: p?.active ?? true,
-                    complements: Array.isArray(p?.complements)
-                      ? p.complements
+  ? cat.products.map((p: any) => ({
+      ...p,
+      imageUrl: p.imageUrl || null, // 🔥 LINHA QUE FALTAVA
+      discount: p?.discount ?? 0,
+      price: p?.price ?? 0,
+      active: p?.active ?? true,
+      complements: Array.isArray(p?.complements)
+        ? p.complements
                       : [],
                   }))
                 : [],
