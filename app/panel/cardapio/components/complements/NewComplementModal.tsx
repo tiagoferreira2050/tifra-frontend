@@ -48,34 +48,40 @@ export default function NewComplementModal({
   // UPLOAD DE IMAGEM
   // ===========================================
   async function handleImageUpload(e: any, id: string) {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = new FormData();
-      data.append("file", file);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(
-  `${process.env.NEXT_PUBLIC_API_URL}/upload`,
-  {
-    method: "POST",
-    body: data,
+  if (!API_URL) {
+    alert("API não configurada");
+    return;
   }
-);
 
-      const json = await res.json();
+  try {
+    const data = new FormData();
+    data.append("file", file);
 
-      if (!res.ok || !json.url) {
-        alert("Erro ao enviar imagem");
-        return;
-      }
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: data,
+    });
 
-      updateOption(id, { image: json.url });
-    } catch (err) {
-      console.error("Erro ao enviar imagem:", err);
-      alert("Falha no upload da imagem");
+    const json = await res.json();
+
+    if (!res.ok || !json.url) {
+      alert("Erro ao enviar imagem");
+      return;
     }
+
+    updateOption(id, { image: json.url });
+
+  } catch (err) {
+    console.error("Erro ao enviar imagem:", err);
+    alert("Falha no upload da imagem");
   }
+}
+
 
   // ==========================================
   // FORMATADOR DE MOEDA
