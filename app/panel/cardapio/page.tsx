@@ -13,7 +13,6 @@ import ComplementManager from "./components/complements/ComplementManager";
 import NewComplementModal from "./components/complements/NewComplementModal";
 import EditComplementModal from "./components/complements/EditComplementModal";
 
-import { dbSave } from "./storage/db";
 import { apiFetch } from "@/lib/api"; // ✅ ADIÇÃO NECESSÁRIA
 
 export default function CardapioPage() {
@@ -122,8 +121,6 @@ export default function CardapioPage() {
           : cat
       )
     );
-
-    dbSave("products", newProduct);
   }
 
   // ==========================
@@ -138,8 +135,6 @@ export default function CardapioPage() {
         ),
       }))
     );
-
-    dbSave("products", updatedProduct);
   }
 
   // ==========================
