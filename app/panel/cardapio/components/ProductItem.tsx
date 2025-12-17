@@ -21,14 +21,18 @@ export default function ProductItem({
   };
 
   function formatPrice(value: number | string | null | undefined) {
-    if (!value) return "0,00";
+    if (value === null || value === undefined) return "0,00";
     const num = Number(value);
     return isNaN(num) ? "0,00" : num.toFixed(2).replace(".", ",");
   }
 
-  // 🔥 CORREÇÃO DEFINITIVA DE PRERENDER
-  const hasDiscount = product?.discount && product.discount.price;
+  // ✅ BLINDAGEM REAL DE DESCONTO
+  const discountPrice = product?.discount?.price ?? null;
+  const hasDiscount = typeof discountPrice === "number";
 
+  // =====================================================
+  // COMPLEMENTOS
+  // =====================================================
   const complementTitles =
     Array.isArray(product?.complements) && product.complements.length > 0
       ? product.complements
@@ -51,15 +55,18 @@ export default function ProductItem({
       style={style}
       className="border rounded-lg p-3 flex items-center justify-between bg-white hover:bg-gray-50 shadow-sm transition"
     >
+      {/* DRAG */}
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab p-2 text-gray-400"
+        className="cursor-grab p-2 text-gray-400 hover:text-gray-600 active:cursor-grabbing"
       >
         <GripVertical size={20} />
       </div>
 
+      {/* CONTEÚDO */}
       <div className="flex items-center gap-4 flex-1">
+        {/* ATIVO */}
         <label className="inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -80,26 +87,31 @@ export default function ProductItem({
           </div>
         </label>
 
+        {/* IMAGEM */}
         <img
           src={product?.imageUrl || "/placeholder-100.png"}
+          onError={(e) => (e.currentTarget.src = "/placeholder-100.png")}
           className="w-16 h-16 rounded-md object-cover shadow-sm"
-          alt={product?.name || "produto"}
+          alt={product?.name || "Produto"}
         />
 
+        {/* INFO */}
         <div className="flex flex-col w-full">
-          <p className="font-medium">{product?.name}</p>
+          <p className="font-medium leading-tight">
+            {product?.name || "Produto sem nome"}
+          </p>
 
           {hasDiscount ? (
-            <div className="text-sm mt-1">
+            <div className="text-sm leading-tight mt-1">
               <span className="text-red-600 font-semibold">
-                R$ {formatPrice(product.discount.price)}
+                R$ {formatPrice(discountPrice)}
               </span>
-              <span className="line-through ml-2 text-gray-500">
-                R$ {formatPrice(product.price)}
+              <span className="text-gray-500 line-through ml-2">
+                R$ {formatPrice(product?.price)}
               </span>
             </div>
           ) : (
-            <p className="text-sm font-semibold mt-1">
+            <p className="text-sm text-gray-700 font-semibold mt-1">
               R$ {formatPrice(product?.price)}
             </p>
           )}
@@ -112,11 +124,19 @@ export default function ProductItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button onClick={() => onEdit(product)}>
+      {/* AÇÕES */}
+      <div className="flex items-center gap-3 text-gray-600">
+        <button
+          onClick={() => onEdit(product)}
+          className="p-2 hover:text-blue-600 transition"
+        >
           <Pencil size={18} />
         </button>
-        <button onClick={onDelete}>
+
+        <button
+          onClick={onDelete}
+          className="p-2 hover:text-red-600 transition"
+        >
           <Trash2 size={18} />
         </button>
       </div>
