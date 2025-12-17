@@ -14,6 +14,7 @@ import NewComplementModal from "./components/complements/NewComplementModal";
 import EditComplementModal from "./components/complements/EditComplementModal";
 
 import { dbSave } from "./storage/db";
+import { apiFetch } from "@/lib/api"; // ✅ ADIÇÃO NECESSÁRIA
 
 export default function CardapioPage() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -40,8 +41,7 @@ export default function CardapioPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("/api/categories", { cache: "no-store" });
-        const data = await res.json();
+        const data = await apiFetch("/categories");
 
         const formatted = Array.isArray(data)
           ? data.map((cat: any) => ({
@@ -77,8 +77,7 @@ export default function CardapioPage() {
   // ==========================
   async function loadComplementsFromServer() {
     try {
-      const res = await fetch("/api/complements", { cache: "no-store" });
-      const data = await res.json();
+      const data = await apiFetch("/complements");
 
       const formatted = Array.isArray(data)
         ? data.map((g: any) => ({
@@ -148,9 +147,8 @@ export default function CardapioPage() {
   // ==========================
   async function saveNewComplement(newComp: any) {
     try {
-      const res = await fetch("/api/complements", {
+      await apiFetch("/complements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newComp.title,
           description: newComp.description,
@@ -161,11 +159,6 @@ export default function CardapioPage() {
           options: newComp.options || [],
         }),
       });
-
-      if (!res.ok) {
-        alert("Erro ao criar complemento.");
-        return;
-      }
 
       await loadComplementsFromServer();
     } catch (err) {
@@ -187,16 +180,10 @@ export default function CardapioPage() {
   // ==========================
   async function saveEditedComplement(updated: any) {
     try {
-      const res = await fetch("/api/complements", {
+      await apiFetch("/complements", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
       });
-
-      if (!res.ok) {
-        alert("Erro ao atualizar complemento.");
-        return;
-      }
 
       await loadComplementsFromServer();
     } catch (err) {
