@@ -113,15 +113,31 @@ export default function CardapioPage() {
   // ==========================
   // SALVAR NOVO PRODUTO
   // ==========================
-  function handleSaveProduct(categoryId: string, newProduct: any) {
-    setCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === categoryId
-          ? { ...cat, products: [...cat.products, newProduct] }
-          : cat
-      )
-    );
-  }
+ function handleSaveProduct(categoryId: string, newProduct: any) {
+  const normalizedProduct = {
+    ...newProduct,
+    price: newProduct.price ?? 0,
+    active: newProduct.active ?? true,
+    complements: Array.isArray(newProduct.productComplements)
+      ? newProduct.productComplements.map((pc: any) => ({
+          complementId: pc.groupId,
+          active: pc.active ?? true,
+          order: pc.order ?? 0,
+        }))
+      : [],
+  };
+
+  setCategories((prev) =>
+    prev.map((cat) =>
+      cat.id === categoryId
+        ? {
+            ...cat,
+            products: [...cat.products, normalizedProduct],
+          }
+        : cat
+    )
+  );
+}
 
   // ==========================
   // ATUALIZAR PRODUTO
