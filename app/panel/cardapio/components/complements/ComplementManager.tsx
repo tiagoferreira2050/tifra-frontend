@@ -41,30 +41,50 @@ export default function ComplementManager({
 
   // ---------------- TOGGLE ACTIVE + SALVAR NO BACKEND ----------------
   async function toggleActive(id: string) {
+  const current = complements.find((c) => c.id === id);
+  if (!current) return;
+
+  const newActive = !current.active;
+
+  // 1️⃣ Atualiza UI (optimistic)
+  setComplements((prev: any[]) =>
+    prev.map((c) =>
+      c.id === id ? { ...c, active: newActive } : c
+    )
+  );
+
+  try {
+    const res = await fetch(
+  `${BACKEND_URL}/complements`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          active: newActive,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Falha ao salvar no backend");
+    }
+  } catch (err) {
+    console.error("Erro ao atualizar complemento:", err);
+
+    // 2️⃣ rollback visual se falhar
     setComplements((prev: any[]) =>
       prev.map((c) =>
-        c.id === id ? { ...c, active: !c.active } : c
+        c.id === id ? { ...c, active: current.active } : c
       )
     );
 
-    const changed = complements.find((c) => c.id === id);
-    if (!changed) return;
-
-    try {
-      await fetch(`${BACKEND_URL}/complements`, {
-  method: "PATCH",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    id,
-    active: !changed.active,
-        }),
-      });
-    } catch (err) {
-      console.error("Erro ao atualizar complemento:", err);
-    }
+    alert("Erro ao salvar status do complemento");
   }
+}
+
 
   // ---------------- DELETE (LOCAL) ----------------
   async function deleteComplement(id: string) {
@@ -75,7 +95,7 @@ export default function ComplementManager({
     setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
 
     try {
-      const res = await fetch("/api/complements", {
+      const res = await fetch(`${BACKEND_URL}/complements`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
