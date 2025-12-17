@@ -97,7 +97,8 @@ export default function NewProductModal({
     if (numericPrice <= 0) return alert("Preço inválido");
 
     try {
-      const res = await fetch("/api/products", {
+      const res = await fetch(
+  `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
