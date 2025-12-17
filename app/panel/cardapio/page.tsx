@@ -114,30 +114,33 @@ export default function CardapioPage() {
   // ==========================
   // SALVAR NOVO PRODUTO
   // ==========================
- function handleSaveProduct(categoryId: string, newProduct: any) {
-  const normalizedProduct = {
-    ...newProduct,
-    price: newProduct.price ?? 0,
-    active: newProduct.active ?? true,
-    complements: Array.isArray(newProduct.productComplements)
-      ? newProduct.productComplements.map((pc: any) => ({
-          complementId: pc.groupId,
-          active: pc.active ?? true,
-          order: pc.order ?? 0,
-        }))
-      : [],
-  };
+ async function handleSaveProduct() {
+  try {
+    const data = await apiFetch("/categories");
 
-  setCategories((prev) =>
-    prev.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            products: [...cat.products, normalizedProduct],
-          }
-        : cat
-    )
-  );
+    const formatted = Array.isArray(data)
+      ? data.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          active: cat.active ?? true,
+          products: Array.isArray(cat.products)
+            ? cat.products.map((p: any) => ({
+                ...p,
+                price: p?.price ?? 0,
+                active: p?.active ?? true,
+                complements: Array.isArray(p?.productComplements)
+                  ? p.productComplements
+                  : [],
+              }))
+            : [],
+        }))
+      : [];
+
+    setCategories(formatted);
+    setSelectedCategoryId(formatted[0]?.id ?? null);
+  } catch (err) {
+    console.error("Erro ao recarregar produtos:", err);
+  }
 }
 
   // ==========================

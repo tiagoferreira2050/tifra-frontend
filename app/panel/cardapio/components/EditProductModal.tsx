@@ -19,7 +19,9 @@ export default function EditProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  const [image, setImage] = useState<string | null>(null);
+  // 🔥 SEPARAÇÃO CORRETA
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
@@ -41,7 +43,9 @@ export default function EditProductModal({
         : "0,00"
     );
 
-    setImage(product.imageUrl || null);
+    // 🔥 imagem vinda do banco
+    setImageUrl(product.imageUrl || null);
+    setImagePreview(null);
 
     const raw = product.productComplements || [];
 
@@ -73,25 +77,44 @@ export default function EditProductModal({
     return isNaN(n) ? 0 : n;
   }
 
+  // ============================================================
+  // UPLOAD DE IMAGEM (PADRÃO CORRETO)
+  // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // preview local
     const preview = URL.createObjectURL(file);
-    setImage(preview);
+    setImagePreview(preview);
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!API_URL) {
+      alert("Backend não configurado");
+      return;
+    }
 
-    const upload = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const data = await upload.json();
-    if (data?.url) {
-      setImage(data.url);
-    } else {
+      const res = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.url) {
+        alert("Erro ao enviar imagem");
+        return;
+      }
+
+      // 🔥 URL REAL (Cloudinary)
+      setImageUrl(data.url);
+    } catch (err) {
+      console.error("Erro upload imagem:", err);
       alert("Erro ao enviar imagem");
     }
   }
@@ -107,7 +130,6 @@ export default function EditProductModal({
     if (numericPrice <= 0) return alert("Preço inválido");
 
     try {
-      // 🔥 Ordenar complementos antes de enviar para o backend
       const complementsOrdered = [...selectedComplements].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
@@ -124,10 +146,8 @@ export default function EditProductModal({
           categoryId,
           pdv,
 
-          // 🔥 SÓ envia imageUrl se for URL real (cloudinary)
-          ...(image && image.startsWith("http")
-            ? { imageUrl: image }
-            : {}),
+          // 🔥 SOMENTE URL REAL
+          ...(imageUrl ? { imageUrl } : {}),
 
           complements: complementsOrdered.map(
             (c: any) => c.complementId
@@ -216,11 +236,15 @@ export default function EditProductModal({
 
         <label className="block font-medium mb-1">Imagem</label>
         <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
-          {image ? (
-            <img src={image} className="h-full object-cover rounded" />
+          {imagePreview || imageUrl ? (
+            <img
+              src={imagePreview || imageUrl}
+              className="h-full object-cover rounded"
+            />
           ) : (
             <p className="text-gray-400">Arraste ou clique para enviar</p>
           )}
+
           <input
             type="file"
             accept="image/*"

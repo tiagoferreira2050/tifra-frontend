@@ -20,7 +20,9 @@ export default function NewProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  const [image, setImage] = useState<string | null>(null);
+  // 🔥 SEPARAÇÃO CORRETA
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
@@ -46,15 +48,15 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // ✅ UPLOAD DE IMAGEM (PADRÃO IGUAL COMPLEMENTOS)
+  // ✅ UPLOAD DE IMAGEM (IGUAL COMPLEMENTOS)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview imediato
+    // preview local (NUNCA vai pro banco)
     const previewUrl = URL.createObjectURL(file);
-    setImage(previewUrl);
+    setImagePreview(previewUrl);
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!API_URL) {
@@ -69,6 +71,7 @@ export default function NewProductModal({
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -78,8 +81,8 @@ export default function NewProductModal({
         return;
       }
 
-      // 🔥 URL REAL salva no produto
-      setImage(data.url);
+      // 🔥 URL REAL (CLOUDINARY)
+      setImageUrl(data.url);
     } catch (err) {
       console.error("Erro upload imagem:", err);
       alert("Falha ao enviar imagem");
@@ -87,7 +90,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // SALVAR PRODUTO (JÁ FUNCIONA — NÃO MEXI)
+  // SALVAR PRODUTO
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -106,16 +109,19 @@ export default function NewProductModal({
           priceInCents: Math.round(numericPrice * 100),
           categoryId,
           storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
-          imageUrl: image || null,
+
+          // 🔥 SOMENTE URL REAL
+          imageUrl: imageUrl || null,
+
           complements: selectedComplements.map(
             (c: any) => c.complementId
           ),
         }),
       });
 
-      alert("Produto salvo com sucesso!");
+  
 
-      if (onSave) onSave(categoryId, product);
+      if (onSave) onSave();
       onClose();
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
@@ -124,7 +130,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // UI (INALTERADA)
+  // UI
   // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
@@ -191,11 +197,15 @@ export default function NewProductModal({
 
         <label className="block font-medium mb-1">Imagem</label>
         <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
-          {image ? (
-            <img src={image} className="h-full object-cover rounded" />
+          {imagePreview || imageUrl ? (
+            <img
+              src={imagePreview || imageUrl}
+              className="h-full object-cover rounded"
+            />
           ) : (
             <p className="text-gray-400">Arraste ou clique para enviar</p>
           )}
+
           <input
             type="file"
             accept="image/*"
