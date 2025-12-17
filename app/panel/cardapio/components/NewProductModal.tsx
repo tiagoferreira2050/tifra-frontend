@@ -18,16 +18,8 @@ export default function NewProductModal({
   const [categoryId, setCategoryId] = useState("");
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
-  const [hasDiscount, setHasDiscount] = useState(false);
-  const [discountPercent, setDiscountPercent] = useState("");
-  const [discountPrice, setDiscountPrice] = useState("");
 
-  const [portionValue, setPortionValue] = useState("");
-  const [portionUnit, setPortionUnit] = useState("un");
-  const [serves, setServes] = useState("");
-  const [highlight, setHighlight] = useState("");
   const [image, setImage] = useState<string | null>(null);
-  const [classifications, setClassifications] = useState([] as string[]);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
@@ -42,10 +34,9 @@ export default function NewProductModal({
 
   function formatCurrency(value: string) {
     if (!value) return "0,00";
-    let onlyNums = value.replace(/\D/g, "");
-    if (onlyNums === "") return "0,00";
-    let cents = (parseInt(onlyNums) / 100).toFixed(2);
-    return cents.replace(".", ",");
+    const onlyNums = value.replace(/\D/g, "");
+    if (!onlyNums) return "0,00";
+    return (parseInt(onlyNums) / 100).toFixed(2).replace(".", ",");
   }
 
   function toNumber(val: string) {
@@ -53,14 +44,9 @@ export default function NewProductModal({
     return isNaN(num) ? 0 : num;
   }
 
-  function toggleClassification(val: string) {
-    setClassifications((prev) =>
-      prev.includes(val)
-        ? prev.filter((c) => c !== val)
-        : [...prev, val]
-    );
-  }
-
+  // ============================================================
+  // UPLOAD DE IMAGEM (Next API → Cloudinary)
+  // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -86,7 +72,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // SALVAR PRODUTO (API)
+  // SALVAR PRODUTO (BACKEND EXPRESS / RAILWAY)
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -98,22 +84,25 @@ export default function NewProductModal({
 
     try {
       const res = await fetch(
-  `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          priceInCents: Math.round(numericPrice * 100),
-          categoryId,
-          storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
-          imageUrl: image || null,
-
-          complements: selectedComplements.map((c: any) => c.complementId),
-        }),
-      });
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            description,
+            priceInCents: Math.round(numericPrice * 100),
+            categoryId,
+            storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
+            imageUrl: image || null,
+            complements: selectedComplements.map(
+              (c: any) => c.complementId
+            ),
+          }),
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -121,14 +110,13 @@ export default function NewProductModal({
         return;
       }
 
-      alert("Produto salvo com sucesso!");
       const product = await res.json();
+      alert("Produto salvo com sucesso!");
 
       if (onSave) onSave(categoryId, product);
-
       onClose();
     } catch (error) {
-      console.error("Erro ao salvar produto no banco:", error);
+      console.error("Erro ao salvar produto:", error);
       alert("Erro ao conectar ao servidor");
     }
   }
