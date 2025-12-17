@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ProductComplementsManager from "./ui/ProductComplementsManager";
+import { apiFetch } from "@/lib/api"; // ✅ PADRÃO IGUAL COMPLEMENTOS
 
 export default function NewProductModal({
   open,
@@ -45,7 +46,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // UPLOAD DE IMAGEM (Next API → Cloudinary)
+  // UPLOAD DE IMAGEM (mantido como estava)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -72,7 +73,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // SALVAR PRODUTO (BACKEND EXPRESS / RAILWAY)
+  // SALVAR PRODUTO (PADRÃO IGUAL COMPLEMENTOS)
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -83,46 +84,34 @@ export default function NewProductModal({
     if (numericPrice <= 0) return alert("Preço inválido");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name,
-            description,
-            priceInCents: Math.round(numericPrice * 100),
-            categoryId,
-            storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
-            imageUrl: image || null,
-            complements: selectedComplements.map(
-              (c: any) => c.complementId
-            ),
-          }),
-        }
-      );
+      const product = await apiFetch("/products", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          description,
+          priceInCents: Math.round(numericPrice * 100),
+          categoryId,
+          storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
+          imageUrl: image || null,
+          complements: selectedComplements.map(
+            (c: any) => c.complementId
+          ),
+        }),
+      });
 
-      if (!res.ok) {
-        const data = await res.json();
-        alert(`Erro ao salvar: ${data.error || res.status}`);
-        return;
-      }
-
-      const product = await res.json();
       alert("Produto salvo com sucesso!");
 
       if (onSave) onSave(categoryId, product);
       onClose();
-    } catch (error) {
+
+    } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
-      alert("Erro ao conectar ao servidor");
+      alert(error?.message || "Erro ao salvar produto");
     }
   }
 
   // ============================================================
-  // UI
+  // UI (INALTERADO)
   // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
