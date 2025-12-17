@@ -22,7 +22,7 @@ export default function ProductList({
   search = "",
   complements = [],
   onUpdateProduct,
-  onCreateProduct, // ✅ NOVO (abre modal)
+  onCreateProduct, // ✅ abre modal
 }: any) {
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -84,50 +84,53 @@ export default function ProductList({
   if (products.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-medium text-sm text-gray-700">
-            Produtos
-          </h3>
+        <button
+          onClick={onCreateProduct}
+          className="self-start bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+        >
+          + Criar produto
+        </button>
 
-          <button
-            onClick={onCreateProduct}
-            className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition"
-          >
-            + Criar produto
-          </button>
-        </div>
-
-        <p className="text-gray-400 text-sm">
+        <div className="text-gray-400 text-sm">
           Nenhum produto nesta categoria
-        </p>
+        </div>
       </div>
     );
   }
 
-  // ✅ Categoria com produtos
+  // ✅ Categoria COM produtos (botão fixo)
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-    >
-      <SortableContext
-        items={products.map((p: any) => p.id)}
-        strategy={verticalListSortingStrategy}
+    <div className="flex flex-col gap-4">
+      <button
+        onClick={onCreateProduct}
+        className="self-start bg-red-600 text-white px-4 py-2 rounded-md text-sm"
       >
-        <div className="flex flex-col gap-3">
-          {products.map((product: any) => (
-            <ProductItem
-              key={product.id}
-              id={product.id}
-              product={product}
-              complements={complements}
-              onEdit={() => onUpdateProduct(product)}
-              onDelete={() => handleDeleteProduct(product.id)}
-              onToggle={() => handleToggleProduct(product.id)}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
+        + Criar produto
+      </button>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+      >
+        <SortableContext
+          items={products.map((p: any) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="flex flex-col gap-3">
+            {products.map((product: any) => (
+              <ProductItem
+                key={product.id}
+                id={product.id}
+                product={product}
+                complements={complements}
+                onEdit={() => onUpdateProduct(product)}
+                onDelete={() => handleDeleteProduct(product.id)}
+                onToggle={() => handleToggleProduct(product.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }
