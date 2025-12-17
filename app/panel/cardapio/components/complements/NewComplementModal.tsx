@@ -55,10 +55,13 @@ export default function NewComplementModal({
       const data = new FormData();
       data.append("file", file);
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: data,
-      });
+      const res = await fetch(
+  `${process.env.NEXT_PUBLIC_API_URL}/upload`,
+  {
+    method: "POST",
+    body: data,
+  }
+);
 
       const json = await res.json();
 
