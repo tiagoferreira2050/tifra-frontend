@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ProductComplementsManager from "./ui/ProductComplementsManager";
-import { apiFetch } from "@/lib/api"; // ✅ PADRÃO IGUAL COMPLEMENTOS
+import { apiFetch } from "@/lib/api";
 
 export default function NewProductModal({
   open,
@@ -46,34 +46,48 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // UPLOAD DE IMAGEM (mantido como estava)
+  // ✅ UPLOAD DE IMAGEM (PADRÃO IGUAL COMPLEMENTOS)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // preview imediato
     const previewUrl = URL.createObjectURL(file);
     setImage(previewUrl);
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!API_URL) {
+      alert("Backend não configurado");
+      return;
+    }
 
-    const upload = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const data = await upload.json();
+      const res = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        body: formData,
+      });
 
-    if (data?.url) {
+      const data = await res.json();
+
+      if (!res.ok || !data?.url) {
+        alert("Erro ao enviar imagem");
+        return;
+      }
+
+      // 🔥 URL REAL salva no produto
       setImage(data.url);
-    } else {
-      alert("Erro ao enviar imagem");
+    } catch (err) {
+      console.error("Erro upload imagem:", err);
+      alert("Falha ao enviar imagem");
     }
   }
 
   // ============================================================
-  // SALVAR PRODUTO (PADRÃO IGUAL COMPLEMENTOS)
+  // SALVAR PRODUTO (JÁ FUNCIONA — NÃO MEXI)
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -103,7 +117,6 @@ export default function NewProductModal({
 
       if (onSave) onSave(categoryId, product);
       onClose();
-
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
       alert(error?.message || "Erro ao salvar produto");
@@ -111,7 +124,7 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // UI (INALTERADO)
+  // UI (INALTERADA)
   // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
@@ -162,9 +175,7 @@ export default function NewProductModal({
           openGlobalEdit={() => {}}
         />
 
-        <label className="block font-medium mb-1">
-          Código PDV (opcional)
-        </label>
+        <label className="block font-medium mb-1">Código PDV (opcional)</label>
         <input
           className="w-full border rounded-md p-2 mb-4"
           value={pdv}
