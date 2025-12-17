@@ -21,8 +21,8 @@ export async function signInOrSignUp(email: string, password: string) {
   }
 
   /**
-   * ✅ COOKIE FUNCIONAL (SEM LOOP)
-   * Criado no domínio app.tifra.com.br
+   * ✅ COOKIE (mantido exatamente como já funcionava)
+   * Usado para compatibilidade / legado
    */
   document.cookie = [
     `tifra_token=${data.token}`,
@@ -30,6 +30,12 @@ export async function signInOrSignUp(email: string, password: string) {
     "Max-Age=604800", // 7 dias
     "SameSite=Lax",
   ].join("; ");
+
+  /**
+   * 🔥 LOCALSTORAGE (necessário para apiFetch)
+   * NÃO quebra nada que já existia
+   */
+  localStorage.setItem("tifra_token", data.token);
 
   // 👤 BUSCA USUÁRIO COM AUTH HEADER
   const userRes = await fetch(`${API_URL}/user`, {
