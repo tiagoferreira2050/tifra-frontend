@@ -225,6 +225,7 @@ export default function CardapioPage() {
               search={search}
               complements={complements}
               onUpdateProduct={handleUpdateProduct}
+              onCreateProduct={() => setNewProductOpen(true)}
             />
           )}
 

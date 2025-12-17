@@ -22,6 +22,7 @@ export default function ProductList({
   search = "",
   complements = [],
   onUpdateProduct,
+  onCreateProduct, // ✅ NOVO (abre modal)
 }: any) {
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -70,6 +71,7 @@ export default function ProductList({
     );
   }
 
+  // ❗ Nenhuma categoria selecionada
   if (!selectedCategory) {
     return (
       <div className="text-gray-500 text-sm">
@@ -78,14 +80,31 @@ export default function ProductList({
     );
   }
 
+  // ✅ Categoria existe, mas NÃO tem produto
   if (products.length === 0) {
     return (
-      <div className="text-gray-400 text-sm">
-        Nenhum produto nesta categoria
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-medium text-sm text-gray-700">
+            Produtos
+          </h3>
+
+          <button
+            onClick={onCreateProduct}
+            className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition"
+          >
+            + Criar produto
+          </button>
+        </div>
+
+        <p className="text-gray-400 text-sm">
+          Nenhum produto nesta categoria
+        </p>
       </div>
     );
   }
 
+  // ✅ Categoria com produtos
   return (
     <DndContext
       sensors={sensors}
