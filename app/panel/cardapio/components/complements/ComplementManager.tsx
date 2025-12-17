@@ -2,13 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-if (!BACKEND_URL) {
-  console.error("NEXT_PUBLIC_BACKEND_URL não definida");
-}
-
-
+import { apiFetch } from "@/lib/api"; // 🔥 PADRÃO CORRETO
 
 export default function ComplementManager({
   complements = [],
@@ -43,74 +37,58 @@ export default function ComplementManager({
     });
   }, [complements, effectiveSearch]);
 
-  // ---------------- TOGGLE ACTIVE + SALVAR NO BACKEND ----------------
+  // ---------------- TOGGLE ACTIVE ----------------
   async function toggleActive(id: string) {
-  const current = complements.find((c) => c.id === id);
-  if (!current) return;
+    const current = complements.find((c) => c.id === id);
+    if (!current) return;
 
-  const newActive = !current.active;
+    const newActive = !current.active;
 
-  // 1️⃣ Atualiza UI (optimistic)
-  setComplements((prev: any[]) =>
-    prev.map((c) =>
-      c.id === id ? { ...c, active: newActive } : c
-    )
-  );
+    // 1️⃣ UI otimista
+    setComplements((prev: any[]) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, active: newActive } : c
+      )
+    );
 
-  try {
-    const res = await fetch(
-  `${BACKEND_URL}/complements`,
-      {
+    try {
+      await apiFetch("/complements", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           id,
           active: newActive,
         }),
-      }
-    );
+      });
+    } catch (err) {
+      console.error("Erro ao ativar/desativar complemento:", err);
 
-    if (!res.ok) {
-      throw new Error("Falha ao salvar no backend");
+      // rollback visual
+      setComplements((prev: any[]) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, active: current.active } : c
+        )
+      );
+
+      alert("Erro ao salvar status do complemento");
     }
-  } catch (err) {
-    console.error("Erro ao atualizar complemento:", err);
-
-    // 2️⃣ rollback visual se falhar
-    setComplements((prev: any[]) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, active: current.active } : c
-      )
-    );
-
-    alert("Erro ao salvar status do complemento");
   }
-}
 
-
-  // ---------------- DELETE (LOCAL) ----------------
+  // ---------------- DELETE ----------------
   async function deleteComplement(id: string) {
     if (!confirm("Deseja deletar este complemento?")) return;
 
     const backup = complements;
 
+    // UI otimista
     setComplements((prev: any[]) => prev.filter((c) => c.id !== id));
 
     try {
-      const res = await fetch(`${BACKEND_URL}/complements`, {
+      await apiFetch("/complements", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-
-      if (!res.ok) {
-        throw new Error("Falha no backend");
-      }
-
     } catch (err) {
-      console.error("Erro ao deletar:", err);
+      console.error("Erro ao deletar complemento:", err);
       setComplements(backup);
       alert("Erro ao deletar complemento");
     }
@@ -211,4 +189,3 @@ export default function ComplementManager({
     </div>
   );
 }
-
