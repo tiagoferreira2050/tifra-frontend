@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+
 export default function ComplementManager({
   complements = [],
   setComplements,
@@ -48,12 +51,14 @@ export default function ComplementManager({
     if (!changed) return;
 
     try {
-      await fetch("/api/complements", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          active: !changed.active,
+      await fetch(`${BACKEND_URL}/complements`, {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    id,
+    active: !changed.active,
         }),
       });
     } catch (err) {
