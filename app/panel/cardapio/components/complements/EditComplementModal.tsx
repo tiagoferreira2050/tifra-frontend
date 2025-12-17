@@ -86,13 +86,24 @@ export default function EditComplementModal({
   // UPLOAD DE IMAGEM
   // ==========================================================
   async function handleImageUpload(e: any, id: string) {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    if (!API_URL) {
+      alert("API não configurada");
+      return;
+    }
 
     const data = new FormData();
     data.append("file", file);
 
-    const res = await fetch("/api/upload", { method: "POST", body: data });
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: data,
+    });
+
     const json = await res.json();
 
     if (!res.ok || !json.url) {
@@ -100,8 +111,20 @@ export default function EditComplementModal({
       return;
     }
 
-    updateOption(id, { image: json.url });
+    // 🔥 FORÇA ATUALIZAÇÃO DO PREVIEW
+    setOptions((prev) =>
+      prev.map((o) =>
+        o.id === id
+          ? { ...o, image: `${json.url}?v=${Date.now()}` }
+          : o
+      )
+    );
+  } catch (err) {
+    console.error("Erro ao enviar imagem:", err);
+    alert("Falha no upload da imagem");
   }
+}
+
 
   // ==========================================================
   // FORMATADORES
