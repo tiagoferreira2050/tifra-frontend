@@ -4,6 +4,10 @@ import { useState, useMemo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+if (!BACKEND_URL) {
+  console.error("NEXT_PUBLIC_BACKEND_URL não definida");
+}
+
 
 
 export default function ComplementManager({
