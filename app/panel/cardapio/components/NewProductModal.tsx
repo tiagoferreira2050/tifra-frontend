@@ -135,7 +135,7 @@ export default function NewProductModal({
 
       if (selectedComplements.length > 0) {
         payload.complements = selectedComplements.map(
-  (c: any) => c.groupId
+  (c: any) => c.complementId
 );
       }
 
