@@ -23,6 +23,7 @@ export default function EditProductModal({
   // 🔥 PADRÃO DEFINITIVO (IGUAL NEW)
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
@@ -85,48 +86,56 @@ export default function EditProductModal({
   // ============================================================
   // UPLOAD IMAGE (IGUAL NEW PRODUCT)
   // ============================================================
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+ async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    setImagePreview(URL.createObjectURL(file));
+  setUploadingImage(true); // 🔒 trava
+  setImagePreview(URL.createObjectURL(file));
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
-    if (!API_URL) {
-      alert("Backend não configurado");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  if (!API_URL) {
+    alert("Backend não configurado");
+    setUploadingImage(false);
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data?.url) {
+      alert("Erro ao enviar imagem");
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data?.url) {
-        alert("Erro ao enviar imagem");
-        return;
-      }
-
-      if (typeof data.url === "string" && data.url.startsWith("http")) {
-        setImageUrl(data.url);
-      }
-    } catch (err) {
-      console.error("Erro upload imagem:", err);
-      alert("Erro ao enviar imagem");
+    if (typeof data.url === "string" && data.url.startsWith("http")) {
+      setImageUrl(data.url);
     }
+  } catch (err) {
+    console.error("Erro upload imagem:", err);
+    alert("Erro ao enviar imagem");
+  } finally {
+    setUploadingImage(false); // 🔓 libera
   }
+}
+
 
   // ============================================================
   // SAVE (CORRIGIDO)
   // ============================================================
   async function handleSave() {
+    if (uploadingImage) {
+  return alert("Aguarde o upload da imagem terminar");
+}
     if (!name.trim()) return alert("Nome obrigatório");
     if (!description.trim()) return alert("Descrição obrigatória");
 
@@ -257,13 +266,15 @@ export default function EditProductModal({
           >
             Cancelar
           </button>
-
-          <button
-            className="px-4 py-2 bg-red-600 text-white rounded-md"
-            onClick={handleSave}
-          >
-            Salvar alterações
-          </button>
+<button
+  className={`px-4 py-2 rounded-md text-white ${
+    uploadingImage ? "bg-gray-400 cursor-not-allowed" : "bg-red-600"
+  }`}
+  onClick={handleSave}
+  disabled={uploadingImage}
+>
+  {uploadingImage ? "Enviando imagem..." : "Salvar alterações"}
+</button>
         </div>
       </div>
     </div>
