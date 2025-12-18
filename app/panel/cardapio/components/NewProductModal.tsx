@@ -20,7 +20,7 @@ export default function NewProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 separação correta (igual complements)
+  // 🔥 PADRÃO DEFINITIVO (preview ≠ url real)
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -51,27 +51,25 @@ export default function NewProductModal({
   // HELPERS
   // ============================================================
   function formatCurrency(value: string) {
-    if (!value) return "0,00";
     const onlyNums = value.replace(/\D/g, "");
     if (!onlyNums) return "0,00";
     return (parseInt(onlyNums) / 100).toFixed(2).replace(".", ",");
   }
 
   function toNumber(val: string) {
-    const num = Number(val.replace(",", "."));
-    return isNaN(num) ? 0 : num;
+    const n = Number(val.replace(",", "."));
+    return isNaN(n) ? 0 : n;
   }
 
   // ============================================================
-  // UPLOAD DE IMAGEM (PADRÃO COMPLEMENTS)
+  // UPLOAD IMAGE (PADRÃO COMPLEMENTS)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview local
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
+    // preview local (NUNCA salvar isso)
+    setImagePreview(URL.createObjectURL(file));
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!API_URL) {
@@ -96,7 +94,7 @@ export default function NewProductModal({
         return;
       }
 
-      // 🔥 somente URL real
+      // 🔥 SOMENTE URL DO CLOUDINARY
       setImageUrl(data.url);
     } catch (err) {
       console.error("Erro upload imagem:", err);
@@ -115,26 +113,29 @@ export default function NewProductModal({
     const numericPrice = toNumber(price);
     if (numericPrice <= 0) return alert("Preço inválido");
 
-    // 🔒 blindagem final (igual complements)
-    const finalImageUrl =
-      typeof imageUrl === "string" && imageUrl.startsWith("http")
-        ? imageUrl
-        : null;
-
     try {
+      const payload: any = {
+        name,
+        description,
+        priceInCents: Math.round(numericPrice * 100),
+        categoryId,
+        pdv,
+      };
+
+      // 🔒 blindagem total de imagem
+      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+        payload.imageUrl = imageUrl;
+      }
+
+      if (selectedComplements.length > 0) {
+        payload.complements = selectedComplements.map(
+          (c: any) => c.complementId
+        );
+      }
+
       const product = await apiFetch("/products", {
         method: "POST",
-        body: JSON.stringify({
-          name,
-          description,
-          priceInCents: Math.round(numericPrice * 100),
-          categoryId,
-          storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
-          imageUrl: finalImageUrl,
-          complements: selectedComplements.map(
-            (c: any) => c.complementId
-          ),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (onSave) onSave(categoryId, product);
@@ -197,7 +198,9 @@ export default function NewProductModal({
           openGlobalEdit={() => {}}
         />
 
-        <label className="block font-medium mb-1">Código PDV (opcional)</label>
+        <label className="block font-medium mb-1 mt-3">
+          Código PDV (opcional)
+        </label>
         <input
           className="w-full border rounded-md p-2 mb-4"
           value={pdv}
@@ -212,7 +215,7 @@ export default function NewProductModal({
         />
 
         <label className="block font-medium mb-1">Imagem</label>
-        <div className="border-2 border-dashed rounded-md flex flex-col items-center justify-center h-40 mb-4 p-4 cursor-pointer relative">
+        <div className="border-2 border-dashed rounded-md flex items-center justify-center h-40 mb-4 relative cursor-pointer">
           {imagePreview || imageUrl ? (
             <img
               src={imagePreview || imageUrl}
