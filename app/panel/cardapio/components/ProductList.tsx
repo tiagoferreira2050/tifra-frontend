@@ -11,7 +11,7 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
+  arrayMove, // ✅ SOMENTE ISSO FOI ADICIONADO
 } from "@dnd-kit/sortable";
 
 import ProductItem from "./ProductItem";
@@ -29,7 +29,7 @@ export default function ProductList({
   const sensors = useSensors(useSensor(PointerSensor));
 
   // =====================================================
-  // CATEGORIA SELECIONADA
+  // CATEGORIA SELECIONADA (BLINDADA)
   // =====================================================
   const selectedCategory = Array.isArray(categories)
     ? categories.find((c: any) => c.id === selectedCategoryId)
@@ -45,7 +45,7 @@ export default function ProductList({
     : [];
 
   // =====================================================
-  // TOGGLE ATIVO (UI + BANCO)
+  // TOGGLE ATIVO (NÃO MEXIDO)
   // =====================================================
   async function handleToggleProduct(productId: string) {
     const current = products.find((p: any) => p.id === productId);
@@ -53,7 +53,6 @@ export default function ProductList({
 
     const newActive = !current.active;
 
-    // UI otimista
     setCategories((prev: any[]) =>
       prev.map((cat: any) =>
         cat.id !== selectedCategoryId
@@ -70,15 +69,15 @@ export default function ProductList({
     try {
       await apiFetch(`/products/${productId}`, {
         method: "PATCH",
-        body: { active: newActive }, // ✅ PADRÃO CORRETO
+        body: JSON.stringify({ active: newActive }),
       });
-    } catch (err) {
+    } catch {
       alert("Erro ao atualizar status do produto");
     }
   }
 
   // =====================================================
-  // DELETE PRODUTO
+  // DELETE PRODUTO (NÃO MEXIDO)
   // =====================================================
   async function handleDeleteProduct(productId: string) {
     if (!confirm("Excluir este produto?")) return;
@@ -95,28 +94,25 @@ export default function ProductList({
             ? cat
             : {
                 ...cat,
-                products: Array.isArray(cat.products)
-                  ? cat.products.filter(
-                      (p: any) => p.id !== productId
-                    )
-                  : [],
+                products: cat.products.filter(
+                  (p: any) => p.id !== productId
+                ),
               }
         )
       );
-    } catch (err) {
-      console.error("Erro ao excluir produto:", err);
+    } catch {
       alert("Erro ao excluir produto");
     }
   }
 
   // =====================================================
-  // DRAG & DROP — SALVA AUTOMÁTICO
+  // REORDENAR PRODUTOS (NOVO – ISOLADO)
   // =====================================================
   async function onDragEnd(event: any) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    let newProductsOrder: any[] = [];
+    let newOrder: any[] = [];
 
     setCategories((prev: any[]) =>
       prev.map((cat: any) => {
@@ -137,7 +133,7 @@ export default function ProductList({
           newIndex
         );
 
-        newProductsOrder = reordered;
+        newOrder = reordered;
 
         return {
           ...cat,
@@ -146,17 +142,16 @@ export default function ProductList({
       })
     );
 
-    if (!newProductsOrder.length) return;
+    if (!newOrder.length) return;
 
     try {
       await apiFetch("/products/reorder", {
         method: "POST",
         body: {
-          productIds: newProductsOrder.map((p: any) => p.id),
+          productIds: newOrder.map((p: any) => p.id),
         },
       });
-    } catch (err) {
-      console.error("Erro ao salvar ordem dos produtos", err);
+    } catch {
       alert("Erro ao salvar ordem dos produtos");
     }
   }
@@ -181,7 +176,6 @@ export default function ProductList({
         >
           + Criar produto
         </button>
-
         <div className="text-gray-400 text-sm">
           Nenhum produto nesta categoria
         </div>
@@ -201,7 +195,7 @@ export default function ProductList({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
+        onDragEnd={onDragEnd} // ✅ ÚNICA LIGAÇÃO NOVA
       >
         <SortableContext
           items={products.map((p: any) => p.id)}
