@@ -161,8 +161,8 @@ export default function EditProductModal({
       // ✅ complementos corretos
       if (selectedComplements.length > 0) {
   payload.complements = selectedComplements
-    .sort((a, b) => a.order - b.order)
-    .map((c: any) => c.groupId);
+  .sort((a, b) => a.order - b.order)
+  .map((c: any) => c.complementId);
 }
 
 
