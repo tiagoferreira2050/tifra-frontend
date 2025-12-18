@@ -57,12 +57,12 @@ export default function EditProductModal({
 
     // ✅ FORMATO CORRETO
     setSelectedComplements(
-      raw.map((pc: any, index: number) => ({
-        groupId: pc.groupId,
-        active: pc.active ?? true,
-        order: pc.order ?? index,
-      }))
-    );
+  raw.map((pc: any, index: number) => ({
+    complementId: pc.groupId, // 🔥 AQUI
+    active: pc.active ?? true,
+    order: pc.order ?? index,
+  }))
+);
   }, [product]);
 
   useEffect(() => {
