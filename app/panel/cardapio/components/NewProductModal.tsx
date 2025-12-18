@@ -20,7 +20,7 @@ export default function NewProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 PADRÃO DEFINITIVO (preview ≠ url real)
+  // 🔥 PADRÃO FINAL (igual EditProduct)
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -68,7 +68,6 @@ export default function NewProductModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview local (NUNCA salvar isso)
     setImagePreview(URL.createObjectURL(file));
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -94,7 +93,6 @@ export default function NewProductModal({
         return;
       }
 
-      // 🔥 SOMENTE URL DO CLOUDINARY
       setImageUrl(data.url);
     } catch (err) {
       console.error("Erro upload imagem:", err);
@@ -119,11 +117,12 @@ export default function NewProductModal({
         description,
         priceInCents: Math.round(numericPrice * 100),
         categoryId,
+        storeId: "e6fa0e88-308d-49a2-b988-9618d28daa73",
         pdv,
       };
 
-      // 🔒 blindagem total de imagem
-      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+      // 🔥 só envia se existir
+      if (imageUrl && imageUrl.startsWith("http")) {
         payload.imageUrl = imageUrl;
       }
 
