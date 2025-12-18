@@ -146,11 +146,12 @@ export default function ProductList({
 
     try {
       await apiFetch("/products/reorder", {
-        method: "POST",
-        body: {
-          productIds: newOrder.map((p: any) => p.id),
-        },
-      });
+  method: "POST",
+  body: JSON.stringify({
+    productIds: newOrder.map((p: any) => p.id),
+  }),
+});
+
     } catch {
       alert("Erro ao salvar ordem dos produtos");
     }
