@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import ProductItem from "./ProductItem";
+import { apiFetch } from "@/lib/api";
 
 export default function ProductList({
   categories = [],
@@ -65,47 +66,37 @@ export default function ProductList({
   }
 
   // =====================================================
-  // DELETE (UI otimista)
+  // DELETE PRODUTO (SEGUR0 + PADRONIZADO)
   // =====================================================
- async function handleDeleteProduct(productId: string) {
-  if (!confirm("Excluir este produto?")) return;
+  async function handleDeleteProduct(productId: string) {
+    if (!confirm("Excluir este produto?")) return;
 
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`,
-      {
+    try {
+      await apiFetch("/products", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ id: productId }),
-      }
-    );
+        body: { id: productId },
+      });
 
-    if (!res.ok) {
-      throw new Error("Erro ao excluir produto");
+      // UI otimista
+      setCategories((prev: any[]) =>
+        prev.map((cat: any) =>
+          cat.id !== selectedCategoryId
+            ? cat
+            : {
+                ...cat,
+                products: Array.isArray(cat.products)
+                  ? cat.products.filter(
+                      (p: any) => p.id !== productId
+                    )
+                  : [],
+              }
+        )
+      );
+    } catch (err) {
+      console.error("Erro ao excluir produto:", err);
+      alert("Erro ao excluir produto");
     }
-
-    // UI otimista
-    setCategories((prev: any[]) =>
-      prev.map((cat) =>
-        cat.id !== selectedCategoryId
-          ? cat
-          : {
-              ...cat,
-              products: cat.products.filter(
-                (p: any) => p.id !== productId
-              ),
-            }
-      )
-    );
-  } catch (err) {
-    console.error("Erro ao excluir produto:", err);
-    alert("Erro ao excluir produto");
   }
-}
-
 
   // =====================================================
   // UI — SEM CATEGORIA
