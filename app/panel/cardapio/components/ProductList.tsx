@@ -83,10 +83,10 @@ export default function ProductList({
     if (!confirm("Excluir este produto?")) return;
 
     try {
-      await apiFetch("/products", {
-        method: "DELETE",
-        body: { id: productId },
-      });
+      await apiFetch(`/products/${productId}`, {
+  method: "DELETE",
+});
+
 
       setCategories((prev: any[]) =>
         prev.map((cat: any) =>
