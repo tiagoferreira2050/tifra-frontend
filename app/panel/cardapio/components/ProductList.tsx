@@ -11,6 +11,7 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
+  arrayMove,
 } from "@dnd-kit/sortable";
 
 import ProductItem from "./ProductItem";
@@ -28,7 +29,7 @@ export default function ProductList({
   const sensors = useSensors(useSensor(PointerSensor));
 
   // =====================================================
-  // CATEGORIA SELECIONADA (BLINDADA)
+  // CATEGORIA SELECIONADA
   // =====================================================
   const selectedCategory = Array.isArray(categories)
     ? categories.find((c: any) => c.id === selectedCategoryId)
@@ -44,41 +45,40 @@ export default function ProductList({
     : [];
 
   // =====================================================
-  // TOGGLE ATIVO (UI otimista)
+  // TOGGLE ATIVO (UI + BANCO)
   // =====================================================
   async function handleToggleProduct(productId: string) {
-  const current = products.find((p: any) => p.id === productId);
-  if (!current) return;
+    const current = products.find((p: any) => p.id === productId);
+    if (!current) return;
 
-  const newActive = !current.active;
+    const newActive = !current.active;
 
-  // UI otimista
-  setCategories((prev: any[]) =>
-    prev.map((cat: any) =>
-      cat.id !== selectedCategoryId
-        ? cat
-        : {
-            ...cat,
-            products: cat.products.map((p: any) =>
-              p.id === productId ? { ...p, active: newActive } : p
-            ),
-          }
-    )
-  );
+    // UI otimista
+    setCategories((prev: any[]) =>
+      prev.map((cat: any) =>
+        cat.id !== selectedCategoryId
+          ? cat
+          : {
+              ...cat,
+              products: cat.products.map((p: any) =>
+                p.id === productId ? { ...p, active: newActive } : p
+              ),
+            }
+      )
+    );
 
-  try {
-    await apiFetch(`/products/${productId}`, {
-  method: "PATCH",
-  body: JSON.stringify({ active: newActive }),
-});
-
-  } catch (err) {
-    alert("Erro ao atualizar status do produto");
+    try {
+      await apiFetch(`/products/${productId}`, {
+        method: "PATCH",
+        body: { active: newActive }, // ✅ PADRÃO CORRETO
+      });
+    } catch (err) {
+      alert("Erro ao atualizar status do produto");
+    }
   }
-}
 
   // =====================================================
-  // DELETE PRODUTO (SEGUR0 + PADRONIZADO)
+  // DELETE PRODUTO
   // =====================================================
   async function handleDeleteProduct(productId: string) {
     if (!confirm("Excluir este produto?")) return;
@@ -89,7 +89,6 @@ export default function ProductList({
         body: { id: productId },
       });
 
-      // UI otimista
       setCategories((prev: any[]) =>
         prev.map((cat: any) =>
           cat.id !== selectedCategoryId
@@ -111,7 +110,59 @@ export default function ProductList({
   }
 
   // =====================================================
-  // UI — SEM CATEGORIA
+  // DRAG & DROP — SALVA AUTOMÁTICO
+  // =====================================================
+  async function onDragEnd(event: any) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    let newProductsOrder: any[] = [];
+
+    setCategories((prev: any[]) =>
+      prev.map((cat: any) => {
+        if (cat.id !== selectedCategoryId) return cat;
+
+        const oldIndex = cat.products.findIndex(
+          (p: any) => p.id === active.id
+        );
+        const newIndex = cat.products.findIndex(
+          (p: any) => p.id === over.id
+        );
+
+        if (oldIndex === -1 || newIndex === -1) return cat;
+
+        const reordered = arrayMove(
+          cat.products,
+          oldIndex,
+          newIndex
+        );
+
+        newProductsOrder = reordered;
+
+        return {
+          ...cat,
+          products: reordered,
+        };
+      })
+    );
+
+    if (!newProductsOrder.length) return;
+
+    try {
+      await apiFetch("/products/reorder", {
+        method: "POST",
+        body: {
+          productIds: newProductsOrder.map((p: any) => p.id),
+        },
+      });
+    } catch (err) {
+      console.error("Erro ao salvar ordem dos produtos", err);
+      alert("Erro ao salvar ordem dos produtos");
+    }
+  }
+
+  // =====================================================
+  // UI
   // =====================================================
   if (!selectedCategory) {
     return (
@@ -121,9 +172,6 @@ export default function ProductList({
     );
   }
 
-  // =====================================================
-  // UI — CATEGORIA VAZIA
-  // =====================================================
   if (products.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -141,9 +189,6 @@ export default function ProductList({
     );
   }
 
-  // =====================================================
-  // UI — LISTA DE PRODUTOS
-  // =====================================================
   return (
     <div className="flex flex-col gap-4">
       <button
@@ -156,6 +201,7 @@ export default function ProductList({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
       >
         <SortableContext
           items={products.map((p: any) => p.id)}
@@ -169,12 +215,8 @@ export default function ProductList({
                 product={product}
                 complements={complements}
                 onEdit={(p: any) => onUpdateProduct(p)}
-                onDelete={(id: string) =>
-                  handleDeleteProduct(id)
-                }
-                onToggle={(id: string) =>
-                  handleToggleProduct(id)
-                }
+                onDelete={handleDeleteProduct}
+                onToggle={handleToggleProduct}
               />
             ))}
           </div>
