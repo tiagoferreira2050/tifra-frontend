@@ -31,7 +31,6 @@ export default function CategoryManager({
   selectedCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
 }) {
-  const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
   const sensors = useSensors(useSensor(PointerSensor));
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -51,7 +50,7 @@ export default function CategoryManager({
             name: p.name ?? "",
             price: p.price ?? 0,
             description: p.description ?? null,
-            imageUrl: p.imageUrl ?? p.image ?? null,
+            imageUrl: p.imageUrl ?? null,
             active: p.active ?? true,
             order: p.order ?? idx,
             ...p,
@@ -70,15 +69,10 @@ export default function CategoryManager({
     try {
       const data = await apiFetch("/categories", {
         method: "POST",
-        body: JSON.stringify({ name, storeId: STORE_ID }),
+        body: JSON.stringify({ name }),
       });
 
-      const created = normalizeCategory({
-        id: data.id,
-        name: data.name,
-        active: true,
-        products: data.products ?? [],
-      });
+      const created = normalizeCategory(data);
 
       setCategories((prev: any[]) => [...prev, created]);
       onSelectCategory(created.id);
@@ -167,7 +161,6 @@ export default function CategoryManager({
     try {
       const payload = {
         name: `${cat.name} (cópia)`,
-        storeId: STORE_ID,
         products: (cat.products || []).map((p: any) => ({
           name: p.name,
           price: p.price,
@@ -183,12 +176,7 @@ export default function CategoryManager({
         body: JSON.stringify(payload),
       });
 
-      const created = normalizeCategory({
-        id: createdRaw.id,
-        name: createdRaw.name,
-        active: true,
-        products: createdRaw.products ?? payload.products,
-      });
+      const created = normalizeCategory(createdRaw);
 
       setCategories((prev: any[]) => [...prev, created]);
       onSelectCategory(created.id);
@@ -223,7 +211,7 @@ export default function CategoryManager({
       }));
 
       await apiFetch("/categories/order", {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify({ orders }),
       });
 
