@@ -20,7 +20,7 @@ export default function EditProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 PADRÃO FINAL
+  // 🔥 MESMO PADRÃO DO NEW
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export default function EditProductModal({
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
 
   // ============================================================
-  // LOAD PRODUCT
+  // LOAD PRODUCT (ESPELHO DO BANCO)
   // ============================================================
   useEffect(() => {
     if (!product) return;
@@ -44,20 +44,22 @@ export default function EditProductModal({
         : "0,00"
     );
 
-    // reset imagem
+    // imagem
     setImageUrl(product.imageUrl || null);
     setImagePreview(null);
 
-    const raw = product.productComplements || [];
+    // complementos (EXATAMENTE COMO SALVO)
+    const raw = Array.isArray(product.productComplements)
+      ? product.productComplements
+      : [];
 
     setSelectedComplements(
-  raw.map((pc: any, index: number) => ({
-    groupId: pc.groupId,
-    active: pc.active ?? true,
-    order: pc.order ?? index,
-  }))
-);
-
+      raw.map((pc: any, index: number) => ({
+        groupId: pc.groupId,
+        active: pc.active ?? true,
+        order: pc.order ?? index,
+      }))
+    );
   }, [product]);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function EditProductModal({
   }
 
   // ============================================================
-  // UPLOAD IMAGE (IGUAL NEW PRODUCT / COMPLEMENTS)
+  // UPLOAD IMAGE (IGUAL NEW PRODUCT)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -88,7 +90,6 @@ export default function EditProductModal({
     setImagePreview(URL.createObjectURL(file));
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
     if (!API_URL) {
       alert("Backend não configurado");
       return;
@@ -111,7 +112,9 @@ export default function EditProductModal({
         return;
       }
 
-      setImageUrl(data.url);
+      if (typeof data.url === "string" && data.url.startsWith("http")) {
+        setImageUrl(data.url);
+      }
     } catch (err) {
       console.error("Erro upload imagem:", err);
       alert("Erro ao enviar imagem");
@@ -119,7 +122,7 @@ export default function EditProductModal({
   }
 
   // ============================================================
-  // SAVE
+  // SAVE (PADRÃO DO NEW)
   // ============================================================
   async function handleSave() {
     if (!name.trim()) return alert("Nome obrigatório");
@@ -141,10 +144,13 @@ export default function EditProductModal({
         pdv,
       };
 
-      if (imageUrl) payload.imageUrl = imageUrl;
+      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+        payload.imageUrl = imageUrl;
+      }
+
       if (complementsOrdered.length > 0) {
         payload.complements = complementsOrdered.map(
-          (c: any) => c.complementId
+          (c: any) => c.groupId
         );
       }
 
