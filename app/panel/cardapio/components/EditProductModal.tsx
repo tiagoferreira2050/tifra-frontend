@@ -57,7 +57,7 @@ export default function EditProductModal({
     // ✅ FORMATO CORRETO
     setSelectedComplements(
       raw.map((pc: any, index: number) => ({
-            complementId: pc.groupId,
+        groupId: pc.groupId,
         active: pc.active ?? true,
         order: pc.order ?? index,
       }))
