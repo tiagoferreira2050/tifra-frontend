@@ -58,11 +58,17 @@ export default function EditProductModal({
     // ✅ FORMATO CORRETO
     setSelectedComplements(
   raw.map((pc: any, index: number) => ({
-    complementId: pc.groupId, // 🔥 AQUI
+    // 🔑 PARA A UI (exibir corretamente)
+    complementId: pc.groupId,
+
+    // 🔑 PARA O BACKEND (persistência)
+    groupId: pc.groupId,
+
     active: pc.active ?? true,
     order: pc.order ?? index,
   }))
 );
+
   }, [product]);
 
   useEffect(() => {
@@ -158,10 +164,11 @@ export default function EditProductModal({
 
       // ✅ complementos corretos
       if (selectedComplements.length > 0) {
-        payload.complements = selectedComplements
-          .sort((a, b) => a.order - b.order)
-          .map((c: any) => c.groupId);
-      }
+  payload.complements = selectedComplements
+    .sort((a, b) => a.order - b.order)
+    .map((c: any) => c.groupId);
+}
+
 
       const updated = await apiFetch(`/products/${product.id}`, {
         method: "PATCH",
