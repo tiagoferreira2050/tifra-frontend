@@ -125,10 +125,14 @@ export default function CategoryManager({
     );
 
     try {
-      await apiFetch(`/categories/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ active: newActive }),
-      });
+      await apiFetch("/categories", {
+  method: "PATCH",
+  body: JSON.stringify({
+    id,
+    active: newActive,
+  }),
+});
+
     } catch (err) {
       console.error(err);
       alert("Erro ao atualizar status");
