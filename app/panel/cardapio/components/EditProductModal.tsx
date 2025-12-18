@@ -168,15 +168,101 @@ export default function EditProductModal({
   }
 
   // ============================================================
-  // UI (NÃO ALTERADA)
+  // UI
   // ============================================================
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center overflow-y-auto py-10 z-50">
       <div className="bg-white rounded-2xl w-[750px] max-h-[90vh] overflow-y-auto p-6 shadow-xl">
         <h2 className="text-xl font-semibold mb-6">Editar produto</h2>
 
-        {/* resto do JSX permanece exatamente igual */}
-        {/* botão chama handleSave */}
+        <label className="block font-medium mb-1">Nome *</label>
+        <input
+          className="w-full border rounded-md p-2 mb-4"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <label className="block font-medium mb-1">Descrição *</label>
+        <textarea
+          className="w-full border rounded-md p-2 mb-4"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+
+        <label className="block font-medium mb-1">Categoria *</label>
+        <select
+          className="w-full border rounded-md p-2 mb-4"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+        >
+          {categories.map((cat: any) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <label className="block font-medium mb-1 mt-3">
+          Complementos do produto
+        </label>
+
+        <ProductComplementsManager
+          productComplements={selectedComplements}
+          setProductComplements={setSelectedComplements}
+          globalComplements={globalComplementsState}
+        />
+
+        <label className="block font-medium mb-1 mt-3">
+          Código PDV (opcional)
+        </label>
+        <input
+          className="w-full border rounded-md p-2 mb-4"
+          value={pdv}
+          onChange={(e) => setPdv(e.target.value)}
+        />
+
+        <label className="block font-medium mb-1">Preço *</label>
+        <input
+          className="border rounded-md p-2 w-full mb-4"
+          value={price}
+          onChange={(e) => setPrice(formatCurrency(e.target.value))}
+        />
+
+        <label className="block font-medium mb-1">Imagem</label>
+        <div className="border-2 border-dashed rounded-md flex items-center justify-center h-40 mb-4 relative cursor-pointer">
+          {imagePreview || imageUrl ? (
+            <img
+              src={imagePreview || imageUrl}
+              className="h-full object-cover rounded"
+            />
+          ) : (
+            <p className="text-gray-400">Arraste ou clique para enviar</p>
+          )}
+
+          <input
+            type="file"
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={handleImageUpload}
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-md"
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-md"
+            onClick={handleSave}
+          >
+            Salvar alterações
+          </button>
+        </div>
       </div>
     </div>
   );
