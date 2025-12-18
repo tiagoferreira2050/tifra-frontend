@@ -67,24 +67,31 @@ export default function ProductList({
   // =====================================================
   // DELETE (UI otimista)
   // =====================================================
-  function handleDeleteProduct(productId: string) {
-    if (!confirm("Excluir este produto?")) return;
+  async function handleDeleteProduct(productId: string) {
+  if (!confirm("Excluir este produto?")) return;
+
+  try {
+    await apiFetch(`/products/${productId}`, {
+      method: "DELETE",
+    });
 
     setCategories((prev: any[]) =>
-      prev.map((cat: any) =>
+      prev.map((cat) =>
         cat.id !== selectedCategoryId
           ? cat
           : {
               ...cat,
-              products: Array.isArray(cat.products)
-                ? cat.products.filter(
-                    (p: any) => p.id !== productId
-                  )
-                : [],
+              products: cat.products.filter(
+                (p: any) => p.id !== productId
+              ),
             }
       )
     );
+  } catch (err) {
+    console.error("Erro ao excluir produto:", err);
+    alert("Erro ao excluir produto");
   }
+}
 
   // =====================================================
   // UI — SEM CATEGORIA
