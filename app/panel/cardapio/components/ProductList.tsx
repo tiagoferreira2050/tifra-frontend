@@ -69,9 +69,9 @@ export default function ProductList({
   try {
     await apiFetch(`/products/${productId}`, {
   method: "PATCH",
-  bodyd
   body: JSON.stringify({ active: newActive }),
 });
+
   } catch (err) {
     alert("Erro ao atualizar status do produto");
   }
