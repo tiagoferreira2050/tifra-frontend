@@ -51,12 +51,13 @@ export default function EditProductModal({
     const raw = product.productComplements || [];
 
     setSelectedComplements(
-      raw.map((pc: any, index: number) => ({
-        complementId: pc.groupId,
-        active: pc.active ?? true,
-        order: pc.order ?? index,
-      }))
-    );
+  raw.map((pc: any, index: number) => ({
+    groupId: pc.groupId,
+    active: pc.active ?? true,
+    order: pc.order ?? index,
+  }))
+);
+
   }, [product]);
 
   useEffect(() => {
@@ -139,11 +140,13 @@ export default function EditProductModal({
         pdv,
       };
 
-      if (imageUrl) payload.imageUrl = imageUrl;
+      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+  payload.imageUrl = imageUrl;
+}
       if (complementsOrdered.length > 0) {
         payload.complements = complementsOrdered.map(
-          (c: any) => c.complementId
-        );
+  (c: any) => c.groupId
+);
       }
 
       const updated = await apiFetch(`/products/${product.id}`, {
