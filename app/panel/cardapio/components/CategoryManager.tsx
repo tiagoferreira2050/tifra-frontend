@@ -87,10 +87,14 @@ export default function CategoryManager({
   // ========================================================
   async function handleSaveCategory(updated: any) {
     try {
-      await apiFetch(`/categories/${updated.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ name: updated.name }),
-      });
+      await apiFetch("/categories", {
+  method: "PATCH",
+  body: JSON.stringify({
+    id: updated.id,
+    name: updated.name,
+  }),
+});
+
 
       setCategories((prev: any[]) =>
         prev.map((c: any) =>
