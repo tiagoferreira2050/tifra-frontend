@@ -67,14 +67,27 @@ export default function ProductList({
   // =====================================================
   // DELETE (UI otimista)
   // =====================================================
-  async function handleDeleteProduct(productId: string) {
+ async function handleDeleteProduct(productId: string) {
   if (!confirm("Excluir este produto?")) return;
 
   try {
-    await apiFetch(`/products/${productId}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ id: productId }),
+      }
+    );
 
+    if (!res.ok) {
+      throw new Error("Erro ao excluir produto");
+    }
+
+    // UI otimista
     setCategories((prev: any[]) =>
       prev.map((cat) =>
         cat.id !== selectedCategoryId
@@ -92,6 +105,7 @@ export default function ProductList({
     alert("Erro ao excluir produto");
   }
 }
+
 
   // =====================================================
   // UI — SEM CATEGORIA
