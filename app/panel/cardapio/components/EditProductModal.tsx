@@ -140,13 +140,11 @@ export default function EditProductModal({
         pdv,
       };
 
-      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
-  payload.imageUrl = imageUrl;
-}
+      if (imageUrl) payload.imageUrl = imageUrl;
       if (complementsOrdered.length > 0) {
         payload.complements = complementsOrdered.map(
-  (c: any) => c.groupId
-);
+          (c: any) => c.complementId
+        );
       }
 
       const updated = await apiFetch(`/products/${product.id}`, {
