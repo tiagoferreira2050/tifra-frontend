@@ -135,8 +135,8 @@ export default function NewProductModal({
 
       if (selectedComplements.length > 0) {
         payload.complements = selectedComplements.map(
-          (c: any) => c.complementId
-        );
+  (c: any) => c.groupId
+);
       }
 
       const product = await apiFetch("/products", {
