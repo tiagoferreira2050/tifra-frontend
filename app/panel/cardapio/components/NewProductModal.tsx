@@ -20,9 +20,9 @@ export default function NewProductModal({
   const [pdv, setPdv] = useState("");
   const [price, setPrice] = useState("0,00");
 
-  // 🔥 PADRÃO FINAL (igual EditProduct)
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  // 🔥 SEPARAÇÃO DEFINITIVA
+  const [imagePreview, setImagePreview] = useState<string | null>(null); // SOMENTE UI
+  const [imageUrl, setImageUrl] = useState<string | null>(null); // SOMENTE CLOUDINARY
 
   const [selectedComplements, setSelectedComplements] = useState<any[]>([]);
   const [globalComplementsState, setGlobalComplementsState] = useState<any[]>([]);
@@ -62,12 +62,13 @@ export default function NewProductModal({
   }
 
   // ============================================================
-  // UPLOAD IMAGE (PADRÃO COMPLEMENTS)
+  // UPLOAD IMAGE (CLOUDINARY)
   // ============================================================
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 🔥 preview LOCAL (nunca vai pro banco)
     setImagePreview(URL.createObjectURL(file));
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -93,7 +94,12 @@ export default function NewProductModal({
         return;
       }
 
-      setImageUrl(data.url);
+      // ✅ SOMENTE URL REAL
+      if (typeof data.url === "string" && data.url.startsWith("http")) {
+        setImageUrl(data.url);
+      } else {
+        setImageUrl(null);
+      }
     } catch (err) {
       console.error("Erro upload imagem:", err);
       alert("Falha ao enviar imagem");
@@ -121,8 +127,8 @@ export default function NewProductModal({
         pdv,
       };
 
-      // 🔥 só envia se existir
-      if (imageUrl && imageUrl.startsWith("http")) {
+      // 🔒 BLINDAGEM FINAL
+      if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
         payload.imageUrl = imageUrl;
       }
 
