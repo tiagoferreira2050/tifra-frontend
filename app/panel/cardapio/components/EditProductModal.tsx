@@ -56,18 +56,14 @@ export default function EditProductModal({
     const raw = product.productComplements || [];
 
     // ✅ FORMATO CORRETO
-    setSelectedComplements(
+   setSelectedComplements(
   raw.map((pc: any, index: number) => ({
-    // 🔑 PARA A UI (exibir corretamente)
-    complementId: pc.groupId,
-
-    // 🔑 PARA O BACKEND (persistência)
-    groupId: pc.groupId,
-
+    complementId: pc.groupId, // ✅ ÚNICO ID
     active: pc.active ?? true,
     order: pc.order ?? index,
   }))
 );
+
 
   }, [product]);
 
