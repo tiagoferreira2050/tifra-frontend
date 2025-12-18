@@ -46,24 +46,35 @@ export default function ProductList({
   // =====================================================
   // TOGGLE ATIVO (UI otimista)
   // =====================================================
-  function handleToggleProduct(productId: string) {
-    setCategories((prev: any[]) =>
-      prev.map((cat: any) =>
-        cat.id !== selectedCategoryId
-          ? cat
-          : {
-              ...cat,
-              products: Array.isArray(cat.products)
-                ? cat.products.map((p: any) =>
-                    p.id === productId
-                      ? { ...p, active: !p.active }
-                      : p
-                  )
-                : [],
-            }
-      )
-    );
+  async function handleToggleProduct(productId: string) {
+  const current = products.find((p: any) => p.id === productId);
+  if (!current) return;
+
+  const newActive = !current.active;
+
+  // UI otimista
+  setCategories((prev: any[]) =>
+    prev.map((cat: any) =>
+      cat.id !== selectedCategoryId
+        ? cat
+        : {
+            ...cat,
+            products: cat.products.map((p: any) =>
+              p.id === productId ? { ...p, active: newActive } : p
+            ),
+          }
+    )
+  );
+
+  try {
+    await apiFetch(`/products/${productId}`, {
+      method: "PATCH",
+      body: { active: newActive },
+    });
+  } catch (err) {
+    alert("Erro ao atualizar status do produto");
   }
+}
 
   // =====================================================
   // DELETE PRODUTO (SEGUR0 + PADRONIZADO)
