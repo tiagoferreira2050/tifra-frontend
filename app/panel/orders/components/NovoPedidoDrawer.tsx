@@ -34,30 +34,49 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
   // 🔥 Carrega produtos do banco
   useEffect(() => {
-    if (!open) return;
+  if (!open) return;
 
-    let mounted = true;
+  let mounted = true;
 
-    async function loadProducts() {
-  try {
-    const res = await fetch("/api/products", { cache: "no-store" });
-    const data = await res.json();
+  async function loadProducts() {
+    try {
+      const storeId = localStorage.getItem("storeId");
 
-    if (!mounted) return;
+      if (!storeId) {
+        console.error("storeId não encontrado");
+        if (mounted) setAllProducts([]);
+        return;
+      }
 
-    setAllProducts(data);
-  } catch (err) {
-    console.error("Erro ao carregar produtos:", err);
-    setAllProducts([]);
+      const res = await fetch(
+        `/api/products/pdv?storeId=${storeId}`,
+        { cache: "no-store" }
+      );
+
+      if (!res.ok) {
+        console.error("Erro ao buscar produtos PDV");
+        if (mounted) setAllProducts([]);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (mounted) {
+        setAllProducts(data);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar produtos:", err);
+      if (mounted) setAllProducts([]);
+    }
   }
-}
 
+  loadProducts();
 
-    loadProducts();
-    return () => {
-      mounted = false;
-    };
-  }, [open]);
+  return () => {
+    mounted = false;
+  };
+}, [open]);
+
 
   const filteredProducts = allProducts.filter((prod) =>
     prod.name.toLowerCase().includes(search.toLowerCase())

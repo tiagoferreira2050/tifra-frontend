@@ -152,6 +152,8 @@ export default function ProductList({
   }),
 });
 
+
+
     } catch {
       alert("Erro ao salvar ordem dos produtos");
     }
