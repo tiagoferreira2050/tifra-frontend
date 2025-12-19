@@ -14,6 +14,9 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
+  const [categories, setCategories] = useState<any[]>([]);
+
+
   const [items, setItems] = useState<any[]>([]);
 
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
