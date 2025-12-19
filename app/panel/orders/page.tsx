@@ -7,7 +7,6 @@ import { Plus } from "lucide-react";
 import { Order } from "./services/orderTypes";
 import { apiFetch } from "@/lib/api";
 
-
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,12 +18,18 @@ export default function OrdersPage() {
   useEffect(() => {
     async function loadOrders() {
       try {
-        const data = await apiFetch("/orders", {
-  method: "GET",
-});
+        const storeId = localStorage.getItem("storeId");
 
-setOrders(data);
+        if (!storeId) {
+          console.error("storeId não encontrado");
+          return;
+        }
 
+        const data = await apiFetch(`/orders?storeId=${storeId}`, {
+          method: "GET",
+        });
+
+        setOrders(data || []);
       } catch (err) {
         console.error("Erro ao buscar pedidos:", err);
       }
