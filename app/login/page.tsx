@@ -51,12 +51,20 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ busca a loja existente
+      // ✅ BUSCA A LOJA DO USUÁRIO
       const store = await getStoreByUser(user.id);
 
-      // ✅ dados locais (mantidos)
+      if (!store?.id) {
+        alert("Erro: loja não encontrada para este usuário.");
+        return;
+      }
+
+      // ✅ DADOS LOCAIS (MANTIDOS)
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
+
+      // 🔥🔥🔥 ESSENCIAL PARA TODO O SISTEMA
+      localStorage.setItem("storeId", store.id);
 
       // 🔥 REDIRECT CORRETO (SEM RELOAD DURO)
       router.replace("/panel");
@@ -78,7 +86,7 @@ export default function LoginPage() {
           placeholder="E-mail"
           type="email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
@@ -86,7 +94,7 @@ export default function LoginPage() {
           placeholder="Senha"
           type="password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
         />
 
         <button
