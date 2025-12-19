@@ -170,13 +170,14 @@ export default function CategoryManager({
       const payload = {
         name: `${cat.name} (cópia)`,
         products: (cat.products || []).map((p: any) => ({
-          name: p.name,
-          price: p.price,
-          description: p.description,
-          imageUrl: p.imageUrl ?? null,
-          active: p.active,
-          order: p.order,
-        })),
+  id: p.id, // 🔥 ESSENCIAL (NÃO AFETA OUTRAS ROTAS)
+  name: p.name,
+  price: p.price,
+  description: p.description,
+  imageUrl: p.imageUrl ?? null,
+  active: p.active,
+  order: p.order,
+}))
       };
 
       const createdRaw = await apiFetch("/categories", {
