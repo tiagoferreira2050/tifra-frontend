@@ -13,13 +13,14 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   // =========================================================
-  // 🔥 CARREGAR PEDIDOS DO BANCO AO ABRIR A PÁGINA
+  // 🔥 CARREGAR PEDIDOS DO BANCO (OBRIGATÓRIO COM storeId)
   // =========================================================
   useEffect(() => {
     async function loadOrders() {
       try {
         const storeId = localStorage.getItem("storeId");
 
+        // 🔒 Segurança: não busca pedidos sem loja
         if (!storeId) {
           console.error("storeId não encontrado");
           return;
@@ -39,7 +40,7 @@ export default function OrdersPage() {
   }, []);
 
   // =========================================================
-  // 🔥 ADICIONAR NOVO PEDIDO NA LISTA LOCAL
+  // 🔥 ADICIONAR NOVO PEDIDO NA LISTA LOCAL (PDV)
   // =========================================================
   function handleCreateOrder(newOrder: Order) {
     setOrders((prev) => [newOrder, ...prev]);
@@ -47,11 +48,12 @@ export default function OrdersPage() {
 
   return (
     <div className="p-4 w-full h-full">
-      
-      {/* HEADER PROFISSIONAL – ESTILO BRENDI */}
+      {/* ===================================================== */}
+      {/* HEADER */}
+      {/* ===================================================== */}
       <div className="w-full flex items-center justify-between bg-white border-b px-3 py-2 rounded-md shadow-sm mb-4">
-
-        {/* CAMPO DE BUSCA */}
+        
+        {/* BUSCA */}
         <div className="flex items-center w-1/3">
           <input
             type="text"
@@ -62,14 +64,13 @@ export default function OrdersPage() {
           />
         </div>
 
-        {/* BOTÕES DO HEADER */}
+        {/* AÇÕES */}
         <div className="flex items-center gap-2">
-
           <button className="flex items-center gap-1 border border-gray-300 px-3 py-1.5 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition">
             🛑 Pausar loja
           </button>
 
-          <button 
+          <button
             onClick={() => setOpenNovoPedido(true)}
             className="flex items-center gap-1 bg-red-600 px-4 py-1.5 rounded-md text-sm text-white hover:bg-red-700 transition shadow-sm"
           >
@@ -79,13 +80,17 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* QUADROS DE PEDIDOS */}
+      {/* ===================================================== */}
+      {/* BOARD DE PEDIDOS */}
+      {/* ===================================================== */}
       <OrderBoard
         searchTerm={searchTerm}
         externalOrders={orders}
       />
 
-      {/* DRAWER DO NOVO PEDIDO */}
+      {/* ===================================================== */}
+      {/* DRAWER – NOVO PEDIDO */}
+      {/* ===================================================== */}
       <NovoPedidoDrawer
         open={openNovoPedido}
         onClose={() => setOpenNovoPedido(false)}
