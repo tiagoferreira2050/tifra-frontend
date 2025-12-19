@@ -233,17 +233,33 @@ async function handleCreate() {
               <div
   key={prod.id}
   onClick={() => {
-    console.log("PROD SELECIONADO >>>", prod);
+  const complementItems = prod.complements || [];
 
-    const complementItems = prod.complements || [];
-
+  if (complementItems.length > 0) {
+    // 👉 TEM complementos → abre modal de complementos
     setSelectedProduct({
       ...prod,
       complementItems,
     });
-
     setOpenProductModal(true);
-  }}
+  } else {
+    // 👉 NÃO tem complementos → adiciona direto
+    setItems((prev) => [
+      ...prev,
+      {
+        id: prod.id + "-" + Date.now(),
+        productId: prod.id,
+        name: prod.name,
+        price: Number(prod.price),
+        qty: 1,
+        complements: [],
+        categoryName: prod.categoryName,
+      },
+    ]);
+  }
+}}
+
+    
   className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
 >
   <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">

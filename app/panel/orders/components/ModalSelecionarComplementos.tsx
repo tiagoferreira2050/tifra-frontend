@@ -49,7 +49,7 @@ export default function ModalSelecionarComplementos({
     setSelected((prev: any) => {
       const arr = prev[groupId] || [];
 
-      // Caso seja SINGLE (apenas 1)
+      // SINGLE (radio)
       if (type === "single") {
         return { ...prev, [groupId]: [option.id] };
       }
@@ -93,11 +93,30 @@ export default function ModalSelecionarComplementos({
   const finalPrice = (basePrice + totalComplements) * qty;
 
   // =====================================================
+  // 🔥 FORMATAR COMPLEMENTOS (ALTERAÇÃO PRINCIPAL)
+  // =====================================================
+  const complementsFormatted = groups.flatMap((group: any) => {
+    const chosen = selected[group.id] || [];
+
+    return chosen.map((optionId: string) => {
+      const opt = group.options.find((o: any) => o.id === optionId);
+
+      return {
+        groupId: group.id,
+        groupTitle: group.title,
+        optionId: opt.id,
+        optionName: opt.name,
+        price: Number(opt.price || 0),
+      };
+    });
+  });
+
+  // =====================================================
   // 🔥 INTERFACE (UI)
   // =====================================================
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-height-[90vh] overflow-y-auto shadow-lg">
+      <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto shadow-lg">
 
         {/* =====================================================
             HEADER
@@ -166,14 +185,18 @@ export default function ModalSelecionarComplementos({
                           <input
                             type="radio"
                             checked={isChecked}
-                            onChange={() => toggleOption(group.id, opt, type)}
+                            onChange={() =>
+                              toggleOption(group.id, opt, type)
+                            }
                           />
                         ) : (
                           <input
                             type="checkbox"
                             checked={isChecked}
                             disabled={disabled}
-                            onChange={() => toggleOption(group.id, opt, type)}
+                            onChange={() =>
+                              toggleOption(group.id, opt, type)
+                            }
                           />
                         )}
 
@@ -227,11 +250,11 @@ export default function ModalSelecionarComplementos({
             onClick={() => {
               onAdd({
                 id: product.id + "-" + Date.now(),
-                productId: product.id, // 🔥 ESSENCIAL PARA SALVAR NO BANCO
+                productId: product.id,
                 name: product.name,
                 price: basePrice + totalComplements,
                 qty,
-                complements: selected,
+                complements: complementsFormatted,
                 categoryName: product.categoryName,
               });
               onClose();
@@ -245,7 +268,6 @@ export default function ModalSelecionarComplementos({
             Cancelar
           </button>
         </div>
-
       </div>
     </div>
   );
