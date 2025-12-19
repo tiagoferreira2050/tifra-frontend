@@ -19,6 +19,7 @@ export default function CardapioPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [complements, setComplements] = useState<any[]>([]);
 
+  
   const [editProductOpen, setEditProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
@@ -185,10 +186,11 @@ export default function CardapioPage() {
     setNewComplementOpen(true);
   }
 
-  function openEditComplement(comp: any) {
-    setEditingComplement(comp);
-    setEditComplementOpen(true);
-  }
+  function openEditProduct(product: any) {
+  setEditingProduct(product);
+  setEditProductOpen(true);
+}
+
 
   // ==========================
   // SALVAR EDIÇÃO DO COMPLEMENTO
@@ -239,14 +241,15 @@ export default function CardapioPage() {
 
           {activeTab === "produtos" && (
             <ProductList
-              categories={categories}
-              setCategories={setCategories}
-              selectedCategoryId={selectedCategoryId}
-              search={search}
-              complements={complements}
-              onUpdateProduct={handleUpdateProduct}
-              onCreateProduct={() => setNewProductOpen(true)}
-            />
+  categories={categories}
+  setCategories={setCategories}
+  selectedCategoryId={selectedCategoryId}
+  search={search}
+  complements={complements}
+  onUpdateProduct={handleUpdateProduct}
+  onCreateProduct={() => setNewProductOpen(true)}
+  onEditProduct={openEditProduct} // ✅ AQUI
+/>
           )}
 
           {activeTab === "complementos" && (

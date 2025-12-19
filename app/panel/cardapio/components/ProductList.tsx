@@ -25,7 +25,9 @@ export default function ProductList({
   complements = [],
   onUpdateProduct,
   onCreateProduct,
-}: any) {
+  onEditProduct, // ✅ NOVA PROP
+}: any)
+ {
   const sensors = useSensors(useSensor(PointerSensor));
 
   // =====================================================
@@ -211,7 +213,7 @@ export default function ProductList({
                 id={product.id}
                 product={product}
                 complements={complements}
-                onEdit={(p: any) => onUpdateProduct(p)}
+                onEdit={(p: any) => onEditProduct(p)}
                 onDelete={handleDeleteProduct}
                 onToggle={handleToggleProduct}
               />
