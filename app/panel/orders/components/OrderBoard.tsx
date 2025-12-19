@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import OrderColumn from "./OrderColumn";
-import { apiFetch } from "@/lib/api"; // ✅ PADRÃO BACKEND EXPRESS
 
 /* 🔒 Tipo único e consistente com OrderCard / OrderColumn */
 export type Order = {
@@ -30,49 +29,22 @@ export default function OrderBoard({
   searchTerm = "",
   externalOrders = [],
 }: Props) {
-  const [dbOrders, setDbOrders] = useState<Order[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  // =====================================================
+  // 🔥 PEDIDOS VINDOS DO PAI (OrdersPage)
+  // =====================================================
+  const [orders, setOrders] = useState<Order[]>(externalOrders);
+
+  // Sempre que o pai atualizar, sincroniza
+  React.useEffect(() => {
+    setOrders(externalOrders);
+  }, [externalOrders]);
 
   // =====================================================
-  // 🔥 CARREGAR PEDIDOS DO BACKEND (EXPRESS)
-  // =====================================================
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadOrders() {
-      try {
-        const data = await apiFetch("/orders", {
-          method: "GET",
-        });
-
-        if (!mounted) return;
-        setDbOrders(data || []);
-      } catch (err) {
-        console.error("Erro ao carregar pedidos:", err);
-      }
-    }
-
-    loadOrders();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // =====================================================
-  // 🔥 MERGE: PEDIDOS DO BACKEND + PEDIDOS NOVOS (PDV)
-  // =====================================================
-  useEffect(() => {
-    setOrders([...(externalOrders || []), ...dbOrders]);
-  }, [externalOrders, dbOrders]);
-
-  // =====================================================
-  // 🔥 SELEÇÃO MÚLTIPLA + MODAL
+  // 🔥 SELEÇÃO MÚLTIPLA
   // =====================================================
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
     {}
   );
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // =====================================================
   // 🔥 FILTRO DE BUSCA
@@ -95,7 +67,7 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES LOCAIS (SEM BACKEND AINDA)
+  // 🔥 AÇÕES LOCAIS (POR ENQUANTO)
   // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -147,7 +119,7 @@ export default function OrderBoard({
         onReject={reject}
         onToggleSelect={toggleSelect}
         multiSelected={multiSelected}
-        onOpen={(o) => setSelectedOrder(o)}
+        onOpen={() => {}}
       />
 
       <OrderColumn
@@ -158,7 +130,7 @@ export default function OrderBoard({
         onDispatch={dispatchOrder}
         onToggleSelect={toggleSelect}
         multiSelected={multiSelected}
-        onOpen={(o) => setSelectedOrder(o)}
+        onOpen={() => {}}
       />
 
       <OrderColumn
@@ -169,7 +141,7 @@ export default function OrderBoard({
         onFinish={finishOrder}
         onToggleSelect={toggleSelect}
         multiSelected={multiSelected}
-        onOpen={(o) => setSelectedOrder(o)}
+        onOpen={() => {}}
       />
 
       <OrderColumn
@@ -180,7 +152,7 @@ export default function OrderBoard({
         footerValue={sumFinished}
         onToggleSelect={toggleSelect}
         multiSelected={multiSelected}
-        onOpen={(o) => setSelectedOrder(o)}
+        onOpen={() => {}}
       />
     </div>
   );
