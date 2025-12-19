@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import ModalSelecionarComplementos from "./ModalSelecionarComplementos";
+import { apiFetch } from "@/lib/api";
+
 
 export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   const [customer, setCustomer] = useState("");
@@ -37,35 +39,27 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   let mounted = true;
 
   async function loadProducts() {
-    try {
-      const storeId = localStorage.getItem("storeId");
+  try {
+    const storeId = localStorage.getItem("storeId");
 
-      if (!storeId) {
-        console.error("storeId não encontrado");
-        setAllProducts([]);
-        return;
-      }
-
-      const res = await fetch(
-        `/api/products/pdv?storeId=${storeId}`,
-        { cache: "no-store" }
-      );
-
-      if (!res.ok) {
-        console.error("Erro ao buscar produtos PDV");
-        setAllProducts([]);
-        return;
-      }
-
-      const data = await res.json();
-
-      if (!mounted) return;
-      setAllProducts(data);
-    } catch (err) {
-      console.error("Erro ao carregar produtos:", err);
+    if (!storeId) {
+      console.error("storeId não encontrado");
       setAllProducts([]);
+      return;
     }
+
+    const data = await apiFetch(`/products/pdv?storeId=${storeId}`, {
+      method: "GET",
+    });
+
+    if (!mounted) return;
+    setAllProducts(data);
+  } catch (err) {
+    console.error("Erro ao carregar produtos:", err);
+    setAllProducts([]);
   }
+}
+
 
   loadProducts();
 
@@ -159,51 +153,35 @@ async function handleCreate() {
   }
 
   const total =
-    items.reduce(
-      (acc, v) => acc + Number(v.price) * v.qty,
-      0
-    ) +
+    items.reduce((acc, v) => acc + Number(v.price) * v.qty, 0) +
     (deliveryType === "entrega" ? toNumber(deliveryFee) : 0);
 
   const payload = {
     storeId,
-
     customer: {
       name: customer,
       phone,
       address:
         deliveryType === "entrega"
-          ? `${street}, ${number}${
-              complement ? " - " + complement : ""
-            } - ${neighborhood} - ${city} - ${stateUf} (CEP: ${cep})`
+          ? `${street}, ${number}${complement ? " - " + complement : ""} - ${neighborhood} - ${city} - ${stateUf} (CEP: ${cep})`
           : null,
     },
-
     items: items.map((it: any) => ({
       productId: it.productId,
       quantity: it.qty,
       unitPrice: it.price,
       complements: it.complements || [],
     })),
-
     paymentMethod,
     deliveryFee: deliveryType === "entrega" ? toNumber(deliveryFee) : 0,
     total,
   };
 
   try {
-    const res = await fetch("/api/orders", {
+    const savedOrder = await apiFetch("/orders", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (!res.ok) {
-      alert("Erro ao criar pedido no servidor");
-      return;
-    }
-
-    const savedOrder = await res.json();
 
     if (onCreate) onCreate(savedOrder);
 
@@ -217,7 +195,6 @@ async function handleCreate() {
     alert("Falha ao salvar pedido no servidor.");
   }
 }
-
 
 
   // ────────────────────────────────────────────────
