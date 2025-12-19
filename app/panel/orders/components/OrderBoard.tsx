@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import OrderColumn from "./OrderColumn";
 import { apiFetch } from "@/lib/api"; // ✅ PADRÃO BACKEND EXPRESS
 
-type Order = {
+/* 🔒 Tipo único e consistente com OrderCard / OrderColumn */
+export type Order = {
   id: string;
   customer: string;
   status: string;
@@ -20,26 +21,31 @@ type Order = {
   deliveryFee?: number;
 };
 
+interface Props {
+  searchTerm?: string;
+  externalOrders?: Order[];
+}
+
 export default function OrderBoard({
   searchTerm = "",
   externalOrders = [],
-}: {
-  searchTerm?: string;
-  externalOrders?: Order[];
-}) {
+}: Props) {
   const [dbOrders, setDbOrders] = useState<Order[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
   // =====================================================
-  // 🔥 CARREGAR PEDIDOS REAIS DO BACKEND (EXPRESS)
+  // 🔥 CARREGAR PEDIDOS DO BACKEND (EXPRESS)
   // =====================================================
   useEffect(() => {
+    let mounted = true;
+
     async function loadOrders() {
       try {
         const data = await apiFetch("/orders", {
           method: "GET",
         });
 
+        if (!mounted) return;
         setDbOrders(data || []);
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
@@ -47,21 +53,30 @@ export default function OrderBoard({
     }
 
     loadOrders();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // =====================================================
-  // 🔥 MERGE ENTRE PEDIDOS DO BANCO E NOVOS (PDV)
+  // 🔥 MERGE: PEDIDOS DO BACKEND + PEDIDOS NOVOS (PDV)
   // =====================================================
   useEffect(() => {
     setOrders([...(externalOrders || []), ...dbOrders]);
   }, [externalOrders, dbOrders]);
 
   // =====================================================
-  // 🔥 FILTRO DE BUSCA (MANTIDO)
+  // 🔥 SELEÇÃO MÚLTIPLA + MODAL
   // =====================================================
-  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
+  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
+    {}
+  );
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  // =====================================================
+  // 🔥 FILTRO DE BUSCA
+  // =====================================================
   function normalize(text: any) {
     if (!text) return "";
     return String(text)
@@ -80,7 +95,7 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES LOCAIS (SEM BACKEND AINDA – OK)
+  // 🔥 AÇÕES LOCAIS (SEM BACKEND AINDA)
   // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -88,7 +103,9 @@ export default function OrderBoard({
 
   function accept(id: string) {
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "preparing" } : o))
+      prev.map((o) =>
+        o.id === id ? { ...o, status: "preparing" } : o
+      )
     );
   }
 
@@ -98,13 +115,17 @@ export default function OrderBoard({
 
   function dispatchOrder(id: string) {
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "delivering" } : o))
+      prev.map((o) =>
+        o.id === id ? { ...o, status: "delivering" } : o
+      )
     );
   }
 
   function finishOrder(id: string) {
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "finished" } : o))
+      prev.map((o) =>
+        o.id === id ? { ...o, status: "finished" } : o
+      )
     );
   }
 

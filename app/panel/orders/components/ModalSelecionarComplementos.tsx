@@ -13,7 +13,7 @@ export default function ModalSelecionarComplementos({
   // 🔥 ESTADOS
   // =====================================================
   const [qty, setQty] = useState(1);
-  const [selected, setSelected] = useState<any>({});
+  const [selected, setSelected] = useState<Record<string, string[]>>({});
 
   // =====================================================
   // 🔥 RESET AO ABRIR O MODAL
@@ -31,12 +31,12 @@ export default function ModalSelecionarComplementos({
   // =====================================================
   // 🔥 LÓGICA DE SELEÇÃO (CHECKBOX / RADIO)
   // =====================================================
-  const toggleOption = (groupId: string, option: any, type: string) => {
+  function toggleOption(groupId: string, option: any, type: string) {
     const group = groups.find((g: any) => g.id === groupId);
-    const max = group?.maxChoose || null;
-    const current = selected[groupId] || [];
+    const max = group?.maxChoose ?? null;
+    const current = selected[groupId] ?? [];
 
-    // Impede seleção acima do limite
+    // 🚫 bloqueia seleção acima do limite
     if (
       max &&
       current.length >= max &&
@@ -46,19 +46,19 @@ export default function ModalSelecionarComplementos({
       return;
     }
 
-    setSelected((prev: any) => {
-      const arr = prev[groupId] || [];
+    setSelected((prev) => {
+      const arr = prev[groupId] ?? [];
 
       // SINGLE (radio)
       if (type === "single") {
         return { ...prev, [groupId]: [option.id] };
       }
 
-      // Remove se já existir
+      // Remove
       if (arr.includes(option.id)) {
         return {
           ...prev,
-          [groupId]: arr.filter((id: string) => id !== option.id),
+          [groupId]: arr.filter((id) => id !== option.id),
         };
       }
 
@@ -68,24 +68,24 @@ export default function ModalSelecionarComplementos({
         [groupId]: [...arr, option.id],
       };
     });
-  };
+  }
 
   // =====================================================
-  // 🔥 CÁLCULO DE TOTAL
+  // 🔥 CÁLCULO DE PREÇO
   // =====================================================
   const basePrice = product.discount
     ? Number(product.discount.price)
     : Number(product.price);
 
   const totalComplements = groups.reduce((acc: number, g: any) => {
-    const opts = g.options || [];
-    const chosen = selected[g.id] || [];
+    const opts = g.options ?? [];
+    const chosen = selected[g.id] ?? [];
 
     return (
       acc +
       chosen.reduce((sum: number, optionId: string) => {
         const opt = opts.find((o: any) => o.id === optionId);
-        return sum + Number(opt?.price || 0);
+        return sum + Number(opt?.price ?? 0);
       }, 0)
     );
   }, 0);
@@ -93,10 +93,10 @@ export default function ModalSelecionarComplementos({
   const finalPrice = (basePrice + totalComplements) * qty;
 
   // =====================================================
-  // 🔥 FORMATAR COMPLEMENTOS (ALTERAÇÃO PRINCIPAL)
+  // 🔥 FORMATAR COMPLEMENTOS (PADRÃO BACKEND)
   // =====================================================
   const complementsFormatted = groups.flatMap((group: any) => {
-    const chosen = selected[group.id] || [];
+    const chosen = selected[group.id] ?? [];
 
     return chosen.map((optionId: string) => {
       const opt = group.options.find((o: any) => o.id === optionId);
@@ -106,21 +106,19 @@ export default function ModalSelecionarComplementos({
         groupTitle: group.title,
         optionId: opt.id,
         optionName: opt.name,
-        price: Number(opt.price || 0),
+        price: Number(opt.price ?? 0),
       };
     });
   });
 
   // =====================================================
-  // 🔥 INTERFACE (UI)
+  // 🔥 UI
   // =====================================================
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto shadow-lg">
 
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
+        {/* HEADER */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-lg font-semibold">{product.name}</h3>
@@ -132,9 +130,7 @@ export default function ModalSelecionarComplementos({
           </button>
         </div>
 
-        {/* =====================================================
-            LISTA DE COMPLEMENTOS
-        ===================================================== */}
+        {/* COMPLEMENTOS */}
         {groups.length === 0 && (
           <p className="text-gray-500 text-center mb-4">
             Este produto não possui complementos configurados.
@@ -143,8 +139,8 @@ export default function ModalSelecionarComplementos({
 
         {groups.map((group: any) => {
           const type = group.type;
-          const chosen = selected[group.id] || [];
-          const opts = group.options || [];
+          const chosen = selected[group.id] ?? [];
+          const opts = group.options ?? [];
           const max = group.maxChoose;
 
           return (
@@ -176,7 +172,7 @@ export default function ModalSelecionarComplementos({
                   return (
                     <label
                       key={opt.id}
-                      className={`flex justify-between items-center border p-2 rounded cursor-pointer transition-opacity
+                      className={`flex justify-between items-center border p-2 rounded cursor-pointer
                         ${disabled ? "opacity-40 cursor-not-allowed" : ""}
                       `}
                     >
@@ -216,9 +212,7 @@ export default function ModalSelecionarComplementos({
           );
         })}
 
-        {/* =====================================================
-            QUANTIDADE
-        ===================================================== */}
+        {/* QUANTIDADE */}
         <div className="flex items-center gap-4 my-4">
           <button
             className="px-3 py-1 border rounded"
@@ -235,21 +229,17 @@ export default function ModalSelecionarComplementos({
           </button>
         </div>
 
-        {/* =====================================================
-            TOTAL
-        ===================================================== */}
+        {/* TOTAL */}
         <p className="text-xl font-bold mb-4">
           Total: R$ {finalPrice.toFixed(2).replace(".", ",")}
         </p>
 
-        {/* =====================================================
-            BOTÕES
-        ===================================================== */}
+        {/* AÇÕES */}
         <div className="flex gap-3">
           <button
             onClick={() => {
               onAdd({
-                id: product.id + "-" + Date.now(),
+                id: `${product.id}-${Date.now()}`,
                 productId: product.id,
                 name: product.name,
                 price: basePrice + totalComplements,
@@ -264,7 +254,10 @@ export default function ModalSelecionarComplementos({
             Adicionar ao pedido
           </button>
 
-          <button onClick={onClose} className="px-4 py-2 border rounded-md">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border rounded-md"
+          >
             Cancelar
           </button>
         </div>

@@ -1,10 +1,20 @@
 "use client";
 
 import React from "react";
-import { Clock, Phone, FileText, Bike, ShoppingBag, Check, X, Truck, ClipboardCheck } from "lucide-react";
+import {
+  Clock,
+  Phone,
+  FileText,
+  Bike,
+  ShoppingBag,
+  Check,
+  X,
+  Truck,
+  ClipboardCheck,
+} from "lucide-react";
 
-/* Mesmo tipo seguro usado nos outros componentes */
-type Order = {
+/* 🔒 Tipo padronizado com OrderBoard / OrderColumn */
+export type Order = {
   id: string;
   customer: string;
   status: string;
@@ -23,6 +33,7 @@ type Order = {
 interface Props {
   order: Order;
   selected?: boolean;
+
   onToggle?: () => void;
   onAccept?: () => void;
   onReject?: () => void;
@@ -44,10 +55,13 @@ export default function OrderCard({
   return (
     <div
       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-        selected ? "bg-gray-100 border-gray-400" : "hover:bg-gray-50"
+        selected
+          ? "bg-gray-100 border-gray-400"
+          : "hover:bg-gray-50 border-gray-200"
       }`}
-      onClick={() => onOpen && onOpen()}
+      onClick={() => onOpen?.()}
     >
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <input
@@ -55,18 +69,27 @@ export default function OrderCard({
             checked={selected}
             onChange={(e) => {
               e.stopPropagation();
-              onToggle && onToggle();
+              onToggle?.();
             }}
             className="w-4 h-4"
           />
-          <h3 className="font-semibold text-sm">#{order.id}</h3>
+
+          <h3 className="font-semibold text-sm">
+            #{order.id}
+          </h3>
         </div>
 
-        <span className="text-xs text-gray-500">{order.createdAt}</span>
+        <span className="text-xs text-gray-500">
+          {order.createdAt}
+        </span>
       </div>
 
-      <p className="font-medium text-gray-800 truncate">{order.customer}</p>
+      {/* CLIENTE */}
+      <p className="font-medium text-gray-800 truncate">
+        {order.customer}
+      </p>
 
+      {/* ENDEREÇO */}
       {order.shortAddress && (
         <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
           <Bike size={12} />
@@ -74,6 +97,7 @@ export default function OrderCard({
         </div>
       )}
 
+      {/* TELEFONE */}
       {order.phone && (
         <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
           <Phone size={12} />
@@ -81,12 +105,14 @@ export default function OrderCard({
         </div>
       )}
 
+      {/* INFO */}
       <div className="flex justify-between items-center mt-3">
         <div className="flex items-center text-xs text-gray-700 gap-2">
           <ShoppingBag size={13} />
           <span>{order.items?.length ?? 0} itens</span>
+
           <FileText size={13} className="ml-2" />
-          <span>{order.status}</span>
+          <span className="capitalize">{order.status}</span>
         </div>
 
         <span className="font-bold text-sm">
@@ -94,7 +120,7 @@ export default function OrderCard({
         </span>
       </div>
 
-      {/* Ações rápidas (seguem as props opcionais) */}
+      {/* AÇÕES */}
       <div className="mt-3 flex gap-2 flex-wrap">
         {onAccept && (
           <button
@@ -103,7 +129,6 @@ export default function OrderCard({
               onAccept();
             }}
             className="flex items-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded"
-            title="Aceitar"
           >
             <Check size={12} /> Aceitar
           </button>
@@ -116,7 +141,6 @@ export default function OrderCard({
               onDispatch();
             }}
             className="flex items-center gap-1 text-xs bg-orange-500 text-white px-2 py-1 rounded"
-            title="Despachar / Entregar"
           >
             <Truck size={12} /> Despachar
           </button>
@@ -129,7 +153,6 @@ export default function OrderCard({
               onFinish();
             }}
             className="flex items-center gap-1 text-xs bg-green-700 text-white px-2 py-1 rounded"
-            title="Finalizar"
           >
             <ClipboardCheck size={12} /> Finalizar
           </button>
@@ -142,13 +165,12 @@ export default function OrderCard({
               onReject();
             }}
             className="flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded"
-            title="Rejeitar"
           >
             <X size={12} /> Rejeitar
           </button>
         )}
 
-        {/* Exibir apenas leitura do método de pagamento, se existir */}
+        {/* MÉTODO DE PAGAMENTO (SOMENTE LEITURA) */}
         {order.paymentMethod && (
           <div className="ml-auto text-xs text-gray-600 flex items-center gap-1">
             <Clock size={12} />

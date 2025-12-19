@@ -259,7 +259,7 @@ async function handleCreate() {
   }
 }}
 
-    
+
   className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
 >
   <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">
