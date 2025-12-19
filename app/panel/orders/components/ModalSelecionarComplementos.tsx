@@ -16,6 +16,9 @@ export default function ModalSelecionarComplementos({
     Record<string, Record<string, number>>
   >({});
 
+  // ======================================
+  // RESET AO ABRIR
+  // ======================================
   useEffect(() => {
     if (!open || !product) return;
     setSelected({});
@@ -26,12 +29,21 @@ export default function ModalSelecionarComplementos({
 
   const groups = product.complementItems ?? [];
 
-  // ============================
+  // ======================================
+  // HELPERS
+  // ======================================
+  function getTotalSelected(groupId: string) {
+    const g = selected[groupId] ?? {};
+    return Object.values(g).reduce((acc, v) => acc + v, 0);
+  }
+
+  // ======================================
   // TOGGLE / ADDABLE
-  // ============================
+  // ======================================
   function toggleOption(group: any, option: any) {
     setSelected((prev) => {
       const current = prev[group.id] ?? {};
+      const totalSelected = getTotalSelected(group.id);
 
       // 🔘 SINGLE
       if (group.type === "single") {
@@ -43,15 +55,17 @@ export default function ModalSelecionarComplementos({
 
       // ☑️ MULTIPLE
       if (group.type === "multiple") {
+        // remove
         if (current[option.id]) {
           const copy = { ...current };
           delete copy[option.id];
           return { ...prev, [group.id]: copy };
         }
 
+        // bloqueia maxChoose
         if (
-          group.maxChoose &&
-          Object.keys(current).length >= group.maxChoose
+          typeof group.maxChoose === "number" &&
+          totalSelected >= group.maxChoose
         ) {
           return prev;
         }
@@ -63,50 +77,82 @@ export default function ModalSelecionarComplementos({
       }
 
       // ➕ ADDABLE
-      const qty = current[option.id] ?? 0;
-      return {
-        ...prev,
-        [group.id]: { ...current, [option.id]: qty + 1 },
-      };
-    });
-  }
-
-  function changeAddableQty(groupId: string, optionId: string, delta: number) {
-    setSelected((prev) => {
-      const current = prev[groupId] ?? {};
-      const newQty = (current[optionId] ?? 0) + delta;
-
-      if (newQty <= 0) {
-        const copy = { ...current };
-        delete copy[optionId];
-        return { ...prev, [groupId]: copy };
+      if (
+        typeof group.maxChoose === "number" &&
+        totalSelected >= group.maxChoose
+      ) {
+        return prev;
       }
 
       return {
         ...prev,
-        [groupId]: { ...current, [optionId]: newQty },
+        [group.id]: {
+          ...current,
+          [option.id]: (current[option.id] ?? 0) + 1,
+        },
       };
     });
   }
 
-  // ============================
-  // VALIDAÇÃO
-  // ============================
+  function changeAddableQty(
+    group: any,
+    option: any,
+    delta: number
+  ) {
+    setSelected((prev) => {
+      const current = prev[group.id] ?? {};
+      const currentQty = current[option.id] ?? 0;
+      const totalSelected = getTotalSelected(group.id);
+
+      if (delta > 0) {
+        if (
+          typeof group.maxChoose === "number" &&
+          totalSelected >= group.maxChoose
+        ) {
+          return prev;
+        }
+      }
+
+      const newQty = currentQty + delta;
+
+      if (newQty <= 0) {
+        const copy = { ...current };
+        delete copy[option.id];
+        return { ...prev, [group.id]: copy };
+      }
+
+      return {
+        ...prev,
+        [group.id]: { ...current, [option.id]: newQty },
+      };
+    });
+  }
+
+  // ======================================
+  // VALIDAÇÃO (min / required)
+  // ======================================
   function isValid() {
     return groups.every((g: any) => {
       const chosen = selected[g.id] ?? {};
-      const count = Object.keys(chosen).length;
+      const total = Object.values(chosen).reduce(
+        (acc, v) => acc + v,
+        0
+      );
 
-      if (g.required && count === 0) return false;
-      if (g.minChoose && count < g.minChoose) return false;
+      if (g.required && total === 0) return false;
+      if (
+        typeof g.minChoose === "number" &&
+        total < g.minChoose
+      )
+        return false;
 
       return true;
     });
   }
 
-  // ============================
+  // ======================================
   // PREÇO
-  // ============================
+  // ======================================
   const basePrice = Number(product.price);
 
   const complementsTotal = groups.reduce((acc: number, g: any) => {
@@ -124,9 +170,9 @@ export default function ModalSelecionarComplementos({
 
   const finalPrice = (basePrice + complementsTotal) * qty;
 
-  // ============================
-  // FORMATAR
-  // ============================
+  // ======================================
+  // FORMATAR PARA O PEDIDO (SEM QUEBRAR)
+  // ======================================
   const complementsFormatted = groups.flatMap((g: any) => {
     const chosen = selected[g.id] ?? {};
     const opts = g.options ?? [];
@@ -144,48 +190,100 @@ export default function ModalSelecionarComplementos({
     });
   });
 
-  // ============================
+  // ======================================
   // UI
-  // ============================
+  // ======================================
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto">
 
+        {/* HEADER */}
         <div className="flex justify-between mb-4">
           <div>
             <h3 className="font-semibold">{product.name}</h3>
-            <p className="text-sm text-gray-500">{product.categoryName}</p>
+            <p className="text-sm text-gray-500">
+              {product.categoryName}
+            </p>
           </div>
-          <button onClick={onClose}><X /></button>
+          <button onClick={onClose}>
+            <X />
+          </button>
         </div>
 
+        {/* COMPLEMENTOS */}
         {groups.map((group: any) => {
           const chosen = selected[group.id] ?? {};
+          const totalSelected = getTotalSelected(group.id);
+
           return (
             <div key={group.id} className="border rounded p-3 mb-4">
-              <p className="font-medium mb-2">
-                {group.title}
-                {group.required && <span className="text-red-500"> *</span>}
-              </p>
+              <div className="flex justify-between mb-2">
+                <p className="font-medium">
+                  {group.title}
+                  {group.required && (
+                    <span className="text-red-500"> *</span>
+                  )}
+                </p>
+                {typeof group.maxChoose === "number" && (
+                  <span className="text-xs text-gray-500">
+                    até {group.maxChoose}
+                  </span>
+                )}
+              </div>
 
               {group.options.map((opt: any) => {
                 const q = chosen[opt.id] ?? 0;
+                const disabled =
+                  typeof group.maxChoose === "number" &&
+                  totalSelected >= group.maxChoose &&
+                  q === 0;
 
                 return (
-                  <div key={opt.id} className="flex justify-between items-center mb-2">
-                    <span>{opt.name}</span>
+                  <div
+                    key={opt.id}
+                    className={`flex justify-between items-center mb-2 ${
+                      disabled ? "opacity-40" : ""
+                    }`}
+                  >
+                    <div>
+                      <span>{opt.name}</span>
+                      {opt.price > 0 && (
+                        <span className="text-sm text-gray-500 ml-2">
+                          + R$ {opt.price.toFixed(2).replace(".", ",")}
+                        </span>
+                      )}
+                    </div>
 
                     {group.type === "addable" ? (
                       <div className="flex gap-2 items-center">
-                        <button onClick={() => changeAddableQty(group.id, opt.id, -1)}>-</button>
+                        <button
+                          onClick={() =>
+                            changeAddableQty(group, opt, -1)
+                          }
+                          className="px-2 border rounded"
+                        >
+                          -
+                        </button>
                         <span>{q}</span>
-                        <button onClick={() => toggleOption(group, opt)}>+</button>
+                        <button
+                          onClick={() => toggleOption(group, opt)}
+                          className="px-2 border rounded"
+                        >
+                          +
+                        </button>
                       </div>
                     ) : (
                       <input
-                        type={group.type === "single" ? "radio" : "checkbox"}
+                        type={
+                          group.type === "single"
+                            ? "radio"
+                            : "checkbox"
+                        }
                         checked={q > 0}
-                        onChange={() => toggleOption(group, opt)}
+                        disabled={disabled}
+                        onChange={() =>
+                          toggleOption(group, opt)
+                        }
                       />
                     )}
                   </div>
@@ -195,10 +293,12 @@ export default function ModalSelecionarComplementos({
           );
         })}
 
+        {/* TOTAL */}
         <p className="font-bold mb-4">
           Total: R$ {finalPrice.toFixed(2).replace(".", ",")}
         </p>
 
+        {/* AÇÃO */}
         <button
           disabled={!isValid()}
           onClick={() => {
