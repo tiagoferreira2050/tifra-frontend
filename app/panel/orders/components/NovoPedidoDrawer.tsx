@@ -44,7 +44,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
       if (!storeId) {
         console.error("storeId não encontrado");
-        if (mounted) setAllProducts([]);
+        setAllProducts([]);
         return;
       }
 
@@ -55,18 +55,17 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
       if (!res.ok) {
         console.error("Erro ao buscar produtos PDV");
-        if (mounted) setAllProducts([]);
+        setAllProducts([]);
         return;
       }
 
       const data = await res.json();
 
-      if (mounted) {
-        setAllProducts(data);
-      }
+      if (!mounted) return;
+      setAllProducts(data);
     } catch (err) {
       console.error("Erro ao carregar produtos:", err);
-      if (mounted) setAllProducts([]);
+      setAllProducts([]);
     }
   }
 
