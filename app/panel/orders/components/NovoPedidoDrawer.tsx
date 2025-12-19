@@ -246,8 +246,23 @@ async function handleCreate() {
               key={prod.id}
               onClick={() => {
                 const complementItems = Array.isArray(prod.productComplements)
-                  ? prod.productComplements.map((pc: any) => pc.group)
-                  : [];
+  ? prod.productComplements.map((pc: any) => ({
+      id: pc.group.id,
+      title: pc.group.name,
+      type: pc.group.type, // single | multiple | addable
+      required: pc.group.required,
+      minChoose: pc.group.min ?? null,
+      maxChoose: pc.group.max ?? null,
+      options: Array.isArray(pc.group.items)
+        ? pc.group.items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price ?? 0),
+          }))
+        : [],
+    }))
+  : [];
+
 
                 if (complementItems.length > 0) {
                   setSelectedProduct({

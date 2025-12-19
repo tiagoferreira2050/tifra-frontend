@@ -9,15 +9,13 @@ export default function ModalSelecionarComplementos({
   onClose,
   onAdd,
 }: any) {
-  // =====================================================
-  // 🔥 ESTADOS
-  // =====================================================
   const [qty, setQty] = useState(1);
-  const [selected, setSelected] = useState<Record<string, string[]>>({});
 
-  // =====================================================
-  // 🔥 RESET AO ABRIR O MODAL
-  // =====================================================
+  // groupId -> { optionId: qty }
+  const [selected, setSelected] = useState<
+    Record<string, Record<string, number>>
+  >({});
+
   useEffect(() => {
     if (!open || !product) return;
     setSelected({});
@@ -28,239 +26,197 @@ export default function ModalSelecionarComplementos({
 
   const groups = product.complementItems ?? [];
 
-  // =====================================================
-  // 🔥 LÓGICA DE SELEÇÃO (CHECKBOX / RADIO)
-  // =====================================================
-  function toggleOption(groupId: string, option: any, type: string) {
-    const group = groups.find((g: any) => g.id === groupId);
-    const max = group?.maxChoose ?? null;
-    const current = selected[groupId] ?? [];
-
-    // 🚫 bloqueia seleção acima do limite
-    if (
-      max &&
-      current.length >= max &&
-      !current.includes(option.id) &&
-      type !== "single"
-    ) {
-      return;
-    }
-
+  // ============================
+  // TOGGLE / ADDABLE
+  // ============================
+  function toggleOption(group: any, option: any) {
     setSelected((prev) => {
-      const arr = prev[groupId] ?? [];
+      const current = prev[group.id] ?? {};
 
-      // SINGLE (radio)
-      if (type === "single") {
-        return { ...prev, [groupId]: [option.id] };
-      }
-
-      // Remove
-      if (arr.includes(option.id)) {
+      // 🔘 SINGLE
+      if (group.type === "single") {
         return {
           ...prev,
-          [groupId]: arr.filter((id) => id !== option.id),
+          [group.id]: { [option.id]: 1 },
         };
       }
 
-      // Adiciona
+      // ☑️ MULTIPLE
+      if (group.type === "multiple") {
+        if (current[option.id]) {
+          const copy = { ...current };
+          delete copy[option.id];
+          return { ...prev, [group.id]: copy };
+        }
+
+        if (
+          group.maxChoose &&
+          Object.keys(current).length >= group.maxChoose
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [group.id]: { ...current, [option.id]: 1 },
+        };
+      }
+
+      // ➕ ADDABLE
+      const qty = current[option.id] ?? 0;
       return {
         ...prev,
-        [groupId]: [...arr, option.id],
+        [group.id]: { ...current, [option.id]: qty + 1 },
       };
     });
   }
 
-  // =====================================================
-  // 🔥 CÁLCULO DE PREÇO
-  // =====================================================
-  const basePrice = product.discount
-    ? Number(product.discount.price)
-    : Number(product.price);
+  function changeAddableQty(groupId: string, optionId: string, delta: number) {
+    setSelected((prev) => {
+      const current = prev[groupId] ?? {};
+      const newQty = (current[optionId] ?? 0) + delta;
 
-  const totalComplements = groups.reduce((acc: number, g: any) => {
+      if (newQty <= 0) {
+        const copy = { ...current };
+        delete copy[optionId];
+        return { ...prev, [groupId]: copy };
+      }
+
+      return {
+        ...prev,
+        [groupId]: { ...current, [optionId]: newQty },
+      };
+    });
+  }
+
+  // ============================
+  // VALIDAÇÃO
+  // ============================
+  function isValid() {
+    return groups.every((g: any) => {
+      const chosen = selected[g.id] ?? {};
+      const count = Object.keys(chosen).length;
+
+      if (g.required && count === 0) return false;
+      if (g.minChoose && count < g.minChoose) return false;
+
+      return true;
+    });
+  }
+
+  // ============================
+  // PREÇO
+  // ============================
+  const basePrice = Number(product.price);
+
+  const complementsTotal = groups.reduce((acc: number, g: any) => {
+    const chosen = selected[g.id] ?? {};
     const opts = g.options ?? [];
-    const chosen = selected[g.id] ?? [];
 
     return (
       acc +
-      chosen.reduce((sum: number, optionId: string) => {
-        const opt = opts.find((o: any) => o.id === optionId);
-        return sum + Number(opt?.price ?? 0);
+      Object.entries(chosen).reduce((sum, [optId, q]) => {
+        const opt = opts.find((o: any) => o.id === optId);
+        return sum + Number(opt?.price ?? 0) * q;
       }, 0)
     );
   }, 0);
 
-  const finalPrice = (basePrice + totalComplements) * qty;
+  const finalPrice = (basePrice + complementsTotal) * qty;
 
-  // =====================================================
-  // 🔥 FORMATAR COMPLEMENTOS (PADRÃO BACKEND)
-  // =====================================================
-  const complementsFormatted = groups.flatMap((group: any) => {
-    const chosen = selected[group.id] ?? [];
+  // ============================
+  // FORMATAR
+  // ============================
+  const complementsFormatted = groups.flatMap((g: any) => {
+    const chosen = selected[g.id] ?? {};
+    const opts = g.options ?? [];
 
-    return chosen.map((optionId: string) => {
-      const opt = group.options.find((o: any) => o.id === optionId);
-
+    return Object.entries(chosen).map(([optId, q]) => {
+      const opt = opts.find((o: any) => o.id === optId);
       return {
-        groupId: group.id,
-        groupTitle: group.title,
+        groupId: g.id,
+        groupTitle: g.title,
         optionId: opt.id,
         optionName: opt.name,
+        qty: q,
         price: Number(opt.price ?? 0),
       };
     });
   });
 
-  // =====================================================
-  // 🔥 UI
-  // =====================================================
+  // ============================
+  // UI
+  // ============================
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto shadow-lg">
+      <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto">
 
-        {/* HEADER */}
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold">{product.name}</h3>
-            <p className="text-sm text-gray-600">{product.categoryName}</p>
+            <h3 className="font-semibold">{product.name}</h3>
+            <p className="text-sm text-gray-500">{product.categoryName}</p>
           </div>
-
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded">
-            <X />
-          </button>
+          <button onClick={onClose}><X /></button>
         </div>
 
-        {/* COMPLEMENTOS */}
-        {groups.length === 0 && (
-          <p className="text-gray-500 text-center mb-4">
-            Este produto não possui complementos configurados.
-          </p>
-        )}
-
         {groups.map((group: any) => {
-          const type = group.type;
-          const chosen = selected[group.id] ?? [];
-          const opts = group.options ?? [];
-          const max = group.maxChoose;
-
+          const chosen = selected[group.id] ?? {};
           return (
-            <div key={group.id} className="border rounded-md p-3 mb-4">
-              <div className="flex justify-between mb-2">
-                <p className="font-semibold">
-                  {group.title}
-                  {group.required && (
-                    <span className="text-red-600 text-xs"> (obrigatório)</span>
-                  )}
-                </p>
+            <div key={group.id} className="border rounded p-3 mb-4">
+              <p className="font-medium mb-2">
+                {group.title}
+                {group.required && <span className="text-red-500"> *</span>}
+              </p>
 
-                {max && (
-                  <p className="text-xs text-gray-500">
-                    até {max} opção{max > 1 ? "es" : ""}
-                  </p>
-                )}
-              </div>
+              {group.options.map((opt: any) => {
+                const q = chosen[opt.id] ?? 0;
 
-              <div className="flex flex-col gap-2">
-                {opts.map((opt: any) => {
-                  const isChecked = chosen.includes(opt.id);
-                  const disabled =
-                    max &&
-                    chosen.length >= max &&
-                    !isChecked &&
-                    type !== "single";
+                return (
+                  <div key={opt.id} className="flex justify-between items-center mb-2">
+                    <span>{opt.name}</span>
 
-                  return (
-                    <label
-                      key={opt.id}
-                      className={`flex justify-between items-center border p-2 rounded cursor-pointer
-                        ${disabled ? "opacity-40 cursor-not-allowed" : ""}
-                      `}
-                    >
-                      <div className="flex items-center gap-2">
-                        {type === "single" ? (
-                          <input
-                            type="radio"
-                            checked={isChecked}
-                            onChange={() =>
-                              toggleOption(group.id, opt, type)
-                            }
-                          />
-                        ) : (
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            disabled={disabled}
-                            onChange={() =>
-                              toggleOption(group.id, opt, type)
-                            }
-                          />
-                        )}
-
-                        <span>{opt.name}</span>
+                    {group.type === "addable" ? (
+                      <div className="flex gap-2 items-center">
+                        <button onClick={() => changeAddableQty(group.id, opt.id, -1)}>-</button>
+                        <span>{q}</span>
+                        <button onClick={() => toggleOption(group, opt)}>+</button>
                       </div>
-
-                      {opt.price > 0 && (
-                        <span className="text-sm text-gray-700">
-                          + R$ {opt.price.toFixed(2).replace(".", ",")}
-                        </span>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
+                    ) : (
+                      <input
+                        type={group.type === "single" ? "radio" : "checkbox"}
+                        checked={q > 0}
+                        onChange={() => toggleOption(group, opt)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
 
-        {/* QUANTIDADE */}
-        <div className="flex items-center gap-4 my-4">
-          <button
-            className="px-3 py-1 border rounded"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-          >
-            -
-          </button>
-          <span>{qty}</span>
-          <button
-            className="px-3 py-1 border rounded"
-            onClick={() => setQty((q) => q + 1)}
-          >
-            +
-          </button>
-        </div>
-
-        {/* TOTAL */}
-        <p className="text-xl font-bold mb-4">
+        <p className="font-bold mb-4">
           Total: R$ {finalPrice.toFixed(2).replace(".", ",")}
         </p>
 
-        {/* AÇÕES */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              onAdd({
-                id: `${product.id}-${Date.now()}`,
-                productId: product.id,
-                name: product.name,
-                price: basePrice + totalComplements,
-                qty,
-                complements: complementsFormatted,
-                categoryName: product.categoryName,
-              });
-              onClose();
-            }}
-            className="bg-green-600 text-white px-4 py-2 rounded-md"
-          >
-            Adicionar ao pedido
-          </button>
-
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-md"
-          >
-            Cancelar
-          </button>
-        </div>
+        <button
+          disabled={!isValid()}
+          onClick={() => {
+            onAdd({
+              id: `${product.id}-${Date.now()}`,
+              productId: product.id,
+              name: product.name,
+              price: basePrice + complementsTotal,
+              qty,
+              complements: complementsFormatted,
+              categoryName: product.categoryName,
+            });
+            onClose();
+          }}
+          className="bg-green-600 text-white w-full py-2 rounded disabled:opacity-50"
+        >
+          Adicionar ao pedido
+        </button>
       </div>
     </div>
   );
