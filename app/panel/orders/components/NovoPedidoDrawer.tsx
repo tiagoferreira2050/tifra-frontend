@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { generateOrderId } from "../utils/orderId";
-import { dbLoadAll } from "../../cardapio/storage/db";
 import ModalSelecionarComplementos from "./ModalSelecionarComplementos";
 
 export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
