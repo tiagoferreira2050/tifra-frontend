@@ -466,6 +466,22 @@ async function handleCreate() {
                     <div className="font-medium">{it.name}</div>
                     <div className="text-xs text-gray-500">{it.categoryName}</div>
                   </div>
+{Array.isArray(it.complements) && it.complements.length > 0 && (
+  <div className="text-xs text-gray-500 mt-1 space-y-1">
+    {it.complements.map((c: any, index: number) => (
+      <div key={index}>
+        <span className="font-medium">{c.groupTitle}:</span>{" "}
+        {c.optionName}
+        {c.price > 0 && (
+          <span className="text-gray-400">
+            {" "} (+R$ {c.price.toFixed(2).replace(".", ",")})
+          </span>
+        )}
+      </div>
+    ))}
+  </div>
+)}
+
 
                   <div className="flex items-center gap-3">
                     <div className="text-sm">

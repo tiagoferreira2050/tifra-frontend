@@ -1,18 +1,35 @@
-export type OrderStatus = 'analysis' | 'preparing' | 'delivering' | 'finished';
+export type OrderStatus =
+  | "analysis"
+  | "preparing"
+  | "delivering"
+  | "finished";
+
+export type DeliveryType =
+  | "entrega"
+  | "retirada"
+  | "balcao";
 
 export type Order = {
   id: string;
-  deliveryType: "entrega", // ou retirada
+
+  deliveryType: DeliveryType;
+
   customer: string;
   phone?: string;
+
   address?: string;
-  shortAddress?: string; // rua, nº, bairro (resumida)
+  shortAddress?: string;
+
   total: number;
   createdAt: string;
+
   status: OrderStatus;
+
   items?: { name: string; qty: number }[];
+
   paymentMethod?: string;
-  changeFor?: number; // troco
+  changeFor?: number;
+
   isNewCustomer?: boolean;
-  ordersCount?: number; // quantas vezes já comprou
+  ordersCount?: number;
 };

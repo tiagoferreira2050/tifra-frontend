@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import OrderColumn from "./OrderColumn";
+import { apiFetch } from "@/lib/api"; // ✅ PADRÃO BACKEND EXPRESS
 
 type Order = {
   id: string;
@@ -29,12 +30,15 @@ export default function OrderBoard({
   const [dbOrders, setDbOrders] = useState<Order[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // 🔥 CARREGAR PEDIDOS REAIS DO BANCO
+  // =====================================================
+  // 🔥 CARREGAR PEDIDOS REAIS DO BACKEND (EXPRESS)
+  // =====================================================
   useEffect(() => {
     async function loadOrders() {
       try {
-        const res = await fetch("/api/orders", { cache: "no-store" });
-        const data = await res.json();
+        const data = await apiFetch("/orders", {
+          method: "GET",
+        });
 
         setDbOrders(data || []);
       } catch (err) {
@@ -45,14 +49,16 @@ export default function OrderBoard({
     loadOrders();
   }, []);
 
-  // 🔥 MERGE ENTRE PEDIDOS DO BANCO E EXTERNAL (NOVO PEDIDO MANUAL)
+  // =====================================================
+  // 🔥 MERGE ENTRE PEDIDOS DO BANCO E NOVOS (PDV)
+  // =====================================================
   useEffect(() => {
     setOrders([...(externalOrders || []), ...dbOrders]);
   }, [externalOrders, dbOrders]);
 
-  // ---------------------------------------
-  // 🔥 FILTRO DE BUSCA (mantido igual)
-  // ---------------------------------------
+  // =====================================================
+  // 🔥 FILTRO DE BUSCA (MANTIDO)
+  // =====================================================
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -73,9 +79,9 @@ export default function OrderBoard({
     );
   });
 
-  // ---------------------------------------
-  // 🔥 AÇÕES LOCAIS (mantidas como estão)
-  // ---------------------------------------
+  // =====================================================
+  // 🔥 AÇÕES LOCAIS (SEM BACKEND AINDA – OK)
+  // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
@@ -106,9 +112,9 @@ export default function OrderBoard({
     .filter((o) => o.status === "finished")
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
-  // ---------------------------------------
-  // 🔥 RENDERIZAÇÃO IDÊNTICA
-  // ---------------------------------------
+  // =====================================================
+  // 🔥 RENDER
+  // =====================================================
   return (
     <div className="grid grid-cols-4 gap-5 px-5">
       <OrderColumn
