@@ -5,6 +5,8 @@ import NovoPedidoDrawer from "./components/NovoPedidoDrawer";
 import OrderBoard from "./components/OrderBoard";
 import { Plus } from "lucide-react";
 import { Order } from "./services/orderTypes";
+import { apiFetch } from "@/lib/api";
+
 
 export default function OrdersPage() {
   const [openNovoPedido, setOpenNovoPedido] = useState(false);
@@ -17,9 +19,12 @@ export default function OrdersPage() {
   useEffect(() => {
     async function loadOrders() {
       try {
-        const res = await fetch("/api/orders", { cache: "no-store" });
-        const data = await res.json();
-        setOrders(data); // 🔥 agora os pedidos permanecem após atualizar
+        const data = await apiFetch("/orders", {
+  method: "GET",
+});
+
+setOrders(data);
+
       } catch (err) {
         console.error("Erro ao buscar pedidos:", err);
       }
