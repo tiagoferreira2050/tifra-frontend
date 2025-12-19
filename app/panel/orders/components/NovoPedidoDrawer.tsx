@@ -147,25 +147,42 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
   }, [cep]);
 
   // 🔥 Criar pedido
-  async function handleCreate() {
+async function handleCreate() {
   if (!customer.trim()) {
     alert("Digite o nome do cliente");
     return;
   }
 
-  // Monta o payload para enviar ao backend
+  const storeId = localStorage.getItem("storeId");
+
+  if (!storeId) {
+    alert("StoreId não encontrado. Faça login novamente.");
+    return;
+  }
+
+  const total =
+    items.reduce(
+      (acc, v) => acc + Number(v.price) * v.qty,
+      0
+    ) +
+    (deliveryType === "entrega" ? toNumber(deliveryFee) : 0);
+
   const payload = {
-    customerName: customer,
-    customerPhone: phone,
-    customerAddress:
-      deliveryType === "entrega"
-        ? `${street}, ${number}${
-            complement ? " - " + complement : ""
-          } - ${neighborhood} - ${city} - ${stateUf} (CEP: ${cep})`
-        : "-",
+    storeId,
+
+    customer: {
+      name: customer,
+      phone,
+      address:
+        deliveryType === "entrega"
+          ? `${street}, ${number}${
+              complement ? " - " + complement : ""
+            } - ${neighborhood} - ${city} - ${stateUf} (CEP: ${cep})`
+          : null,
+    },
 
     items: items.map((it: any) => ({
-      productId: it.productId,   // ← precisa existir no objeto vindo do modal
+      productId: it.productId,
       quantity: it.qty,
       unitPrice: it.price,
       complements: it.complements || [],
@@ -173,6 +190,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
     paymentMethod,
     deliveryFee: deliveryType === "entrega" ? toNumber(deliveryFee) : 0,
+    total,
   };
 
   try {
@@ -187,12 +205,10 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
       return;
     }
 
-    const savedOrder = await res.json(); // Pedido REAL que o backend criou
+    const savedOrder = await res.json();
 
-    // Atualiza o painel com o pedido vindo do banco
     if (onCreate) onCreate(savedOrder);
 
-    // Limpar e fechar o drawer
     onClose();
     setCustomer("");
     setPhone("");
@@ -203,6 +219,7 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
     alert("Falha ao salvar pedido no servidor.");
   }
 }
+
 
 
   // ────────────────────────────────────────────────
