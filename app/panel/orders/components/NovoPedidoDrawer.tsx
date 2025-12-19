@@ -38,35 +38,34 @@ export default function NovoPedidoDrawer({ open, onClose, onCreate }: any) {
 
   let mounted = true;
 
-  async function loadProducts() {
-  try {
-    const storeId = localStorage.getItem("storeId");
+  async function loadCategories() {
+    try {
+      const data = await apiFetch("/categories");
 
-    if (!storeId) {
-      console.error("storeId não encontrado");
-      setAllProducts([]);
-      return;
+      if (!mounted) return;
+
+      setCategories(
+        Array.isArray(data)
+          ? data.map((cat: any) => ({
+              id: cat.id,
+              name: cat.name,
+              products: Array.isArray(cat.products) ? cat.products : [],
+            }))
+          : []
+      );
+    } catch (err) {
+      console.error("Erro ao carregar categorias:", err);
+      setCategories([]);
     }
-
-    const data = await apiFetch(`/products/pdv?storeId=${storeId}`, {
-      method: "GET",
-    });
-
-    if (!mounted) return;
-    setAllProducts(data);
-  } catch (err) {
-    console.error("Erro ao carregar produtos:", err);
-    setAllProducts([]);
   }
-}
 
-
-  loadProducts();
+  loadCategories();
 
   return () => {
     mounted = false;
   };
 }, [open]);
+
 
 
   const filteredProducts = allProducts.filter((prod) =>
@@ -218,77 +217,81 @@ async function handleCreate() {
 
       <div className="grid grid-cols-2 h-full">
         {/* ESQUERDA */}
-        <div className="p-4 overflow-y-auto border-r">
+<div className="p-4 overflow-y-auto border-r">
+  <input
+    type="text"
+    placeholder="Buscar produto..."
+    className="w-full border px-3 py-2 rounded-md mb-4"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
 
-          <input
-            type="text"
-            placeholder="Buscar produto..."
-            className="w-full border px-3 py-2 rounded-md mb-4"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+  {categories.map((cat: any) => {
+    const products = (cat.products || []).filter((p: any) =>
+      p.name.toLowerCase().includes(search.toLowerCase())
+    );
 
-          <div className="grid grid-cols-3 gap-4">
-            {filteredProducts.map((prod: any) => (
-              <div
-  key={prod.id}
-  onClick={() => {
-  const complementItems = prod.complements || [];
+    if (products.length === 0) return null;
 
-  if (complementItems.length > 0) {
-    // 👉 TEM complementos → abre modal de complementos
-    setSelectedProduct({
-      ...prod,
-      complementItems,
-    });
-    setOpenProductModal(true);
-  } else {
-    // 👉 NÃO tem complementos → adiciona direto
-    setItems((prev) => [
-      ...prev,
-      {
-        id: prod.id + "-" + Date.now(),
-        productId: prod.id,
-        name: prod.name,
-        price: Number(prod.price),
-        qty: 1,
-        complements: [],
-        categoryName: prod.categoryName,
-      },
-    ]);
-  }
-}}
+    return (
+      <div key={cat.id} className="mb-6">
+        <h3 className="font-semibold text-sm mb-2">{cat.name}</h3>
 
+        <div className="grid grid-cols-3 gap-4">
+          {products.map((prod: any) => (
+            <div
+              key={prod.id}
+              onClick={() => {
+                const complementItems = Array.isArray(prod.productComplements)
+                  ? prod.productComplements.map((pc: any) => pc.group)
+                  : [];
 
-  className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
->
-  <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">
-    {prod.imageUrl && (
-      <img
-        src={prod.imageUrl}
-        alt={prod.name}
-        className="w-full h-full object-cover"
-      />
-    )}
-  </div>
+                if (complementItems.length > 0) {
+                  setSelectedProduct({
+                    ...prod,
+                    complementItems,
+                    categoryName: cat.name,
+                  });
+                  setOpenProductModal(true);
+                } else {
+                  setItems((prev) => [
+                    ...prev,
+                    {
+                      id: prod.id + "-" + Date.now(),
+                      productId: prod.id,
+                      name: prod.name,
+                      price: Number(prod.price),
+                      qty: 1,
+                      complements: [],
+                      categoryName: cat.name,
+                    },
+                  ]);
+                }
+              }}
+              className="border rounded-lg p-2 shadow-sm cursor-pointer hover:bg-gray-50"
+            >
+              <div className="h-24 bg-gray-200 rounded mb-2 overflow-hidden">
+                {prod.imageUrl && (
+                  <img
+                    src={prod.imageUrl}
+                    alt={prod.name}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
 
-  <p className="font-medium truncate">{prod.name}</p>
-
-  <p className="text-sm text-gray-600">
-    R$ {Number(prod.price).toFixed(2).replace(".", ",")}
-  </p>
-
-  <p className="text-xs text-gray-400">{prod.categoryName}</p>
-</div>
-))}
-
-            {filteredProducts.length === 0 && (
-              <p className="text-gray-500 text-sm col-span-3 text-center">
-                Nenhum produto encontrado
+              <p className="font-medium truncate">{prod.name}</p>
+              <p className="text-sm text-gray-600">
+                R$ {Number(prod.price).toFixed(2).replace(".", ",")}
               </p>
-            )}
-          </div>
+            </div>
+          ))}
         </div>
+      </div>
+    );
+  })}
+</div>
+
 
         {/* DIREITA */}
         <div className="p-4 overflow-y-auto pb-24">
