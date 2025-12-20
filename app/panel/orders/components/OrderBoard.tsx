@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import OrderColumn from "./OrderColumn";
+import { apiFetch } from "@/lib/api";
+import { playNewOrderSound, stopNewOrderSound } from "@/lib/newOrderSound";
 
-/* 🔒 Tipo único e consistente com OrderCard / OrderColumn */
+/* 🔒 Tipo único e consistente */
 export type Order = {
   id: string;
   customer: string;
   status: string;
   total: number;
-
   phone?: string;
   deliveryType?: string;
   address?: string;
@@ -30,24 +31,67 @@ export default function OrderBoard({
   externalOrders = [],
 }: Props) {
   // =====================================================
-  // 🔥 PEDIDOS VINDOS DO PAI (OrdersPage)
+  // 🔥 ESTADO PRINCIPAL
   // =====================================================
   const [orders, setOrders] = useState<Order[]>(externalOrders);
-
-  // Sempre que o pai atualizar, sincroniza
-  React.useEffect(() => {
-    setOrders(externalOrders);
-  }, [externalOrders]);
-
-  // =====================================================
-  // 🔥 SELEÇÃO MÚLTIPLA
-  // =====================================================
+  const [lastOrderIds, setLastOrderIds] = useState<string[]>([]);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
     {}
   );
 
   // =====================================================
-  // 🔥 FILTRO DE BUSCA
+  // 🔄 SINCRONIZA COM O PAI (OrdersPage)
+  // =====================================================
+  useEffect(() => {
+    setOrders(externalOrders);
+  }, [externalOrders]);
+
+  // =====================================================
+  // 🔊 POLLING + SOM
+  // =====================================================
+  useEffect(() => {
+    let interval: any;
+
+    async function loadOrders() {
+      try {
+        const storeId = localStorage.getItem("storeId");
+        if (!storeId) return;
+
+        const data: Order[] = await apiFetch(
+          `/orders?storeId=${storeId}`,
+          { method: "GET" }
+        );
+
+        const currentIds = data.map((o) => o.id);
+
+        const hasNewOrder = data.some(
+          (o) =>
+            o.status === "analysis" &&
+            !lastOrderIds.includes(o.id)
+        );
+
+        if (hasNewOrder) {
+          playNewOrderSound();
+        }
+
+        setOrders(data);
+        setLastOrderIds(currentIds);
+      } catch (err) {
+        console.error("Erro ao carregar pedidos:", err);
+      }
+    }
+
+    loadOrders();
+    interval = setInterval(loadOrders, 5000);
+
+    return () => {
+      clearInterval(interval);
+      stopNewOrderSound();
+    };
+  }, [lastOrderIds]);
+
+  // =====================================================
+  // 🔍 FILTRO
   // =====================================================
   function normalize(text: any) {
     if (!text) return "";
@@ -67,13 +111,14 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES LOCAIS (POR ENQUANTO)
+  // 🔥 AÇÕES
   // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
   function accept(id: string) {
+    stopNewOrderSound();
     setOrders((prev) =>
       prev.map((o) =>
         o.id === id ? { ...o, status: "preparing" } : o
@@ -82,6 +127,7 @@ export default function OrderBoard({
   }
 
   function reject(id: string) {
+    stopNewOrderSound();
     setOrders((prev) => prev.filter((o) => o.id !== id));
   }
 
@@ -106,7 +152,7 @@ export default function OrderBoard({
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
   // =====================================================
-  // 🔥 RENDER
+  // 🖥️ RENDER
   // =====================================================
   return (
     <div className="grid grid-cols-4 gap-5 px-5">
