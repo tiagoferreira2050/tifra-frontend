@@ -164,24 +164,21 @@ export default function OrderBoard({
   // =====================================================
   // 🔊 ATIVAR SOM (1 VEZ)
   // =====================================================
-  function enableSound() {
+ function enableSound() {
   const audio = new Audio("/sounds/new-order.mp3");
-  audio.volume = 0.01; // quase mudo, mas REAL
+  audio.volume = 0.2; // baixo, mas audível
 
   audio.play()
     .then(() => {
-      setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-
-        localStorage.setItem("soundEnabled", "true");
-        setSoundEnabled(true);
-      }, 300); // deixa tocar 300ms
+      console.log("🔊 Áudio liberado com sucesso");
+      localStorage.setItem("soundEnabled", "true");
+      setSoundEnabled(true);
     })
     .catch((err) => {
-      console.error("Erro ao ativar som:", err);
+      console.error("❌ Chrome bloqueou o áudio:", err);
     });
 }
+
 
 
   // =====================================================
