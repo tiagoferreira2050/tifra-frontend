@@ -49,17 +49,7 @@ export default function OrderBoard({
   }, [externalOrders]);
 
   // =====================================================
-  // 🔊 LÊ SOM DO LOCALSTORAGE
-  // =====================================================
-  useEffect(() => {
-    const enabled = localStorage.getItem("soundEnabled");
-    if (enabled === "true") {
-      setSoundEnabled(true);
-    }
-  }, []);
-
-  // =====================================================
-  // 🔊 POLLING + SOM
+  // 🔊 POLLING + SOM (LOOP ENQUANTO HOUVER PENDENTE)
   // =====================================================
   useEffect(() => {
     let interval: any;
@@ -74,18 +64,19 @@ export default function OrderBoard({
           { method: "GET" }
         );
 
-        const currentIds = data.map((o) => o.id);
+        // 🔁 existe pedido em análise?
+        const hasPending = data.some((o) => o.status === "analysis");
 
-        const hasNewOrder = data.some(
-          (o) => o.status === "analysis" && !lastOrderIds.includes(o.id)
-        );
+        if (hasPending && soundEnabled) {
+          playNewOrderSound(); // 🔁 loop
+        }
 
-        if (hasNewOrder && soundEnabled) {
-          playNewOrderSound();
+        if (!hasPending) {
+          stopNewOrderSound(); // 🛑 para automaticamente
         }
 
         setOrders(data);
-        setLastOrderIds(currentIds);
+        setLastOrderIds(data.map((o) => o.id));
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
       }
@@ -98,7 +89,7 @@ export default function OrderBoard({
       clearInterval(interval);
       stopNewOrderSound();
     };
-  }, [lastOrderIds, soundEnabled]);
+  }, [soundEnabled]);
 
   // =====================================================
   // 🔍 FILTRO
@@ -162,24 +153,22 @@ export default function OrderBoard({
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
   // =====================================================
-  // 🔊 ATIVAR SOM (1 VEZ)
+  // 🔊 ATIVAR SOM (INTERAÇÃO DO USUÁRIO)
   // =====================================================
- function enableSound() {
-  const audio = new Audio("/sounds/new-order.mp3");
-  audio.volume = 0.2; // baixo, mas audível
+  function enableSound() {
+    const audio = new Audio("/sounds/new-order.mp3");
+    audio.volume = 0.3;
 
-  audio.play()
-    .then(() => {
-      console.log("🔊 Áudio liberado com sucesso");
-      localStorage.setItem("soundEnabled", "true");
-      setSoundEnabled(true);
-    })
-    .catch((err) => {
-      console.error("❌ Chrome bloqueou o áudio:", err);
-    });
-}
-
-
+    audio
+      .play()
+      .then(() => {
+        console.log("🔊 Áudio liberado pelo usuário");
+        setSoundEnabled(true);
+      })
+      .catch((err) => {
+        console.error("❌ Chrome bloqueou o áudio:", err);
+      });
+  }
 
   // =====================================================
   // 🖥️ RENDER
