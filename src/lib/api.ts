@@ -17,6 +17,8 @@ export async function apiFetch(
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
+
+    // 🔒 headers garantidos para POST / PATCH / PUT
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -24,9 +26,21 @@ export async function apiFetch(
     },
   });
 
-  const data = await res.json().catch(() => null);
+  // 🔍 tenta ler JSON, mas não quebra se vier vazio
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
 
   if (!res.ok) {
+    console.error("❌ API ERROR:", {
+      path,
+      status: res.status,
+      data,
+    });
+
     throw new Error(data?.error || "Erro na requisição");
   }
 
