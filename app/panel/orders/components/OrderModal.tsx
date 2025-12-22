@@ -96,8 +96,8 @@ export default function OrderModal({
                     {item.complements.map((comp, i) => (
                       <li key={i}>
                         {comp.name}
-                        {comp.price && comp.price > 0 && (
-                          <span>
+                        {comp.price !== undefined && comp.price > 0 && (
+                          <span className="text-gray-500">
                             {" "}
                             (+R$ {comp.price.toFixed(2).replace(".", ",")})
                           </span>
