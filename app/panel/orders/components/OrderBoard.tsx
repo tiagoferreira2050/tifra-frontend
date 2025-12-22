@@ -31,7 +31,7 @@ export default function OrderBoard({
   externalOrders = [],
 }: Props) {
   // =====================================================
-  // 🔥 ESTADO PRINCIPAL
+  // 🔥 ESTADOS
   // =====================================================
   const [orders, setOrders] = useState<Order[]>(externalOrders);
   const [lastOrderIds, setLastOrderIds] = useState<string[]>([]);
@@ -39,12 +39,24 @@ export default function OrderBoard({
     {}
   );
 
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
   // =====================================================
-  // 🔄 SINCRONIZA COM O PAI (OrdersPage)
+  // 🔄 SINCRONIZA COM O PAI
   // =====================================================
   useEffect(() => {
     setOrders(externalOrders);
   }, [externalOrders]);
+
+  // =====================================================
+  // 🔊 LÊ SOM DO LOCALSTORAGE
+  // =====================================================
+  useEffect(() => {
+    const enabled = localStorage.getItem("soundEnabled");
+    if (enabled === "true") {
+      setSoundEnabled(true);
+    }
+  }, []);
 
   // =====================================================
   // 🔊 POLLING + SOM
@@ -65,12 +77,10 @@ export default function OrderBoard({
         const currentIds = data.map((o) => o.id);
 
         const hasNewOrder = data.some(
-          (o) =>
-            o.status === "analysis" &&
-            !lastOrderIds.includes(o.id)
+          (o) => o.status === "analysis" && !lastOrderIds.includes(o.id)
         );
 
-        if (hasNewOrder) {
+        if (hasNewOrder && soundEnabled) {
           playNewOrderSound();
         }
 
@@ -88,7 +98,7 @@ export default function OrderBoard({
       clearInterval(interval);
       stopNewOrderSound();
     };
-  }, [lastOrderIds]);
+  }, [lastOrderIds, soundEnabled]);
 
   // =====================================================
   // 🔍 FILTRO
@@ -152,54 +162,77 @@ export default function OrderBoard({
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
   // =====================================================
+  // 🔊 ATIVAR SOM (1 VEZ)
+  // =====================================================
+  function enableSound() {
+    const audio = new Audio("/sounds/new-order.mp3");
+    audio.play().then(() => {
+      audio.pause();
+      localStorage.setItem("soundEnabled", "true");
+      setSoundEnabled(true);
+    });
+  }
+
+  // =====================================================
   // 🖥️ RENDER
   // =====================================================
   return (
-    <div className="grid grid-cols-4 gap-5 px-5">
-      <OrderColumn
-        title="Em Análise"
-        color="border-gray-300"
-        count={filteredOrders.filter((o) => o.status === "analysis").length}
-        orders={filteredOrders.filter((o) => o.status === "analysis")}
-        onAccept={accept}
-        onReject={reject}
-        onToggleSelect={toggleSelect}
-        multiSelected={multiSelected}
-        onOpen={() => {}}
-      />
+    <>
+      {!soundEnabled && (
+        <button
+          onClick={enableSound}
+          className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded z-50"
+        >
+          Ativar som 🔊
+        </button>
+      )}
 
-      <OrderColumn
-        title="Em Preparo"
-        color="border-gray-300"
-        count={filteredOrders.filter((o) => o.status === "preparing").length}
-        orders={filteredOrders.filter((o) => o.status === "preparing")}
-        onDispatch={dispatchOrder}
-        onToggleSelect={toggleSelect}
-        multiSelected={multiSelected}
-        onOpen={() => {}}
-      />
+      <div className="grid grid-cols-4 gap-5 px-5">
+        <OrderColumn
+          title="Em Análise"
+          color="border-gray-300"
+          count={filteredOrders.filter((o) => o.status === "analysis").length}
+          orders={filteredOrders.filter((o) => o.status === "analysis")}
+          onAccept={accept}
+          onReject={reject}
+          onToggleSelect={toggleSelect}
+          multiSelected={multiSelected}
+          onOpen={() => {}}
+        />
 
-      <OrderColumn
-        title="Em Entrega"
-        color="border-gray-300"
-        count={filteredOrders.filter((o) => o.status === "delivering").length}
-        orders={filteredOrders.filter((o) => o.status === "delivering")}
-        onFinish={finishOrder}
-        onToggleSelect={toggleSelect}
-        multiSelected={multiSelected}
-        onOpen={() => {}}
-      />
+        <OrderColumn
+          title="Em Preparo"
+          color="border-gray-300"
+          count={filteredOrders.filter((o) => o.status === "preparing").length}
+          orders={filteredOrders.filter((o) => o.status === "preparing")}
+          onDispatch={dispatchOrder}
+          onToggleSelect={toggleSelect}
+          multiSelected={multiSelected}
+          onOpen={() => {}}
+        />
 
-      <OrderColumn
-        title="Concluídos"
-        color="border-green-600"
-        count={filteredOrders.filter((o) => o.status === "finished").length}
-        orders={filteredOrders.filter((o) => o.status === "finished")}
-        footerValue={sumFinished}
-        onToggleSelect={toggleSelect}
-        multiSelected={multiSelected}
-        onOpen={() => {}}
-      />
-    </div>
+        <OrderColumn
+          title="Em Entrega"
+          color="border-gray-300"
+          count={filteredOrders.filter((o) => o.status === "delivering").length}
+          orders={filteredOrders.filter((o) => o.status === "delivering")}
+          onFinish={finishOrder}
+          onToggleSelect={toggleSelect}
+          multiSelected={multiSelected}
+          onOpen={() => {}}
+        />
+
+        <OrderColumn
+          title="Concluídos"
+          color="border-green-600"
+          count={filteredOrders.filter((o) => o.status === "finished").length}
+          orders={filteredOrders.filter((o) => o.status === "finished")}
+          footerValue={sumFinished}
+          onToggleSelect={toggleSelect}
+          multiSelected={multiSelected}
+          onOpen={() => {}}
+        />
+      </div>
+    </>
   );
 }
