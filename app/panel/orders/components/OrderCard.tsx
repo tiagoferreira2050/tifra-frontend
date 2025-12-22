@@ -34,6 +34,8 @@ interface Props {
   order: Order;
   selected?: boolean;
 
+  loadingOrderId?: string | null;
+
   onToggle?: () => void;
   onAccept?: () => void;
   onReject?: () => void;
@@ -45,6 +47,7 @@ interface Props {
 export default function OrderCard({
   order,
   selected = false,
+  loadingOrderId = null,
   onToggle,
   onAccept,
   onReject,
@@ -52,13 +55,15 @@ export default function OrderCard({
   onFinish,
   onOpen,
 }: Props) {
+  const isLoading = loadingOrderId === order.id;
+
   return (
     <div
-      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+      className={`p-3 border rounded-lg transition-colors ${
         selected
           ? "bg-gray-100 border-gray-400"
           : "hover:bg-gray-50 border-gray-200"
-      }`}
+      } ${isLoading ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}
       onClick={() => onOpen?.()}
     >
       {/* HEADER */}
@@ -67,6 +72,7 @@ export default function OrderCard({
           <input
             type="checkbox"
             checked={selected}
+            disabled={isLoading}
             onChange={(e) => {
               e.stopPropagation();
               onToggle?.();
@@ -124,11 +130,12 @@ export default function OrderCard({
       <div className="mt-3 flex gap-2 flex-wrap">
         {onAccept && (
           <button
+            disabled={isLoading}
             onClick={(e) => {
               e.stopPropagation();
               onAccept();
             }}
-            className="flex items-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded"
+            className="flex items-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded disabled:opacity-60"
           >
             <Check size={12} /> Aceitar
           </button>
@@ -136,11 +143,12 @@ export default function OrderCard({
 
         {onDispatch && (
           <button
+            disabled={isLoading}
             onClick={(e) => {
               e.stopPropagation();
               onDispatch();
             }}
-            className="flex items-center gap-1 text-xs bg-orange-500 text-white px-2 py-1 rounded"
+            className="flex items-center gap-1 text-xs bg-orange-500 text-white px-2 py-1 rounded disabled:opacity-60"
           >
             <Truck size={12} /> Despachar
           </button>
@@ -148,11 +156,12 @@ export default function OrderCard({
 
         {onFinish && (
           <button
+            disabled={isLoading}
             onClick={(e) => {
               e.stopPropagation();
               onFinish();
             }}
-            className="flex items-center gap-1 text-xs bg-green-700 text-white px-2 py-1 rounded"
+            className="flex items-center gap-1 text-xs bg-green-700 text-white px-2 py-1 rounded disabled:opacity-60"
           >
             <ClipboardCheck size={12} /> Finalizar
           </button>
@@ -160,17 +169,18 @@ export default function OrderCard({
 
         {onReject && (
           <button
+            disabled={isLoading}
             onClick={(e) => {
               e.stopPropagation();
               onReject();
             }}
-            className="flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded"
+            className="flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded disabled:opacity-60"
           >
             <X size={12} /> Rejeitar
           </button>
         )}
 
-        {/* MÉTODO DE PAGAMENTO (SOMENTE LEITURA) */}
+        {/* MÉTODO DE PAGAMENTO */}
         {order.paymentMethod && (
           <div className="ml-auto text-xs text-gray-600 flex items-center gap-1">
             <Clock size={12} />
