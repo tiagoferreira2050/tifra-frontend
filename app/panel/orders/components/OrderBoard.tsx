@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import OrderColumn from "./OrderColumn";
+import OrderModal from "./OrderModal";
 import { apiFetch } from "@/lib/api";
 import { playNewOrderSound, stopNewOrderSound } from "@/lib/newOrderSound";
 
@@ -35,9 +36,10 @@ export default function OrderBoard({
   const [orders, setOrders] = useState<Order[]>(externalOrders);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [soundEnabled, setSoundEnabled] = useState(false);
-
-  // 🔐 LOADING POR PEDIDO
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
+
+  // 🔥 MODAL
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // =====================================================
   // 🔄 SINCRONIZA COM O PAI
@@ -100,7 +102,7 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 FUNÇÃO ÚNICA DE UPDATE (ANTI BUG)
+  // 🔥 UPDATE DE STATUS (ÚNICO)
   // =====================================================
   async function updateOrderStatus(id: string, status: string) {
     if (loadingOrderId) return;
@@ -188,7 +190,7 @@ export default function OrderBoard({
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
           loadingOrderId={loadingOrderId}
-          onOpen={() => {}}
+          onOpen={(order) => setSelectedOrder(order)}
         />
 
         <OrderColumn
@@ -200,7 +202,7 @@ export default function OrderBoard({
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
           loadingOrderId={loadingOrderId}
-          onOpen={() => {}}
+          onOpen={(order) => setSelectedOrder(order)}
         />
 
         <OrderColumn
@@ -212,7 +214,7 @@ export default function OrderBoard({
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
           loadingOrderId={loadingOrderId}
-          onOpen={() => {}}
+          onOpen={(order) => setSelectedOrder(order)}
         />
 
         <OrderColumn
@@ -224,9 +226,15 @@ export default function OrderBoard({
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
           loadingOrderId={loadingOrderId}
-          onOpen={() => {}}
+          onOpen={(order) => setSelectedOrder(order)}
         />
       </div>
+
+      {/* 🔥 MODAL DO PEDIDO */}
+      <OrderModal
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </>
   );
 }
