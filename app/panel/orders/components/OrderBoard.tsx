@@ -47,39 +47,40 @@ export default function OrderBoard({
   }, [externalOrders]);
 
   // =====================================================
-  // 🔊 POLLING + SOM (BACKEND É A VERDADE)
+  // 🔁 FUNÇÃO CENTRAL DE REFETCH (FONTE DA VERDADE)
+  // =====================================================
+  async function loadOrdersFromApi() {
+    try {
+      const storeId = localStorage.getItem("storeId");
+      if (!storeId) return;
+
+      const data: Order[] = await apiFetch(
+        `/orders?storeId=${storeId}`,
+        { method: "GET" }
+      );
+
+      const hasPending = data.some((o) => o.status === "analysis");
+
+      if (hasPending && soundEnabled) {
+        playNewOrderSound();
+      }
+
+      if (!hasPending) {
+        stopNewOrderSound();
+      }
+
+      setOrders(data);
+    } catch (err) {
+      console.error("Erro ao carregar pedidos:", err);
+    }
+  }
+
+  // =====================================================
+  // 🔊 POLLING (SEGURANÇA)
   // =====================================================
   useEffect(() => {
-    let interval: any;
-
-    async function loadOrders() {
-      try {
-        const storeId = localStorage.getItem("storeId");
-        if (!storeId) return;
-
-        const data: Order[] = await apiFetch(
-          `/orders?storeId=${storeId}`,
-          { method: "GET" }
-        );
-
-        const hasPending = data.some((o) => o.status === "analysis");
-
-        if (hasPending && soundEnabled) {
-          playNewOrderSound(); // 🔁 loop enquanto pendente
-        }
-
-        if (!hasPending) {
-          stopNewOrderSound(); // 🛑 para automaticamente
-        }
-
-        setOrders(data);
-      } catch (err) {
-        console.error("Erro ao carregar pedidos:", err);
-      }
-    }
-
-    loadOrders();
-    interval = setInterval(loadOrders, 5000);
+    loadOrdersFromApi();
+    const interval = setInterval(loadOrdersFromApi, 5000);
 
     return () => {
       clearInterval(interval);
@@ -108,7 +109,7 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES (SALVA NO BACKEND)
+  // 🔥 AÇÕES (SALVA NO BACKEND + REFRESH IMEDIATO)
   // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -121,6 +122,8 @@ export default function OrderBoard({
       method: "PATCH",
       body: JSON.stringify({ status: "preparing" }),
     });
+
+    await loadOrdersFromApi(); // ⚡ resposta imediata
   }
 
   async function reject(id: string) {
@@ -130,6 +133,8 @@ export default function OrderBoard({
       method: "PATCH",
       body: JSON.stringify({ status: "finished" }),
     });
+
+    await loadOrdersFromApi();
   }
 
   async function dispatchOrder(id: string) {
@@ -137,6 +142,8 @@ export default function OrderBoard({
       method: "PATCH",
       body: JSON.stringify({ status: "delivering" }),
     });
+
+    await loadOrdersFromApi();
   }
 
   async function finishOrder(id: string) {
@@ -144,6 +151,8 @@ export default function OrderBoard({
       method: "PATCH",
       body: JSON.stringify({ status: "finished" }),
     });
+
+    await loadOrdersFromApi();
   }
 
   const sumFinished = filteredOrders
