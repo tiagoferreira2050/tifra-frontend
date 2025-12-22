@@ -12,7 +12,6 @@ export type Order = {
   status: string;
   total: number;
   phone?: string;
-  deliveryType?: string;
   address?: string;
   shortAddress?: string;
   createdAt: string;
@@ -34,10 +33,11 @@ export default function OrderBoard({
   // 🔥 ESTADOS
   // =====================================================
   const [orders, setOrders] = useState<Order[]>(externalOrders);
-  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [soundEnabled, setSoundEnabled] = useState(false);
+
+  // 🔐 LOADING POR PEDIDO
+  const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
 
   // =====================================================
   // 🔄 SINCRONIZA COM O PAI
@@ -47,27 +47,19 @@ export default function OrderBoard({
   }, [externalOrders]);
 
   // =====================================================
-  // 🔁 FUNÇÃO CENTRAL DE REFETCH (FONTE DA VERDADE)
+  // 🔁 FUNÇÃO CENTRAL (BACKEND = VERDADE)
   // =====================================================
   async function loadOrdersFromApi() {
     try {
       const storeId = localStorage.getItem("storeId");
       if (!storeId) return;
 
-      const data: Order[] = await apiFetch(
-        `/orders?storeId=${storeId}`,
-        { method: "GET" }
-      );
+      const data: Order[] = await apiFetch(`/orders?storeId=${storeId}`);
 
       const hasPending = data.some((o) => o.status === "analysis");
 
-      if (hasPending && soundEnabled) {
-        playNewOrderSound();
-      }
-
-      if (!hasPending) {
-        stopNewOrderSound();
-      }
+      if (hasPending && soundEnabled) playNewOrderSound();
+      if (!hasPending) stopNewOrderSound();
 
       setOrders(data);
     } catch (err) {
@@ -76,7 +68,7 @@ export default function OrderBoard({
   }
 
   // =====================================================
-  // 🔊 POLLING (SEGURANÇA)
+  // 🔊 POLLING DE SEGURANÇA
   // =====================================================
   useEffect(() => {
     loadOrdersFromApi();
@@ -92,8 +84,7 @@ export default function OrderBoard({
   // 🔍 FILTRO
   // =====================================================
   function normalize(text: any) {
-    if (!text) return "";
-    return String(text)
+    return String(text || "")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
@@ -109,50 +100,50 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES (SALVA NO BACKEND + REFRESH IMEDIATO)
+  // 🔥 FUNÇÃO ÚNICA DE UPDATE (ANTI BUG)
   // =====================================================
+  async function updateOrderStatus(id: string, status: string) {
+    if (loadingOrderId) return;
+
+    setLoadingOrderId(id);
+
+    try {
+      await apiFetch(`/orders/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+
+      await loadOrdersFromApi();
+    } catch (err) {
+      console.error("Erro ao atualizar pedido:", err);
+      alert("Erro ao atualizar pedido");
+    } finally {
+      setLoadingOrderId(null);
+    }
+  }
+
+  // =====================================================
+  // 🔥 AÇÕES
+  // =====================================================
+  function accept(id: string) {
+    stopNewOrderSound();
+    updateOrderStatus(id, "preparing");
+  }
+
+  function dispatchOrder(id: string) {
+    updateOrderStatus(id, "delivering");
+  }
+
+  function finishOrder(id: string) {
+    updateOrderStatus(id, "finished");
+  }
+
+  function reject(id: string) {
+    updateOrderStatus(id, "canceled");
+  }
+
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  async function accept(id: string) {
-    stopNewOrderSound();
-
-    await apiFetch(`/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "preparing" }),
-    });
-
-    await loadOrdersFromApi(); // ⚡ resposta imediata
-  }
-
-  async function reject(id: string) {
-    stopNewOrderSound();
-
-    await apiFetch(`/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "finished" }),
-    });
-
-    await loadOrdersFromApi();
-  }
-
-  async function dispatchOrder(id: string) {
-    await apiFetch(`/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "delivering" }),
-    });
-
-    await loadOrdersFromApi();
-  }
-
-  async function finishOrder(id: string) {
-    await apiFetch(`/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "finished" }),
-    });
-
-    await loadOrdersFromApi();
   }
 
   const sumFinished = filteredOrders
@@ -160,7 +151,7 @@ export default function OrderBoard({
     .reduce((acc, o) => acc + (o.total || 0), 0);
 
   // =====================================================
-  // 🔊 ATIVAR SOM (INTERAÇÃO DO USUÁRIO)
+  // 🔊 ATIVAR SOM
   // =====================================================
   function enableSound() {
     const audio = new Audio("/sounds/new-order.mp3");
@@ -168,12 +159,8 @@ export default function OrderBoard({
 
     audio
       .play()
-      .then(() => {
-        setSoundEnabled(true);
-      })
-      .catch((err) => {
-        console.error("❌ Chrome bloqueou o áudio:", err);
-      });
+      .then(() => setSoundEnabled(true))
+      .catch(() => console.warn("Áudio bloqueado"));
   }
 
   // =====================================================
@@ -200,6 +187,7 @@ export default function OrderBoard({
           onReject={reject}
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
+          loadingOrderId={loadingOrderId}
           onOpen={() => {}}
         />
 
@@ -211,6 +199,7 @@ export default function OrderBoard({
           onDispatch={dispatchOrder}
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
+          loadingOrderId={loadingOrderId}
           onOpen={() => {}}
         />
 
@@ -222,6 +211,7 @@ export default function OrderBoard({
           onFinish={finishOrder}
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
+          loadingOrderId={loadingOrderId}
           onOpen={() => {}}
         />
 
@@ -233,6 +223,7 @@ export default function OrderBoard({
           footerValue={sumFinished}
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
+          loadingOrderId={loadingOrderId}
           onOpen={() => {}}
         />
       </div>

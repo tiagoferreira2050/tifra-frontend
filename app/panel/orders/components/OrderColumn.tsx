@@ -35,6 +35,9 @@ interface Props {
   onToggleSelect: (id: string) => void;
   multiSelected: Record<string, boolean>;
   onOpen: (order: Order) => void;
+
+  /** 🔒 NOVO (opcional, não quebra nada) */
+  loadingOrderId?: string | null;
 }
 
 export default function OrderColumn({
@@ -50,6 +53,7 @@ export default function OrderColumn({
   onToggleSelect,
   multiSelected,
   onOpen,
+  loadingOrderId = null,
 }: Props) {
   return (
     <div className="flex flex-col">
@@ -80,6 +84,7 @@ export default function OrderColumn({
               key={order.id}
               order={order}
               selected={!!multiSelected[order.id]}
+              loadingOrderId={loadingOrderId}
               onToggle={() => onToggleSelect(order.id)}
               onAccept={onAccept ? () => onAccept(order.id) : undefined}
               onReject={onReject ? () => onReject(order.id) : undefined}
