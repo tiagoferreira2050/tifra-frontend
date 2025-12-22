@@ -34,11 +34,9 @@ export default function OrderBoard({
   // 🔥 ESTADOS
   // =====================================================
   const [orders, setOrders] = useState<Order[]>(externalOrders);
-  const [lastOrderIds, setLastOrderIds] = useState<string[]>([]);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>(
     {}
   );
-
   const [soundEnabled, setSoundEnabled] = useState(false);
 
   // =====================================================
@@ -49,7 +47,7 @@ export default function OrderBoard({
   }, [externalOrders]);
 
   // =====================================================
-  // 🔊 POLLING + SOM (LOOP ENQUANTO HOUVER PENDENTE)
+  // 🔊 POLLING + SOM (BACKEND É A VERDADE)
   // =====================================================
   useEffect(() => {
     let interval: any;
@@ -64,11 +62,10 @@ export default function OrderBoard({
           { method: "GET" }
         );
 
-        // 🔁 existe pedido em análise?
         const hasPending = data.some((o) => o.status === "analysis");
 
         if (hasPending && soundEnabled) {
-          playNewOrderSound(); // 🔁 loop
+          playNewOrderSound(); // 🔁 loop enquanto pendente
         }
 
         if (!hasPending) {
@@ -76,7 +73,6 @@ export default function OrderBoard({
         }
 
         setOrders(data);
-        setLastOrderIds(data.map((o) => o.id));
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
       }
@@ -112,40 +108,42 @@ export default function OrderBoard({
   });
 
   // =====================================================
-  // 🔥 AÇÕES
+  // 🔥 AÇÕES (SALVA NO BACKEND)
   // =====================================================
   function toggleSelect(id: string) {
     setMultiSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  function accept(id: string) {
+  async function accept(id: string) {
     stopNewOrderSound();
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "preparing" } : o
-      )
-    );
+
+    await apiFetch(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "preparing" }),
+    });
   }
 
-  function reject(id: string) {
+  async function reject(id: string) {
     stopNewOrderSound();
-    setOrders((prev) => prev.filter((o) => o.id !== id));
+
+    await apiFetch(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "finished" }),
+    });
   }
 
-  function dispatchOrder(id: string) {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "delivering" } : o
-      )
-    );
+  async function dispatchOrder(id: string) {
+    await apiFetch(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "delivering" }),
+    });
   }
 
-  function finishOrder(id: string) {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "finished" } : o
-      )
-    );
+  async function finishOrder(id: string) {
+    await apiFetch(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "finished" }),
+    });
   }
 
   const sumFinished = filteredOrders
@@ -162,7 +160,6 @@ export default function OrderBoard({
     audio
       .play()
       .then(() => {
-        console.log("🔊 Áudio liberado pelo usuário");
         setSoundEnabled(true);
       })
       .catch((err) => {
