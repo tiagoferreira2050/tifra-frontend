@@ -7,6 +7,8 @@ type Complement = {
   optionName?: string;
   label?: string;
   price?: number;
+  quantity?: number;
+  qty?: number;
 };
 
 type OrderItem = {
@@ -59,21 +61,11 @@ export default function OrderModal({
 
         {/* ================= DADOS DO PEDIDO ================= */}
         <div className="space-y-1 text-sm mb-3">
-          <p>
-            <b>Pedido:</b> #{order.id}
-          </p>
-          <p>
-            <b>Cliente:</b> {order.customer}
-          </p>
-          <p>
-            <b>Telefone:</b> {order.phone || "-"}
-          </p>
-          <p>
-            <b>Endereço:</b> {order.address || "-"}
-          </p>
-          <p>
-            <b>Pagamento:</b> {order.paymentMethod || "-"}
-          </p>
+          <p><b>Pedido:</b> #{order.id}</p>
+          <p><b>Cliente:</b> {order.customer}</p>
+          <p><b>Telefone:</b> {order.phone || "-"}</p>
+          <p><b>Endereço:</b> {order.address || "-"}</p>
+          <p><b>Pagamento:</b> {order.paymentMethod || "-"}</p>
         </div>
 
         <p className="font-semibold mb-4">
@@ -104,24 +96,31 @@ export default function OrderModal({
                 {item.complements && item.complements.length > 0 && (
                   <ul className="mt-2 ml-4 list-disc text-gray-600">
                     {item.complements.map((comp, i) => {
-                      // 🔥 compatível com pedidos antigos e novos
+                      // 🔒 Compatível com todos os formatos
                       const name =
                         comp.name ||
                         comp.optionName ||
                         comp.label ||
                         "Complemento";
 
+                      const qty =
+                        comp.quantity ??
+                        comp.qty ??
+                        1;
+
+                      const price =
+                        typeof comp.price === "number"
+                          ? comp.price
+                          : 0;
+
                       return (
                         <li key={i}>
-                          {name}
-                          {comp.price !== undefined && comp.price > 0 && (
+                          {qty}x {name}
+                          {price > 0 && (
                             <span className="text-gray-500">
                               {" "}
                               (+R${" "}
-                              {comp.price
-                                .toFixed(2)
-                                .replace(".", ",")}
-                              )
+                              {price.toFixed(2).replace(".", ",")})
                             </span>
                           )}
                         </li>
