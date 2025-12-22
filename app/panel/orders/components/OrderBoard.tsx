@@ -165,13 +165,24 @@ export default function OrderBoard({
   // 🔊 ATIVAR SOM (1 VEZ)
   // =====================================================
   function enableSound() {
-    const audio = new Audio("/sounds/new-order.mp3");
-    audio.play().then(() => {
-      audio.pause();
-      localStorage.setItem("soundEnabled", "true");
-      setSoundEnabled(true);
+  const audio = new Audio("/sounds/new-order.mp3");
+  audio.volume = 0.01; // quase mudo, mas REAL
+
+  audio.play()
+    .then(() => {
+      setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+
+        localStorage.setItem("soundEnabled", "true");
+        setSoundEnabled(true);
+      }, 300); // deixa tocar 300ms
+    })
+    .catch((err) => {
+      console.error("Erro ao ativar som:", err);
     });
-  }
+}
+
 
   // =====================================================
   // 🖥️ RENDER
