@@ -3,7 +3,9 @@
 import React, { useEffect } from "react";
 
 type Complement = {
-  name: string;
+  name?: string;
+  optionName?: string;
+  label?: string;
   price?: number;
 };
 
@@ -55,36 +57,44 @@ export default function OrderModal({
       >
         <h2 className="text-xl font-bold mb-4">Comanda do Pedido</h2>
 
-        {/* DADOS DO PEDIDO */}
+        {/* ================= DADOS DO PEDIDO ================= */}
         <div className="space-y-1 text-sm mb-3">
-          <p><b>Pedido:</b> #{order.id}</p>
-          <p><b>Cliente:</b> {order.customer}</p>
-          <p><b>Telefone:</b> {order.phone || "-"}</p>
-          <p><b>Endereço:</b> {order.address || "-"}</p>
-          <p><b>Pagamento:</b> {order.paymentMethod || "-"}</p>
+          <p>
+            <b>Pedido:</b> #{order.id}
+          </p>
+          <p>
+            <b>Cliente:</b> {order.customer}
+          </p>
+          <p>
+            <b>Telefone:</b> {order.phone || "-"}
+          </p>
+          <p>
+            <b>Endereço:</b> {order.address || "-"}
+          </p>
+          <p>
+            <b>Pagamento:</b> {order.paymentMethod || "-"}
+          </p>
         </div>
 
         <p className="font-semibold mb-4">
           Total: R$ {order.total.toFixed(2).replace(".", ",")}
         </p>
 
-        {/* ITENS */}
+        {/* ================= ITENS ================= */}
         <h3 className="font-semibold mb-2">Itens:</h3>
 
         <div className="space-y-3">
           {order.items && order.items.length > 0 ? (
             order.items.map((item, index) => (
-              <div
-                key={index}
-                className="border rounded-lg p-3 text-sm"
-              >
+              <div key={index} className="border rounded-lg p-3 text-sm">
                 {/* PRODUTO */}
                 <div className="flex justify-between font-medium">
                   <span>
                     {item.quantity}x {item.product?.name || "Produto"}
                   </span>
                   <span>
-                    R$ {(item.unitPrice * item.quantity)
+                    R${" "}
+                    {(item.unitPrice * item.quantity)
                       .toFixed(2)
                       .replace(".", ",")}
                   </span>
@@ -93,17 +103,30 @@ export default function OrderModal({
                 {/* COMPLEMENTOS */}
                 {item.complements && item.complements.length > 0 && (
                   <ul className="mt-2 ml-4 list-disc text-gray-600">
-                    {item.complements.map((comp, i) => (
-                      <li key={i}>
-                        {comp.name}
-                        {comp.price !== undefined && comp.price > 0 && (
-                          <span className="text-gray-500">
-                            {" "}
-                            (+R$ {comp.price.toFixed(2).replace(".", ",")})
-                          </span>
-                        )}
-                      </li>
-                    ))}
+                    {item.complements.map((comp, i) => {
+                      // 🔥 compatível com pedidos antigos e novos
+                      const name =
+                        comp.name ||
+                        comp.optionName ||
+                        comp.label ||
+                        "Complemento";
+
+                      return (
+                        <li key={i}>
+                          {name}
+                          {comp.price !== undefined && comp.price > 0 && (
+                            <span className="text-gray-500">
+                              {" "}
+                              (+R${" "}
+                              {comp.price
+                                .toFixed(2)
+                                .replace(".", ",")}
+                              )
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
