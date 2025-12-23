@@ -12,11 +12,8 @@ export default function DomainSettingsPage() {
   useEffect(() => {
     async function loadStore() {
       const data = await apiFetch("/store/me");
-
       setStoreName(data.name);
-      setSubdomain(
-        data.subdomain || generateSubdomain(data.name)
-      );
+      setSubdomain(data.subdomain);
     }
 
     loadStore().catch(() => {
@@ -27,12 +24,10 @@ export default function DomainSettingsPage() {
   async function save() {
     try {
       setLoading(true);
-
       await apiFetch("/store/update-subdomain", {
         method: "POST",
         body: JSON.stringify({ subdomain }),
       });
-
       alert("Subdomínio atualizado com sucesso!");
     } catch {
       alert("Erro ao atualizar subdomínio");
@@ -43,9 +38,7 @@ export default function DomainSettingsPage() {
 
   return (
     <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">
-        Domínio da Loja
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Domínio da Loja</h1>
 
       <p className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 p-3 rounded mb-4">
         ⚠️ Alterar o subdomínio muda o endereço do seu site.

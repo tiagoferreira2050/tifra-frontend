@@ -65,6 +65,8 @@ export default function LoginPage() {
 
       // 🔥🔥🔥 ESSENCIAL PARA TODO O SISTEMA
       localStorage.setItem("storeId", store.id);
+// 🔥🔥🔥 ESSENCIAL PARA TODA A API
+localStorage.setItem("tifra_user_id", user.id);
 
       // 🔥 REDIRECT CORRETO (SEM RELOAD DURO)
       router.replace("/panel");
