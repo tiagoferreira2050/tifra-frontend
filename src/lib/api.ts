@@ -15,12 +15,18 @@ export async function apiFetch(
       ? localStorage.getItem("tifra_token")
       : null;
 
+  const isBodyMethod =
+    options.method &&
+    ["POST", "PUT", "PATCH"].includes(options.method);
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
 
-    // 🔒 headers garantidos para POST / PATCH / PUT
+    // 🔑 ESSENCIAL PARA AUTH / CORS
+    credentials: "include",
+
     headers: {
-      "Content-Type": "application/json",
+      ...(isBodyMethod ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },

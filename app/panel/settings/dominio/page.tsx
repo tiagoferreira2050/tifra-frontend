@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { generateSubdomain } from "@/lib/generateSubdomain";
+import { apiFetch } from "@/lib/api";
 
 export default function DomainSettingsPage() {
   const [storeName, setStoreName] = useState("");
@@ -10,17 +11,12 @@ export default function DomainSettingsPage() {
 
   useEffect(() => {
     async function loadStore() {
-      const res = await fetch("/api/store/me", {
-        credentials: "include",
-      });
+      const data = await apiFetch("/store/me");
 
-      if (!res.ok) {
-        throw new Error("Erro ao carregar loja");
-      }
-
-      const data = await res.json();
       setStoreName(data.name);
-      setSubdomain(data.subdomain || generateSubdomain(data.name));
+      setSubdomain(
+        data.subdomain || generateSubdomain(data.name)
+      );
     }
 
     loadStore().catch(() => {
@@ -32,18 +28,10 @@ export default function DomainSettingsPage() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/store/update-subdomain", {
+      await apiFetch("/store/update-subdomain", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
         body: JSON.stringify({ subdomain }),
       });
-
-      if (!res.ok) {
-        throw new Error("Erro ao salvar");
-      }
 
       alert("Subdomínio atualizado com sucesso!");
     } catch {
@@ -55,7 +43,9 @@ export default function DomainSettingsPage() {
 
   return (
     <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Domínio da Loja</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Domínio da Loja
+      </h1>
 
       <p className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 p-3 rounded mb-4">
         ⚠️ Alterar o subdomínio muda o endereço do seu site.
