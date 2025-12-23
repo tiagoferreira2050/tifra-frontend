@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { generateSubdomain } from "@/lib/generateSubdomain";
 
-export default function SettingsPage() {
+export default function DomainSettingsPage() {
   const [storeName, setStoreName] = useState("");
   const [subdomain, setSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Carrega dados da loja
   useEffect(() => {
     async function loadStore() {
       const res = await fetch("/api/store/me");
@@ -22,23 +21,38 @@ export default function SettingsPage() {
   }, []);
 
   const save = async () => {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    await fetch("/api/store/update-subdomain", {
-      method: "POST",
-      body: JSON.stringify({ subdomain }),
-      headers: { "Content-Type": "application/json" },
-    });
+      const res = await fetch("/api/store/update-subdomain", {
+        method: "POST",
+        body: JSON.stringify({ subdomain }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-    setLoading(false);
-    alert("Subdomínio atualizado!");
+      if (!res.ok) {
+        throw new Error("Erro ao salvar");
+      }
+
+      alert("Subdomínio atualizado!");
+    } catch {
+      alert("Erro ao atualizar subdomínio");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Configuração da Loja</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Domínio da Loja
+      </h1>
 
-      {/* NOME DA LOJA */}
+      <p className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 p-3 rounded mb-4">
+        ⚠️ Alterar o subdomínio muda o endereço do seu site.
+        Links antigos deixarão de funcionar.
+      </p>
+
       <div className="mb-4">
         <label className="block text-sm font-semibold mb-1">
           Nome da loja
@@ -50,7 +64,6 @@ export default function SettingsPage() {
         />
       </div>
 
-      {/* SUBDOMÍNIO */}
       <div className="mb-2">
         <label className="block text-sm font-semibold mb-1">
           Subdomínio
@@ -64,9 +77,8 @@ export default function SettingsPage() {
         />
       </div>
 
-      {/* PREVIEW */}
       <p className="text-xs text-gray-600 mb-4">
-        Seu site ficará em:{" "}
+        Seu site ficará em{" "}
         <span className="font-semibold">
           https://{subdomain}.tifra.com.br
         </span>

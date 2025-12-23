@@ -1,84 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { generateSubdomain } from "@/lib/generateSubdomain";
+import { useRouter } from "next/navigation";
+import { Globe, Store, ArrowRight } from "lucide-react";
 
 export default function SettingsPage() {
-  const [storeName, setStoreName] = useState("");
-  const [subdomain, setSubdomain] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // 🔹 Carrega dados da loja
-  useEffect(() => {
-    async function loadStore() {
-      const res = await fetch("/api/store/me");
-      const data = await res.json();
-
-      setStoreName(data.name);
-      setSubdomain(data.subdomain || generateSubdomain(data.name));
-    }
-
-    loadStore();
-  }, []);
-
-  const save = async () => {
-    setLoading(true);
-
-    await fetch("/api/store/update-subdomain", {
-      method: "POST",
-      body: JSON.stringify({ subdomain }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    setLoading(false);
-    alert("Subdomínio atualizado!");
-  };
+  const router = useRouter();
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Configuração da Loja</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">
+        Configurações
+      </h1>
 
-      {/* NOME DA LOJA */}
-      <div className="mb-4">
-        <label className="block text-sm font-semibold mb-1">
-          Nome da loja
-        </label>
-        <input
-          className="border rounded px-3 py-2 w-full bg-gray-100"
-          value={storeName}
-          disabled
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* DOMÍNIO */}
+        <button
+          onClick={() => router.push("/panel/settings/dominio")}
+          className="border rounded-xl p-5 flex items-center justify-between hover:bg-gray-50 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-red-100 text-red-600 p-3 rounded-lg">
+              <Globe size={22} />
+            </div>
+
+            <div className="text-left">
+              <p className="font-semibold">
+                Domínio da Loja
+              </p>
+              <p className="text-sm text-gray-600">
+                Configure o endereço do seu site
+              </p>
+            </div>
+          </div>
+
+          <ArrowRight className="text-gray-400" />
+        </button>
+
+        {/* FUTURA CONFIGURAÇÃO */}
+        <div className="border rounded-xl p-5 opacity-50 cursor-not-allowed">
+          <div className="flex items-center gap-4">
+            <div className="bg-gray-100 text-gray-500 p-3 rounded-lg">
+              <Store size={22} />
+            </div>
+
+            <div>
+              <p className="font-semibold">
+                Dados da Loja
+              </p>
+              <p className="text-sm text-gray-500">
+                Em breve
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* SUBDOMÍNIO */}
-      <div className="mb-2">
-        <label className="block text-sm font-semibold mb-1">
-          Subdomínio
-        </label>
-        <input
-          className="border rounded px-3 py-2 w-full"
-          value={subdomain}
-          onChange={(e) =>
-            setSubdomain(generateSubdomain(e.target.value))
-          }
-        />
-      </div>
-
-      {/* PREVIEW */}
-      <p className="text-xs text-gray-600 mb-4">
-        Seu site ficará em:{" "}
-        <span className="font-semibold">
-          https://{subdomain}.tifra.com.br
-        </span>
-      </p>
-
-      <button
-        onClick={save}
-        disabled={loading}
-        className="w-full bg-red-600 text-white py-2 rounded-lg disabled:opacity-60"
-      >
-        {loading ? "Salvando..." : "Salvar"}
-      </button>
     </div>
   );
 }

@@ -104,11 +104,12 @@ export default function Sidebar() {
         onClick={() => router.push('/panel/trafego')}
       />
 
+      {/* 🔥 CONFIGURAÇÃO (ROTA CORRETA) */}
       <SidebarItem
         icon={<Settings size={18} />}
         label="Configuração"
         collapsed={collapsed}
-        onClick={() => router.push('/panel/configuracao')}
+        onClick={() => router.push('/panel/settings')}
       />
 
       <SidebarItem
