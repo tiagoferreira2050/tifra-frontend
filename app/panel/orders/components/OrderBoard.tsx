@@ -149,8 +149,9 @@ export default function OrderBoard({
   }
 
   const sumFinished = filteredOrders
-    .filter((o) => o.status === "finished")
-    .reduce((acc, o) => acc + (o.total || 0), 0);
+  .filter((o) => o.status === "finished")
+  .reduce((acc, o) => acc + (o.total || 0), 0);
+
 
   // =====================================================
   // 🔊 ATIVAR SOM
@@ -220,8 +221,15 @@ export default function OrderBoard({
         <OrderColumn
           title="Concluídos"
           color="border-green-600"
-          count={filteredOrders.filter((o) => o.status === "finished").length}
-          orders={filteredOrders.filter((o) => o.status === "finished")}
+          count={
+  filteredOrders.filter(
+    (o) => o.status === "finished" || o.status === "canceled"
+  ).length
+}
+          orders={filteredOrders.filter(
+  (o) => o.status === "finished" || o.status === "canceled"
+)}
+
           footerValue={sumFinished}
           onToggleSelect={toggleSelect}
           multiSelected={multiSelected}
