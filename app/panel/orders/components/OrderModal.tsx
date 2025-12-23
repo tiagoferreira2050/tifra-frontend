@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import React, { useEffect, useState } from "react";
 import CancelOrderModal from "./CancelOrderModal";
 
@@ -153,20 +154,14 @@ export default function OrderModal({
   onClose={() => setOpenCancelModal(false)}
   onConfirm={async (reason) => {
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/orders/${order.id}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "canceled",
-            reason,
-            canceledBy: "STORE",
-          }),
-        }
-      );
+      await apiFetch(`/orders/${order.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "canceled",
+          reason,
+          canceledBy: "STORE",
+        }),
+      });
 
       setOpenCancelModal(false);
       onClose(); // fecha modal principal
@@ -176,6 +171,7 @@ export default function OrderModal({
     }
   }}
 />
+
 
       </div>
     </div>
