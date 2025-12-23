@@ -92,14 +92,7 @@ export default function OrderCard({
           <h3 className="font-semibold text-sm">
             #{order.id}
           </h3>
-
-          {isCanceled && (
-            <span className="flex items-center gap-1 text-xs font-bold text-red-600">
-              <Lock size={12} />
-              CANCELADO
-            </span>
-          )}
-        </div>
+           </div>
 
         <span className="text-xs text-gray-500">
           {order.createdAt}
@@ -143,14 +136,14 @@ export default function OrderCard({
     <FileText size={13} className="ml-2" />
 
     {order.status === "canceled" ? (
-      <span className="font-bold text-red-600">
-        CANCELADO
-      </span>
-    ) : (
-      <span className="capitalize text-gray-600">
-        {order.status}
-      </span>
-    )}
+  <span className="text-xs font-semibold text-red-600">
+    Cancelado
+  </span>
+) : (
+  <span className="text-xs capitalize text-gray-600">
+    {order.status}
+  </span>
+)}
   </div>
 
   <span className="font-bold text-sm">
