@@ -25,12 +25,15 @@ type OrderItem = {
 type OrderModalType = {
   id: string;
   customer: string;
+  status: string; // 👈 ADD ISSO
   phone?: string;
   address?: string;
   paymentMethod?: string;
   total: number;
   items?: OrderItem[];
+  cancelReason?: string; // 👈 já prepara pro próximo passo
 };
+
 
 export default function OrderModal({
   order,
@@ -69,6 +72,18 @@ export default function OrderModal({
         <p className="font-semibold mb-4">
           Total: R$ {order.total.toFixed(2).replace(".", ",")}
         </p>
+
+{order.status === "canceled" && order.cancelReason && (
+  <div className="mt-3 p-3 rounded bg-red-50 border border-red-200">
+    <p className="text-sm font-semibold text-red-700">
+      Motivo do cancelamento:
+    </p>
+    <p className="text-sm text-red-600">
+      {order.cancelReason}
+    </p>
+  </div>
+)}
+
 
         {/* ================= ITENS ================= */}
         <h3 className="font-semibold mb-2">Itens:</h3>
@@ -131,21 +146,25 @@ export default function OrderModal({
         </div>
 
         {/* ================= AÇÕES ================= */}
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={() => setOpenCancelModal(true)}
-            className="flex-1 bg-red-600 text-white py-2 rounded"
-          >
-            Cancelar pedido
-          </button>
+      <div className="flex gap-2 mt-4">
+  {order.status !== "canceled" && (
+    <button
+      onClick={() => setOpenCancelModal(true)}
+      className="flex-1 bg-red-600 text-white py-2 rounded"
+    >
+      Cancelar pedido
+    </button>
+  )}
 
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-300 py-2 rounded"
-          >
-            Fechar
-          </button>
-        </div>
+  <button
+    onClick={onClose}
+    className="flex-1 bg-gray-300 py-2 rounded"
+  >
+    Fechar
+  </button>
+</div>
+
+
 
         {/* 🔒 PLACEHOLDER SEGURO (não renderiza nada) */}
         <CancelOrderModal

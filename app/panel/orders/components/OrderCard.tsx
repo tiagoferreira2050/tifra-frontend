@@ -136,18 +136,28 @@ export default function OrderCard({
 
       {/* INFO */}
       <div className="flex justify-between items-center mt-3">
-        <div className="flex items-center text-xs text-gray-700 gap-2">
-          <ShoppingBag size={13} />
-          <span>{order.items?.length ?? 0} itens</span>
+  <div className="flex items-center text-xs text-gray-700 gap-2">
+    <ShoppingBag size={13} />
+    <span>{order.items?.length ?? 0} itens</span>
 
-          <FileText size={13} className="ml-2" />
-          <span className="capitalize">{order.status}</span>
-        </div>
+    <FileText size={13} className="ml-2" />
 
-        <span className="font-bold text-sm">
-          R$ {order.total.toFixed(2).replace(".", ",")}
-        </span>
-      </div>
+    {order.status === "canceled" ? (
+      <span className="font-bold text-red-600">
+        CANCELADO
+      </span>
+    ) : (
+      <span className="capitalize text-gray-600">
+        {order.status}
+      </span>
+    )}
+  </div>
+
+  <span className="font-bold text-sm">
+    R$ {order.total.toFixed(2).replace(".", ",")}
+  </span>
+</div>
+
 
       {/* AÇÕES (SÓ SE NÃO FOR CANCELADO) */}
       {!isCanceled && (
