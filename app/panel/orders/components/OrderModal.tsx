@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 type Complement = {
   name?: string;
@@ -37,6 +37,9 @@ export default function OrderModal({
   order: OrderModalType | null;
   onClose: () => void;
 }) {
+  // 🔒 NOVO (não interfere em nada existente)
+  const [openCancelModal, setOpenCancelModal] = useState(false);
+
   if (!order) return null;
 
   // Fecha com ESC
@@ -79,7 +82,6 @@ export default function OrderModal({
           {order.items && order.items.length > 0 ? (
             order.items.map((item, index) => (
               <div key={index} className="border rounded-lg p-3 text-sm">
-                {/* PRODUTO */}
                 <div className="flex justify-between font-medium">
                   <span>
                     {item.quantity}x {item.product?.name || "Produto"}
@@ -92,11 +94,9 @@ export default function OrderModal({
                   </span>
                 </div>
 
-                {/* COMPLEMENTOS */}
                 {item.complements && item.complements.length > 0 && (
                   <ul className="mt-2 ml-4 list-disc text-gray-600">
                     {item.complements.map((comp, i) => {
-                      // 🔒 Compatível com todos os formatos
                       const name =
                         comp.name ||
                         comp.optionName ||
@@ -135,12 +135,25 @@ export default function OrderModal({
           )}
         </div>
 
-        <button
-          onClick={onClose}
-          className="mt-6 bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded w-full"
-        >
-          Fechar
-        </button>
+        {/* ================= AÇÕES ================= */}
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setOpenCancelModal(true)}
+            className="flex-1 bg-red-600 text-white py-2 rounded"
+          >
+            Cancelar pedido
+          </button>
+
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-300 py-2 rounded"
+          >
+            Fechar
+          </button>
+        </div>
+
+        {/* 🔒 PLACEHOLDER SEGURO (não renderiza nada) */}
+        {openCancelModal && null}
       </div>
     </div>
   );
