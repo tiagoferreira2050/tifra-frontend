@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import CancelOrderModal from "./CancelOrderModal";
 
 type Complement = {
   name?: string;
@@ -146,7 +147,36 @@ export default function OrderModal({
         </div>
 
         {/* 🔒 PLACEHOLDER SEGURO (não renderiza nada) */}
-        {openCancelModal && null}
+        <CancelOrderModal
+  open={openCancelModal}
+  orderId={order.id}
+  onClose={() => setOpenCancelModal(false)}
+  onConfirm={async (reason) => {
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/orders/${order.id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "canceled",
+            reason,
+            canceledBy: "STORE",
+          }),
+        }
+      );
+
+      setOpenCancelModal(false);
+      onClose(); // fecha modal principal
+    } catch (err) {
+      console.error("Erro ao cancelar pedido:", err);
+      alert("Erro ao cancelar pedido");
+    }
+  }}
+/>
+
       </div>
     </div>
   );
