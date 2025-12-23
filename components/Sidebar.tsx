@@ -94,13 +94,14 @@ export default function Sidebar() {
         onClick={() => router.push('/clientes')}
       />
 
-      <SidebarItem
-        icon={<BarChart2 size={18} />}
-        label="Relatórios"
-        collapsed={collapsed}
-        open={open.relatorios}
-        onClick={() => toggle("relatorios")}
-      />
+     <SidebarItem
+  icon={<BarChart2 size={18} />}
+  label="Relatórios"
+  collapsed={collapsed}
+  noDropdown
+  onClick={() => router.push('/panel/reports')}
+/>
+
 
       <SidebarItem
         icon={<CreditCard size={18} />}
