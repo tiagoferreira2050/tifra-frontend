@@ -59,13 +59,16 @@ export default function OrderCard({
 
   return (
     <div
-      className={`p-3 border rounded-lg transition-colors ${
-        selected
-          ? "bg-gray-100 border-gray-400"
-          : "hover:bg-gray-50 border-gray-200"
-      } ${isLoading ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}
-      onClick={() => onOpen?.()}
-    >
+  className={`p-3 border rounded-lg transition-colors ${
+    order.status === "canceled"
+      ? "bg-red-50 border-red-500 opacity-80"
+      : selected
+      ? "bg-gray-100 border-gray-400"
+      : "hover:bg-gray-50 border-gray-200"
+  } ${isLoading ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}
+  onClick={() => onOpen?.()}
+>
+
       {/* HEADER */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
