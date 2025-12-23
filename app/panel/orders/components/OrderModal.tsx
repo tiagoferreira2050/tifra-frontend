@@ -43,13 +43,20 @@ export default function OrderModal({
   if (!order) return null;
 
   // Fecha com ESC
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+ useEffect(() => {
+  if (!order) return;
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "Escape") onClose();
+  }
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [order, onClose]);
+
 
   return (
     <div
