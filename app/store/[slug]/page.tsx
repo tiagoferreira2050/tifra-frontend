@@ -14,19 +14,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
+  // 🔒 segurança básica
   if (!slug || typeof slug !== "string") {
     return notFound();
   }
 
   if (!API_URL) {
-    throw new Error("API_URL não configurada");
+    throw new Error("NEXT_PUBLIC_API_URL não configurada");
   }
 
-  // 🔥 Busca dados da loja + categorias via API
-  const res = await fetch(`${API_URL}/store/${slug}`, {
-    // importante para páginas públicas
-    cache: "no-store",
-  });
+  // 🔥 ROTA PÚBLICA CORRETA (POR SUBDOMÍNIO)
+  const res = await fetch(
+    `${API_URL}/stores/by-subdomain/${slug}`,
+    {
+      cache: "no-store", // página pública sempre atualizada
+    }
+  );
 
   if (!res.ok) {
     return notFound();
