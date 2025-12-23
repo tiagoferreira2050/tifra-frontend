@@ -10,9 +10,16 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
+  // 🔐 TOKEN (se existir)
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("tifra_token")
+      : null;
+
+  // 👤 USER ID (necessário para rotas /store)
+  const userId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("tifra_user_id")
       : null;
 
   const isBodyMethod =
@@ -22,17 +29,23 @@ export async function apiFetch(
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
 
-    // 🔑 ESSENCIAL PARA AUTH / CORS
+    // 🔑 essencial para CORS + cookies (Railway / Vercel)
     credentials: "include",
 
     headers: {
       ...(isBodyMethod ? { "Content-Type": "application/json" } : {}),
+
+      // 🔐 Auth por token (mantido)
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
+      // 🔥 FIX DEFINITIVO para /store/me e /store/update-subdomain
+      ...(userId ? { "x-user-id": userId } : {}),
+
       ...(options.headers || {}),
     },
   });
 
-  // 🔍 tenta ler JSON, mas não quebra se vier vazio
+  // 🔍 tenta ler JSON, sem quebrar se vier vazio
   let data: any = null;
   try {
     data = await res.json();
