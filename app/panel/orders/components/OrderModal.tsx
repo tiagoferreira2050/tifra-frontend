@@ -24,15 +24,17 @@ type OrderItem = {
 
 type OrderModalType = {
   id: string;
+  orderCode?: string; // 👈 ADD AQUI
   customer: string;
-  status: string; // 👈 ADD ISSO
+  status: string;
   phone?: string;
   address?: string;
   paymentMethod?: string;
   total: number;
   items?: OrderItem[];
-  cancelReason?: string; // 👈 já prepara pro próximo passo
+  cancelReason?: string;
 };
+
 
 
 export default function OrderModal({

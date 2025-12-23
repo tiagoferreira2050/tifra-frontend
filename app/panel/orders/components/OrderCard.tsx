@@ -17,6 +17,7 @@ import {
 /* 🔒 Tipo padronizado */
 export type Order = {
   id: string;
+  orderCode?: string; // 👈 ADD
   customer: string;
   status: string;
   total: number;
@@ -29,8 +30,8 @@ export type Order = {
   items?: any[];
   paymentMethod?: string;
   deliveryFee?: number;
-  cancelReason?: string;
 };
+
 
 interface Props {
   order: Order;
@@ -90,8 +91,8 @@ export default function OrderCard({
           )}
 
           <h3 className="font-semibold text-sm">
-            #{order.id}
-          </h3>
+  {order.orderCode ?? "—"}
+</h3>
            </div>
 
         <span className="text-xs text-gray-500">
