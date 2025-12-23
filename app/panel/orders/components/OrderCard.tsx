@@ -120,12 +120,6 @@ export default function OrderCard({
         </div>
       )}
 
-      {/* MOTIVO DO CANCELAMENTO */}
-      {isCanceled && order.cancelReason && (
-        <span className="mt-2 inline-block text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">
-          {order.cancelReason}
-        </span>
-      )}
 
       {/* INFO */}
       <div className="flex justify-between items-center mt-3">
