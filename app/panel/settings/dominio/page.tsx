@@ -8,35 +8,64 @@ export default function DomainSettingsPage() {
   const [subdomain, setSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🔹 CARREGA DADOS DA LOJA
   useEffect(() => {
     async function loadStore() {
-      const res = await fetch("/api/store/me");
-      const data = await res.json();
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/stores/me`,
+          {
+            headers: {
+              "x-user-id": localStorage.getItem("userId") || "",
+            },
+          }
+        );
 
-      setStoreName(data.name);
-      setSubdomain(data.subdomain || generateSubdomain(data.name));
+        if (!res.ok) {
+          throw new Error("Erro ao carregar loja");
+        }
+
+        const data = await res.json();
+
+        setStoreName(data.name);
+        setSubdomain(
+          data.subdomain || generateSubdomain(data.name)
+        );
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao carregar dados da loja");
+      }
     }
 
     loadStore();
   }, []);
 
+  // 🔹 SALVAR SUBDOMÍNIO
   const save = async () => {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/store/update-subdomain", {
-        method: "POST",
-        body: JSON.stringify({ subdomain }),
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/stores/update-subdomain`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": localStorage.getItem("userId") || "",
+          },
+          body: JSON.stringify({ subdomain }),
+        }
+      );
 
       if (!res.ok) {
-        throw new Error("Erro ao salvar");
+        const err = await res.json();
+        throw new Error(err.error || "Erro ao salvar");
       }
 
-      alert("Subdomínio atualizado!");
-    } catch {
-      alert("Erro ao atualizar subdomínio");
+      alert("Subdomínio atualizado com sucesso!");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Erro ao atualizar subdomínio");
     } finally {
       setLoading(false);
     }
@@ -53,6 +82,7 @@ export default function DomainSettingsPage() {
         Links antigos deixarão de funcionar.
       </p>
 
+      {/* NOME DA LOJA */}
       <div className="mb-4">
         <label className="block text-sm font-semibold mb-1">
           Nome da loja
@@ -64,6 +94,7 @@ export default function DomainSettingsPage() {
         />
       </div>
 
+      {/* SUBDOMÍNIO */}
       <div className="mb-2">
         <label className="block text-sm font-semibold mb-1">
           Subdomínio
@@ -77,6 +108,7 @@ export default function DomainSettingsPage() {
         />
       </div>
 
+      {/* PREVIEW */}
       <p className="text-xs text-gray-600 mb-4">
         Seu site ficará em{" "}
         <span className="font-semibold">
