@@ -64,7 +64,7 @@ export default function OrderCard({
       ? "bg-red-50 border-red-500 opacity-80"
       : selected
       ? "bg-gray-100 border-gray-400"
-      : "hover:bg-gray-50 border-gray-200"
+      : "bg-white hover:bg-gray-50 border-gray-200"
   } ${isLoading ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}
   onClick={() => onOpen?.()}
 >
