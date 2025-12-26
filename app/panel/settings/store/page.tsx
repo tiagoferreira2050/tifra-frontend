@@ -22,20 +22,34 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
-/**
- * 🔹 UPLOAD DE IMAGEM
- * Agora: preview local
- * Depois: Cloudinary
- */
+/* ===============================
+   CLOUDINARY UPLOAD (IGUAL PRODUTO)
+=============================== */
 async function uploadImage(file: File): Promise<string> {
-  // futuramente: enviar pro backend / Cloudinary
-  return URL.createObjectURL(file);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  if (!API_URL) throw new Error("API não configurada");
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/upload`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data?.url || !data.url.startsWith("http")) {
+    throw new Error("Erro ao enviar imagem");
+  }
+
+  return data.url;
 }
 
 export default function StorePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [storeId, setStoreId] = useState<string | null>(null);
 
   /* ===============================
      STATE
@@ -53,41 +67,26 @@ export default function StorePage() {
   });
 
   /* ===============================
-     LOAD DATA (PADRÃO DOMÍNIO)
+     LOAD (UMA ÚNICA FONTE)
   =============================== */
   useEffect(() => {
     async function load() {
       try {
-        // 🔹 STORE
-        const storeData = await apiFetch("/api/store/me");
-        setStoreId(storeData.id);
-
-        setStore({
-          name: storeData.name ?? "",
-          description: storeData.description ?? "",
-          logoUrl: storeData.logoUrl ?? null,
-          coverImage: storeData.coverImage ?? null,
-        });
-
-        // 🔹 STORE SETTINGS
         const data = await apiFetch("/api/store/settings");
 
-setStoreId(data.store.id);
+        setStore({
+          name: data.store.name ?? "",
+          description: data.store.description ?? "",
+          logoUrl: data.store.logoUrl ?? null,
+          coverImage: data.store.coverImage ?? null,
+        });
 
-setStore({
-  name: data.store.name ?? "",
-  description: data.store.description ?? "",
-  logoUrl: data.store.logoUrl ?? null,
-  coverImage: data.store.coverImage ?? null,
-});
-
-setSettings({
-  whatsapp: data.settings.whatsapp ?? "",
-  minOrderValue: data.settings.minOrderValue ?? 0,
-});
-
+        setSettings({
+          whatsapp: data.settings.whatsapp ?? "",
+          minOrderValue: data.settings.minOrderValue ?? 0,
+        });
       } catch (err) {
-        console.error("Erro ao carregar dados da loja:", err);
+        console.error("Erro ao carregar loja:", err);
         alert("Erro ao carregar dados da loja");
       } finally {
         setLoading(false);
@@ -101,7 +100,7 @@ setSettings({
      SAVE
   =============================== */
   async function handleSave() {
-    if (!storeId || saving) return;
+    if (saving) return;
 
     if (!settings.whatsapp) {
       alert("WhatsApp é obrigatório");
@@ -111,30 +110,17 @@ setSettings({
     try {
       setSaving(true);
 
-      // 🔹 STORE
-      await apiFetch(`/api/store/${storeId}`, {
+      await apiFetch("/api/store/settings", {
         method: "PUT",
         body: JSON.stringify({
           name: store.name.trim(),
           description: store.description.trim(),
           logoUrl: store.logoUrl,
           coverImage: store.coverImage,
+          whatsapp: settings.whatsapp,
+          minOrderValue: settings.minOrderValue,
         }),
       });
-
-      // 🔹 STORE SETTINGS (UPSERT)
-      await apiFetch("/api/store/settings", {
-  method: "PUT",
-  body: JSON.stringify({
-    name: store.name,
-    description: store.description,
-    logoUrl: store.logoUrl,
-    coverImage: store.coverImage,
-    whatsapp: settings.whatsapp,
-    minOrderValue: settings.minOrderValue,
-  }),
-});
-
 
       alert("Dados da loja salvos com sucesso ✅");
     } catch (err) {
@@ -177,9 +163,13 @@ setSettings({
               hidden
               onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (file) {
+                if (!file) return;
+
+                try {
                   const url = await uploadImage(file);
                   setStore((s) => ({ ...s, coverImage: url }));
+                } catch {
+                  alert("Erro ao enviar imagem");
                 }
               }}
             />
@@ -211,9 +201,13 @@ setSettings({
               hidden
               onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (file) {
+                if (!file) return;
+
+                try {
                   const url = await uploadImage(file);
                   setStore((s) => ({ ...s, logoUrl: url }));
+                } catch {
+                  alert("Erro ao enviar imagem");
                 }
               }}
             />
