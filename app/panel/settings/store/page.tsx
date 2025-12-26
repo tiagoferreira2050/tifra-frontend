@@ -6,27 +6,36 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
 const STORE_SUBDOMAIN = process.env.NEXT_PUBLIC_STORE_SUBDOMAIN;
 
-export default function StoreSettingsPage() {
+export default function StorePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({
-    isOpen: true,
-    openTime: "13:00",
-    closeTime: "22:00",
-    deliveryFee: 0,
+  // ===============================
+  // STORE (identidade)
+  // ===============================
+  const [store, setStore] = useState({
+    name: "",
+    description: "",
+    logoUrl: "",
+    coverImage: "",
+    address: "",
+  });
+
+  // ===============================
+  // SETTINGS (dados públicos)
+  // ===============================
+  const [settings, setSettings] = useState({
     minOrderValue: 0,
-    estimatedTime: "30-45 min",
     whatsapp: "",
   });
 
-  // =====================================================
-  // 🔹 LOAD SETTINGS (rota pública)
-  // =====================================================
+  // ===============================
+  // LOAD DATA
+  // ===============================
   useEffect(() => {
-    async function loadSettings() {
+    async function load() {
       try {
-        if (!STORE_SUBDOMAIN || !BACKEND_URL) return;
+        if (!BACKEND_URL || !STORE_SUBDOMAIN) return;
 
         const res = await fetch(
           `${BACKEND_URL}/store/${STORE_SUBDOMAIN}/settings`
@@ -34,194 +43,209 @@ export default function StoreSettingsPage() {
 
         const data = await res.json();
 
+        if (data?.store) {
+          setStore({
+            name: data.store.name || "",
+            description: data.store.description || "",
+            logoUrl: data.store.logoUrl || "",
+            coverImage: data.store.coverImage || "",
+            address: data.store.address || "",
+          });
+        }
+
         if (data?.settings) {
-          setForm({
-            isOpen: data.settings.isOpen,
-            openTime: data.settings.openTime,
-            closeTime: data.settings.closeTime,
-            deliveryFee: data.settings.deliveryFee,
-            minOrderValue: data.settings.minOrderValue,
-            estimatedTime: data.settings.estimatedTime,
+          setSettings({
+            minOrderValue: data.settings.minOrderValue || 0,
             whatsapp: data.settings.whatsapp || "",
           });
         }
       } catch (error) {
-        console.error("Erro ao carregar configurações:", error);
+        console.error("Erro ao carregar dados da loja", error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadSettings();
+    load();
   }, []);
 
-  // =====================================================
-  // 🔹 SAVE SETTINGS (rota admin)
-  // =====================================================
+  // ===============================
+  // SAVE
+  // ===============================
   async function handleSave() {
     try {
-      if (!STORE_ID || !BACKEND_URL) {
-        alert("STORE_ID ou BACKEND_URL não configurado");
+      if (!BACKEND_URL || !STORE_ID) {
+        alert("Configuração inválida");
         return;
       }
 
       setSaving(true);
 
-      const res = await fetch(
-        `${BACKEND_URL}/store/${STORE_ID}/settings`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      // 🔹 Atualiza Store
+      await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(store),
+      });
 
-      if (!res.ok) {
-        throw new Error("Erro ao salvar");
-      }
+      // 🔹 Atualiza StoreSettings
+      await fetch(`${BACKEND_URL}/store/${STORE_ID}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
 
-      alert("Configurações salvas com sucesso ✅");
+      alert("Minha loja salva com sucesso ✅");
     } catch (error) {
       console.error(error);
-      alert("Erro ao salvar configurações");
+      alert("Erro ao salvar dados da loja");
     } finally {
       setSaving(false);
     }
   }
 
   if (loading) {
-    return <p className="p-6">Carregando configurações...</p>;
+    return <p className="p-6">Carregando dados da loja...</p>;
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">
-        Configurações da Loja
-      </h1>
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Minha loja</h1>
 
-      <div className="space-y-4">
-        {/* STATUS */}
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={form.isOpen}
-            onChange={(e) =>
-              setForm({ ...form, isOpen: e.target.checked })
-            }
-          />
-          <span>Loja aberta</span>
+      {/* NOME */}
+      <div>
+        <label className="block font-medium mb-1">
+          Nome da loja
         </label>
-
-        {/* HORÁRIOS */}
-        <div>
-          <label className="block text-sm font-medium">
-            Horário de abertura
-          </label>
-          <input
-            type="time"
-            value={form.openTime}
-            onChange={(e) =>
-              setForm({ ...form, openTime: e.target.value })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">
-            Horário de fechamento
-          </label>
-          <input
-            type="time"
-            value={form.closeTime}
-            onChange={(e) =>
-              setForm({ ...form, closeTime: e.target.value })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        {/* TAXA */}
-        <div>
-          <label className="block text-sm font-medium">
-            Taxa de entrega
-          </label>
-          <input
-            type="number"
-            value={form.deliveryFee}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                deliveryFee: Number(e.target.value),
-              })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        {/* PEDIDO MÍNIMO */}
-        <div>
-          <label className="block text-sm font-medium">
-            Pedido mínimo
-          </label>
-          <input
-            type="number"
-            value={form.minOrderValue}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                minOrderValue: Number(e.target.value),
-              })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        {/* TEMPO */}
-        <div>
-          <label className="block text-sm font-medium">
-            Tempo estimado
-          </label>
-          <input
-            type="text"
-            value={form.estimatedTime}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                estimatedTime: e.target.value,
-              })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        {/* WHATSAPP */}
-        <div>
-          <label className="block text-sm font-medium">
-            WhatsApp
-          </label>
-          <input
-            type="text"
-            value={form.whatsapp}
-            onChange={(e) =>
-              setForm({ ...form, whatsapp: e.target.value })
-            }
-            className="border rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-black text-white rounded px-4 py-2 mt-4 disabled:opacity-50"
-        >
-          {saving ? "Salvando..." : "Salvar"}
-        </button>
+        <input
+          value={store.name}
+          onChange={(e) =>
+            setStore({ ...store, name: e.target.value })
+          }
+          className="border rounded px-3 py-2 w-full"
+        />
       </div>
+
+      {/* DESCRIÇÃO */}
+      <div>
+        <label className="block font-medium mb-1">
+          Descrição da loja
+        </label>
+        <textarea
+          value={store.description}
+          onChange={(e) =>
+            setStore({
+              ...store,
+              description: e.target.value,
+            })
+          }
+          maxLength={400}
+          className="border rounded px-3 py-2 w-full"
+          rows={4}
+        />
+        <p className="text-xs text-gray-500">
+          Máx. 400 caracteres
+        </p>
+      </div>
+
+      {/* LOGO */}
+      <div>
+        <label className="block font-medium mb-1">
+          Logo da loja (URL)
+        </label>
+        <input
+          value={store.logoUrl}
+          onChange={(e) =>
+            setStore({
+              ...store,
+              logoUrl: e.target.value,
+            })
+          }
+          className="border rounded px-3 py-2 w-full"
+          placeholder="https://..."
+        />
+      </div>
+
+      {/* CAPA */}
+      <div>
+        <label className="block font-medium mb-1">
+          Imagem de capa (URL)
+        </label>
+        <input
+          value={store.coverImage}
+          onChange={(e) =>
+            setStore({
+              ...store,
+              coverImage: e.target.value,
+            })
+          }
+          className="border rounded px-3 py-2 w-full"
+          placeholder="https://..."
+        />
+      </div>
+
+      {/* ENDEREÇO */}
+      <div>
+        <label className="block font-medium mb-1">
+          Endereço completo
+        </label>
+        <textarea
+          value={store.address}
+          onChange={(e) =>
+            setStore({
+              ...store,
+              address: e.target.value,
+            })
+          }
+          className="border rounded px-3 py-2 w-full"
+          rows={2}
+        />
+      </div>
+
+      {/* WHATSAPP */}
+      <div>
+        <label className="block font-medium mb-1">
+          WhatsApp
+        </label>
+        <input
+          value={settings.whatsapp}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              whatsapp: e.target.value,
+            })
+          }
+          className="border rounded px-3 py-2 w-full"
+          placeholder="DDD + número"
+        />
+      </div>
+
+      {/* PEDIDO MÍNIMO */}
+      <div>
+        <label className="block font-medium mb-1">
+          Pedido mínimo (R$)
+        </label>
+        <input
+          type="number"
+          min={0}
+          value={settings.minOrderValue}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              minOrderValue: Number(e.target.value),
+            })
+          }
+          className="border rounded px-3 py-2 w-full"
+        />
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="bg-black text-white px-6 py-2 rounded disabled:opacity-50"
+      >
+        {saving ? "Salvando..." : "Salvar"}
+      </button>
     </div>
   );
 }
-
-

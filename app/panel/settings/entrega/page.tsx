@@ -13,6 +13,7 @@ export default function EntregaPage() {
   const [form, setForm] = useState({
     deliveryFee: 0,
     minOrderValue: 0,
+    estimatedTime: "30-45 min",
   });
 
   // =====================================================
@@ -33,6 +34,7 @@ export default function EntregaPage() {
           setForm({
             deliveryFee: data.settings.deliveryFee ?? 0,
             minOrderValue: data.settings.minOrderValue ?? 0,
+            estimatedTime: data.settings.estimatedTime || "30-45 min",
           });
         }
       } catch (error) {
@@ -92,6 +94,28 @@ export default function EntregaPage() {
       </h1>
 
       <div className="space-y-4">
+        {/* TEMPO ESTIMADO */}
+        <div>
+          <label className="block text-sm font-medium">
+            Tempo estimado de entrega
+          </label>
+          <input
+            type="text"
+            value={form.estimatedTime}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                estimatedTime: e.target.value,
+              })
+            }
+            className="border rounded px-3 py-2 w-full"
+            placeholder="Ex: 30-45 min"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Esse tempo será exibido no cardápio público
+          </p>
+        </div>
+
         {/* TAXA DE ENTREGA */}
         <div>
           <label className="block text-sm font-medium">
@@ -110,9 +134,6 @@ export default function EntregaPage() {
             }
             className="border rounded px-3 py-2 w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Esse valor será somado automaticamente no pedido
-          </p>
         </div>
 
         {/* PEDIDO MÍNIMO */}
@@ -133,9 +154,6 @@ export default function EntregaPage() {
             }
             className="border rounded px-3 py-2 w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            O cliente não poderá finalizar abaixo desse valor
-          </p>
         </div>
 
         <button
