@@ -70,14 +70,22 @@ export default function StorePage() {
         });
 
         // 🔹 STORE SETTINGS
-        const settingsData = await apiFetch(
-          `/api/store/${storeData.id}/settings`
-        );
+        const data = await apiFetch("/api/store/settings");
 
-        setSettings({
-          whatsapp: settingsData?.whatsapp ?? "",
-          minOrderValue: settingsData?.minOrderValue ?? 0,
-        });
+setStoreId(data.store.id);
+
+setStore({
+  name: data.store.name ?? "",
+  description: data.store.description ?? "",
+  logoUrl: data.store.logoUrl ?? null,
+  coverImage: data.store.coverImage ?? null,
+});
+
+setSettings({
+  whatsapp: data.settings.whatsapp ?? "",
+  minOrderValue: data.settings.minOrderValue ?? 0,
+});
+
       } catch (err) {
         console.error("Erro ao carregar dados da loja:", err);
         alert("Erro ao carregar dados da loja");
