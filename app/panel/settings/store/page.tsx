@@ -13,14 +13,12 @@ function formatPhone(value: string) {
   const numbers = value.replace(/\D/g, "");
 
   if (numbers.length <= 10) {
-    // (xx) xxxx-xxxx
     return numbers
       .replace(/^(\d{2})(\d)/, "($1) $2")
       .replace(/(\d{4})(\d)/, "$1-$2")
       .slice(0, 14);
   }
 
-  // (xx) xxxxx-xxxx
   return numbers
     .replace(/^(\d{2})(\d)/, "($1) $2")
     .replace(/(\d{5})(\d)/, "$1-$2")
@@ -43,8 +41,8 @@ export default function StorePage() {
   const [store, setStore] = useState({
     name: "",
     description: "",
-    logoUrl: "",
-    coverImage: "",
+    logoUrl: null as string | null,
+    coverImage: null as string | null,
   });
 
   const [settings, setSettings] = useState({
@@ -69,8 +67,8 @@ export default function StorePage() {
           setStore({
             name: data.store.name || "",
             description: data.store.description || "",
-            logoUrl: data.store.logoUrl || "",
-            coverImage: data.store.coverImage || "",
+            logoUrl: data.store.logoUrl || null,
+            coverImage: data.store.coverImage || null,
           });
         }
 
@@ -94,6 +92,8 @@ export default function StorePage() {
      SAVE
   =============================== */
   async function handleSave() {
+    if (saving) return;
+
     try {
       if (!STORE_ID || !BACKEND_URL) return;
 
@@ -108,7 +108,12 @@ export default function StorePage() {
       await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(store),
+        body: JSON.stringify({
+          name: store.name.trim(),
+          description: store.description.trim(),
+          logoUrl: store.logoUrl,
+          coverImage: store.coverImage,
+        }),
       });
 
       // 🔹 StoreSettings
