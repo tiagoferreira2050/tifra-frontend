@@ -119,7 +119,7 @@ export default function StorePage() {
       setSaving(true);
 
       // 🔹 STORE
-      await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
+      await fetch(`${BACKEND_URL}/api/store/${STORE_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
