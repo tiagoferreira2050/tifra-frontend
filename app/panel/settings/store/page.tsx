@@ -13,12 +13,14 @@ function formatPhone(value: string) {
   const numbers = value.replace(/\D/g, "");
 
   if (numbers.length <= 10) {
+    // (xx) xxxx-xxxx
     return numbers
       .replace(/^(\d{2})(\d)/, "($1) $2")
       .replace(/(\d{4})(\d)/, "$1-$2")
       .slice(0, 14);
   }
 
+  // (xx) xxxxx-xxxx
   return numbers
     .replace(/^(\d{2})(\d)/, "($1) $2")
     .replace(/(\d{5})(\d)/, "$1-$2")
@@ -38,20 +40,28 @@ export default function StorePage() {
   /* ===============================
      STATE
   =============================== */
-  const [store, setStore] = useState({
+  const [store, setStore] = useState<{
+    name: string;
+    description: string;
+    logoUrl: string | null;
+    coverImage: string | null;
+  }>({
     name: "",
     description: "",
-    logoUrl: null as string | null,
-    coverImage: null as string | null,
+    logoUrl: null,
+    coverImage: null,
   });
 
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<{
+    minOrderValue: number;
+    whatsapp: string;
+  }>({
     minOrderValue: 0,
     whatsapp: "",
   });
 
   /* ===============================
-     LOAD DATA
+     LOAD DATA (PUBLIC SETTINGS)
   =============================== */
   useEffect(() => {
     async function load() {
@@ -59,8 +69,12 @@ export default function StorePage() {
         if (!BACKEND_URL || !STORE_SUBDOMAIN) return;
 
         const res = await fetch(
-          `${BACKEND_URL}/store/${STORE_SUBDOMAIN}/settings`
+          `${BACKEND_URL}/store/${STORE_SUBDOMAIN}/settings`,
+          { cache: "no-store" }
         );
+
+        if (!res.ok) return;
+
         const data = await res.json();
 
         if (data?.store) {
@@ -79,7 +93,7 @@ export default function StorePage() {
           });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar dados da loja:", err);
       } finally {
         setLoading(false);
       }
@@ -89,7 +103,7 @@ export default function StorePage() {
   }, []);
 
   /* ===============================
-     SAVE
+     SAVE (ADMIN)
   =============================== */
   async function handleSave() {
     if (saving) return;
@@ -104,7 +118,7 @@ export default function StorePage() {
 
       setSaving(true);
 
-      // 🔹 Store
+      // 🔹 STORE
       await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -116,7 +130,7 @@ export default function StorePage() {
         }),
       });
 
-      // 🔹 StoreSettings
+      // 🔹 STORE SETTINGS
       await fetch(`${BACKEND_URL}/store/${STORE_ID}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -125,7 +139,7 @@ export default function StorePage() {
 
       alert("Dados da loja salvos com sucesso ✅");
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao salvar:", err);
       alert("Erro ao salvar dados da loja");
     } finally {
       setSaving(false);
@@ -142,14 +156,13 @@ export default function StorePage() {
 
       {/* CAPA */}
       <div>
-        <label className="block font-medium mb-2">
-          Imagem de capa
-        </label>
+        <label className="block font-medium mb-2">Imagem de capa</label>
 
         <div className="relative w-full h-44 rounded-xl overflow-hidden border">
           {store.coverImage ? (
             <img
               src={store.coverImage}
+              alt="Capa da loja"
               className="w-full h-full object-cover"
             />
           ) : (
@@ -179,14 +192,13 @@ export default function StorePage() {
 
       {/* LOGO */}
       <div>
-        <label className="block font-medium mb-2">
-          Logo da loja
-        </label>
+        <label className="block font-medium mb-2">Logo da loja</label>
 
         <div className="flex items-center gap-4">
           {store.logoUrl ? (
             <img
               src={store.logoUrl}
+              alt="Logo da loja"
               className="w-20 h-20 rounded-full object-cover border"
             />
           ) : (
@@ -216,9 +228,7 @@ export default function StorePage() {
 
       {/* NOME */}
       <div>
-        <label className="block font-medium mb-1">
-          Nome da loja
-        </label>
+        <label className="block font-medium mb-1">Nome da loja</label>
         <input
           value={store.name}
           onChange={(e) =>
@@ -230,9 +240,7 @@ export default function StorePage() {
 
       {/* DESCRIÇÃO */}
       <div>
-        <label className="block font-medium mb-1">
-          Descrição
-        </label>
+        <label className="block font-medium mb-1">Descrição</label>
         <textarea
           value={store.description}
           onChange={(e) =>
@@ -242,9 +250,7 @@ export default function StorePage() {
           rows={4}
           className="border rounded px-3 py-2 w-full"
         />
-        <p className="text-xs text-gray-500">
-          Máximo 400 caracteres
-        </p>
+        <p className="text-xs text-gray-500">Máximo 400 caracteres</p>
       </div>
 
       {/* WHATSAPP */}
