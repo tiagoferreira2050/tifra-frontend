@@ -22,10 +22,25 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
-function readFile(file: File, callback: (url: string) => void) {
-  const reader = new FileReader();
-  reader.onloadend = () => callback(reader.result as string);
-  reader.readAsDataURL(file);
+/**
+ * 🔹 UPLOAD DE IMAGEM
+ * Agora: simulado
+ * Depois: Cloudinary
+ */
+async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // 🔥 quando criar o backend de upload, é só descomentar
+  // const res = await fetch("/api/upload", {
+  //   method: "POST",
+  //   body: formData,
+  // });
+  // const data = await res.json();
+  // return data.url;
+
+  // TEMPORÁRIO (preview local, sem salvar base64 no banco)
+  return URL.createObjectURL(file);
 }
 
 export default function StorePage() {
@@ -49,21 +64,20 @@ export default function StorePage() {
   });
 
   /* ===============================
-     LOAD DATA (IGUAL DOMÍNIO)
+     LOAD DATA (PADRÃO DOMÍNIO)
   =============================== */
   useEffect(() => {
     async function load() {
       try {
         // 🔹 STORE
         const storeData = await apiFetch("/api/store/me");
-
         setStoreId(storeData.id);
 
         setStore({
-          name: storeData.name || "",
-          description: storeData.description || "",
-          logoUrl: storeData.logoUrl || null,
-          coverImage: storeData.coverImage || null,
+          name: storeData.name ?? "",
+          description: storeData.description ?? "",
+          logoUrl: storeData.logoUrl ?? null,
+          coverImage: storeData.coverImage ?? null,
         });
 
         // 🔹 STORE SETTINGS
@@ -72,14 +86,12 @@ export default function StorePage() {
             `/store/${storeData.id}/settings`
           );
 
-          if (settingsData) {
-            setSettings({
-              whatsapp: settingsData.whatsapp || "",
-              minOrderValue: settingsData.minOrderValue || 0,
-            });
-          }
+          setSettings({
+            whatsapp: settingsData?.whatsapp ?? "",
+            minOrderValue: settingsData?.minOrderValue ?? 0,
+          });
         } catch {
-          // se não existir settings ainda, segue vazio
+          // settings ainda não existe → segue vazio
         }
       } catch (err) {
         console.error("Erro ao carregar dados da loja:", err);
@@ -117,7 +129,7 @@ export default function StorePage() {
         }),
       });
 
-      // 🔹 STORE SETTINGS (UPSERT)
+      // 🔹 STORE SETTINGS
       await apiFetch(`/store/${storeId}/settings`, {
         method: "PUT",
         body: JSON.stringify({
@@ -165,12 +177,11 @@ export default function StorePage() {
               type="file"
               accept="image/*"
               hidden
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  readFile(file, (url) =>
-                    setStore({ ...store, coverImage: url })
-                  );
+                  const url = await uploadImage(file);
+                  setStore((s) => ({ ...s, coverImage: url }));
                 }
               }}
             />
@@ -200,12 +211,11 @@ export default function StorePage() {
               type="file"
               accept="image/*"
               hidden
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  readFile(file, (url) =>
-                    setStore({ ...store, logoUrl: url })
-                  );
+                  const url = await uploadImage(file);
+                  setStore((s) => ({ ...s, logoUrl: url }));
                 }
               }}
             />
