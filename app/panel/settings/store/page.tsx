@@ -24,22 +24,11 @@ function formatPhone(value: string) {
 
 /**
  * 🔹 UPLOAD DE IMAGEM
- * Agora: simulado
+ * Agora: preview local
  * Depois: Cloudinary
  */
 async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  // 🔥 quando criar o backend de upload, é só descomentar
-  // const res = await fetch("/api/upload", {
-  //   method: "POST",
-  //   body: formData,
-  // });
-  // const data = await res.json();
-  // return data.url;
-
-  // TEMPORÁRIO (preview local, sem salvar base64 no banco)
+  // futuramente: enviar pro backend / Cloudinary
   return URL.createObjectURL(file);
 }
 
@@ -81,18 +70,14 @@ export default function StorePage() {
         });
 
         // 🔹 STORE SETTINGS
-        try {
-          const settingsData = await apiFetch(
-            `/store/${storeData.id}/settings`
-          );
+        const settingsData = await apiFetch(
+          `/api/store/${storeData.id}/settings`
+        );
 
-          setSettings({
-            whatsapp: settingsData?.whatsapp ?? "",
-            minOrderValue: settingsData?.minOrderValue ?? 0,
-          });
-        } catch {
-          // settings ainda não existe → segue vazio
-        }
+        setSettings({
+          whatsapp: settingsData?.whatsapp ?? "",
+          minOrderValue: settingsData?.minOrderValue ?? 0,
+        });
       } catch (err) {
         console.error("Erro ao carregar dados da loja:", err);
         alert("Erro ao carregar dados da loja");
@@ -129,8 +114,8 @@ export default function StorePage() {
         }),
       });
 
-      // 🔹 STORE SETTINGS
-      await apiFetch(`/store/${storeId}/settings`, {
+      // 🔹 STORE SETTINGS (UPSERT)
+      await apiFetch(`/api/store/${storeId}/settings`, {
         method: "PUT",
         body: JSON.stringify({
           whatsapp: settings.whatsapp,
