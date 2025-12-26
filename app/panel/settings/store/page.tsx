@@ -45,7 +45,6 @@ export default function StorePage() {
     description: "",
     logoUrl: "",
     coverImage: "",
-    address: "",
   });
 
   const [settings, setSettings] = useState({
@@ -72,7 +71,6 @@ export default function StorePage() {
             description: data.store.description || "",
             logoUrl: data.store.logoUrl || "",
             coverImage: data.store.coverImage || "",
-            address: data.store.address || "",
           });
         }
 
@@ -106,14 +104,14 @@ export default function StorePage() {
 
       setSaving(true);
 
-      // Store
+      // 🔹 Store
       await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(store),
       });
 
-      // Settings
+      // 🔹 StoreSettings
       await fetch(`${BACKEND_URL}/store/${STORE_ID}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -242,21 +240,6 @@ export default function StorePage() {
         <p className="text-xs text-gray-500">
           Máximo 400 caracteres
         </p>
-      </div>
-
-      {/* ENDEREÇO */}
-      <div>
-        <label className="block font-medium mb-1">
-          Endereço completo
-        </label>
-        <textarea
-          value={store.address}
-          onChange={(e) =>
-            setStore({ ...store, address: e.target.value })
-          }
-          rows={2}
-          className="border rounded px-3 py-2 w-full"
-        />
       </div>
 
       {/* WHATSAPP */}
