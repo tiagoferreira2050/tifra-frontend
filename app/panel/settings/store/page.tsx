@@ -67,7 +67,7 @@ export default function StorePage() {
   });
 
   /* ===============================
-     LOAD (UMA ÚNICA FONTE)
+     LOAD (FONTE ÚNICA)
   =============================== */
   useEffect(() => {
     async function load() {
@@ -75,15 +75,15 @@ export default function StorePage() {
         const data = await apiFetch("/api/store/settings");
 
         setStore({
-          name: data.store.name ?? "",
-          description: data.store.description ?? "",
-          logoUrl: data.store.logoUrl ?? null,
-          coverImage: data.store.coverImage ?? null,
+          name: data.store?.name ?? "",
+          description: data.store?.description ?? "",
+          logoUrl: data.store?.logoUrl ?? null,
+          coverImage: data.store?.coverImage ?? null,
         });
 
         setSettings({
-          whatsapp: data.settings.whatsapp ?? "",
-          minOrderValue: data.settings.minOrderValue ?? 0,
+          whatsapp: data.settings?.whatsapp ?? "",
+          minOrderValue: data.settings?.minOrderValue ?? 0,
         });
       } catch (err) {
         console.error("Erro ao carregar loja:", err);
