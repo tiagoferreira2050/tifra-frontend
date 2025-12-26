@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
-const STORE_SUBDOMAIN = process.env.NEXT_PUBLIC_STORE_SUBDOMAIN;
+import { apiFetch } from "@/lib/api";
 
 /* ===============================
    HELPERS
@@ -13,14 +10,12 @@ function formatPhone(value: string) {
   const numbers = value.replace(/\D/g, "");
 
   if (numbers.length <= 10) {
-    // (xx) xxxx-xxxx
     return numbers
       .replace(/^(\d{2})(\d)/, "($1) $2")
       .replace(/(\d{4})(\d)/, "$1-$2")
       .slice(0, 14);
   }
 
-  // (xx) xxxxx-xxxx
   return numbers
     .replace(/^(\d{2})(\d)/, "($1) $2")
     .replace(/(\d{5})(\d)/, "$1-$2")
@@ -36,64 +31,59 @@ function readFile(file: File, callback: (url: string) => void) {
 export default function StorePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [storeId, setStoreId] = useState<string | null>(null);
 
   /* ===============================
      STATE
   =============================== */
-  const [store, setStore] = useState<{
-    name: string;
-    description: string;
-    logoUrl: string | null;
-    coverImage: string | null;
-  }>({
+  const [store, setStore] = useState({
     name: "",
     description: "",
-    logoUrl: null,
-    coverImage: null,
+    logoUrl: null as string | null,
+    coverImage: null as string | null,
   });
 
-  const [settings, setSettings] = useState<{
-    minOrderValue: number;
-    whatsapp: string;
-  }>({
-    minOrderValue: 0,
+  const [settings, setSettings] = useState({
     whatsapp: "",
+    minOrderValue: 0,
   });
 
   /* ===============================
-     LOAD DATA (PUBLIC SETTINGS)
+     LOAD DATA (IGUAL DOMÍNIO)
   =============================== */
   useEffect(() => {
     async function load() {
       try {
-        if (!BACKEND_URL || !STORE_SUBDOMAIN) return;
+        // 🔹 STORE
+        const storeData = await apiFetch("/api/store/me");
 
-        const res = await fetch(
-          `${BACKEND_URL}/store/${STORE_SUBDOMAIN}/settings`,
-          { cache: "no-store" }
-        );
+        setStoreId(storeData.id);
 
-        if (!res.ok) return;
+        setStore({
+          name: storeData.name || "",
+          description: storeData.description || "",
+          logoUrl: storeData.logoUrl || null,
+          coverImage: storeData.coverImage || null,
+        });
 
-        const data = await res.json();
+        // 🔹 STORE SETTINGS
+        try {
+          const settingsData = await apiFetch(
+            `/store/${storeData.id}/settings`
+          );
 
-        if (data?.store) {
-          setStore({
-            name: data.store.name || "",
-            description: data.store.description || "",
-            logoUrl: data.store.logoUrl || null,
-            coverImage: data.store.coverImage || null,
-          });
-        }
-
-        if (data?.settings) {
-          setSettings({
-            minOrderValue: data.settings.minOrderValue || 0,
-            whatsapp: data.settings.whatsapp || "",
-          });
+          if (settingsData) {
+            setSettings({
+              whatsapp: settingsData.whatsapp || "",
+              minOrderValue: settingsData.minOrderValue || 0,
+            });
+          }
+        } catch {
+          // se não existir settings ainda, segue vazio
         }
       } catch (err) {
         console.error("Erro ao carregar dados da loja:", err);
+        alert("Erro ao carregar dados da loja");
       } finally {
         setLoading(false);
       }
@@ -103,25 +93,22 @@ export default function StorePage() {
   }, []);
 
   /* ===============================
-     SAVE (ADMIN)
+     SAVE
   =============================== */
   async function handleSave() {
-    if (saving) return;
+    if (!storeId || saving) return;
+
+    if (!settings.whatsapp) {
+      alert("WhatsApp é obrigatório");
+      return;
+    }
 
     try {
-      if (!STORE_ID || !BACKEND_URL) return;
-
-      if (!settings.whatsapp) {
-        alert("WhatsApp é obrigatório");
-        return;
-      }
-
       setSaving(true);
 
       // 🔹 STORE
-      await fetch(`${BACKEND_URL}/api/store/${STORE_ID}`, {
+      await apiFetch(`/api/store/${storeId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: store.name.trim(),
           description: store.description.trim(),
@@ -130,11 +117,13 @@ export default function StorePage() {
         }),
       });
 
-      // 🔹 STORE SETTINGS
-      await fetch(`${BACKEND_URL}/store/${STORE_ID}/settings`, {
+      // 🔹 STORE SETTINGS (UPSERT)
+      await apiFetch(`/store/${storeId}/settings`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          whatsapp: settings.whatsapp,
+          minOrderValue: settings.minOrderValue,
+        }),
       });
 
       alert("Dados da loja salvos com sucesso ✅");
@@ -162,7 +151,6 @@ export default function StorePage() {
           {store.coverImage ? (
             <img
               src={store.coverImage}
-              alt="Capa da loja"
               className="w-full h-full object-cover"
             />
           ) : (
@@ -198,7 +186,6 @@ export default function StorePage() {
           {store.logoUrl ? (
             <img
               src={store.logoUrl}
-              alt="Logo da loja"
               className="w-20 h-20 rounded-full object-cover border"
             />
           ) : (
@@ -260,14 +247,12 @@ export default function StorePage() {
         </label>
         <input
           value={settings.whatsapp}
-          required
           onChange={(e) =>
             setSettings({
               ...settings,
               whatsapp: formatPhone(e.target.value),
             })
           }
-          placeholder="(31) 99999-9999"
           className="border rounded px-3 py-2 w-full"
         />
       </div>
