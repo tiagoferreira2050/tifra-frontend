@@ -5,23 +5,21 @@ import { generateSubdomain } from "@/lib/generateSubdomain";
 import { apiFetch } from "@/lib/api";
 
 export default function DomainSettingsPage() {
-  const [storeName, setStoreName] = useState("");
   const [subdomain, setSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔹 CARREGA STORE
+  // 🔹 CARREGA APENAS O SUBDOMÍNIO DA STORE
   useEffect(() => {
     async function loadStore() {
       const data = await apiFetch("/api/store/me");
 
-      setStoreName(data.name);
-      setSubdomain(
-        data.subdomain || generateSubdomain(data.name)
-      );
+      if (data?.subdomain) {
+        setSubdomain(data.subdomain);
+      }
     }
 
     loadStore().catch(() => {
-      alert("Erro ao carregar dados da loja");
+      alert("Erro ao carregar subdomínio da loja");
     });
   }, []);
 
@@ -53,17 +51,6 @@ export default function DomainSettingsPage() {
         ⚠️ Alterar o subdomínio muda o endereço do seu site.
         Links antigos deixarão de funcionar.
       </p>
-
-      <div className="mb-4">
-        <label className="block text-sm font-semibold mb-1">
-          Nome da loja
-        </label>
-        <input
-          className="border rounded px-3 py-2 w-full bg-gray-100"
-          value={storeName}
-          disabled
-        />
-      </div>
 
       <div className="mb-2">
         <label className="block text-sm font-semibold mb-1">
