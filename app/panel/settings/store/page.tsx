@@ -123,13 +123,18 @@ setSettings({
       });
 
       // 🔹 STORE SETTINGS (UPSERT)
-      await apiFetch(`/api/store/${storeId}/settings`, {
-        method: "PUT",
-        body: JSON.stringify({
-          whatsapp: settings.whatsapp,
-          minOrderValue: settings.minOrderValue,
-        }),
-      });
+      await apiFetch("/api/store/settings", {
+  method: "PUT",
+  body: JSON.stringify({
+    name: store.name,
+    description: store.description,
+    logoUrl: store.logoUrl,
+    coverImage: store.coverImage,
+    whatsapp: settings.whatsapp,
+    minOrderValue: settings.minOrderValue,
+  }),
+});
+
 
       alert("Dados da loja salvos com sucesso ✅");
     } catch (err) {
