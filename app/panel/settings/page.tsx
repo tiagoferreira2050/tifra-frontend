@@ -36,23 +36,28 @@ export default function SettingsPage() {
           <ArrowRight className="text-gray-400" />
         </button>
 
-        {/* FUTURA CONFIGURAÇÃO */}
-        <div className="border rounded-xl p-5 opacity-50 cursor-not-allowed">
+        {/* CONFIGURAÇÕES DA LOJA */}
+        <button
+          onClick={() => router.push("/panel/settings/store")}
+          className="border rounded-xl p-5 flex items-center justify-between hover:bg-gray-50 transition"
+        >
           <div className="flex items-center gap-4">
-            <div className="bg-gray-100 text-gray-500 p-3 rounded-lg">
+            <div className="bg-blue-100 text-blue-600 p-3 rounded-lg">
               <Store size={22} />
             </div>
 
-            <div>
+            <div className="text-left">
               <p className="font-semibold">
-                Dados da Loja
+                Configurações da Loja
               </p>
-              <p className="text-sm text-gray-500">
-                Em breve
+              <p className="text-sm text-gray-600">
+                Horário, taxa, pedido mínimo e status
               </p>
             </div>
           </div>
-        </div>
+
+          <ArrowRight className="text-gray-400" />
+        </button>
       </div>
     </div>
   );
