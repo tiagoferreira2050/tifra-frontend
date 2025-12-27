@@ -100,45 +100,45 @@ export default function StorePage() {
      SAVE
   =============================== */
   async function handleSave() {
-    if (saving) return;
+  if (saving) return;
 
-    if (!settings.whatsapp) {
-      alert("WhatsApp é obrigatório");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      // 1️⃣ Salva dados da STORE
-await apiFetch("/api/store/update", {
-  method: "PUT",
-  body: JSON.stringify({
-    name: store.name.trim(),
-    description: store.description.trim(),
-    logoUrl: store.logoUrl,
-    coverImage: store.coverImage,
-  }),
-});
-
-// 2️⃣ Salva SETTINGS da loja
-await apiFetch("/api/store-settings/update", {
-  method: "PUT",
-  body: JSON.stringify({
-    whatsapp: settings.whatsapp,
-    minOrderValue: settings.minOrderValue,
-  }),
-});
-
-
-      alert("Dados da loja salvos com sucesso ✅");
-    } catch (err) {
-      console.error("Erro ao salvar:", err);
-      alert("Erro ao salvar dados da loja");
-    } finally {
-      setSaving(false);
-    }
+  if (!settings.whatsapp) {
+    alert("WhatsApp é obrigatório");
+    return;
   }
+
+  try {
+    setSaving(true);
+
+    // 1️⃣ ATUALIZA STORE
+    await apiFetch("/api/store/me", {
+      method: "PUT",
+      body: JSON.stringify({
+        name: store.name.trim(),
+        description: store.description.trim(),
+        logoUrl: store.logoUrl,
+        coverImage: store.coverImage,
+      }),
+    });
+
+    // 2️⃣ ATUALIZA SETTINGS
+    await apiFetch("/api/store/settings", {
+      method: "PUT",
+      body: JSON.stringify({
+        whatsapp: settings.whatsapp,
+        minOrderValue: settings.minOrderValue,
+      }),
+    });
+
+    alert("Dados da loja salvos com sucesso ✅");
+  } catch (err) {
+    console.error("Erro ao salvar:", err);
+    alert("Erro ao salvar dados da loja");
+  } finally {
+    setSaving(false);
+  }
+}
+
 
   if (loading) {
     return <p className="p-6">Carregando dados da loja...</p>;
