@@ -110,21 +110,13 @@ export default function StorePage() {
   try {
     setSaving(true);
 
-    // 1️⃣ ATUALIZA STORE
-    await apiFetch("/api/store/me", {
+    await apiFetch("/api/store/settings", {
       method: "PUT",
       body: JSON.stringify({
         name: store.name.trim(),
         description: store.description.trim(),
         logoUrl: store.logoUrl,
         coverImage: store.coverImage,
-      }),
-    });
-
-    // 2️⃣ ATUALIZA SETTINGS
-    await apiFetch("/api/store/settings", {
-      method: "PUT",
-      body: JSON.stringify({
         whatsapp: settings.whatsapp,
         minOrderValue: settings.minOrderValue,
       }),
@@ -138,6 +130,7 @@ export default function StorePage() {
     setSaving(false);
   }
 }
+
 
 
   if (loading) {
