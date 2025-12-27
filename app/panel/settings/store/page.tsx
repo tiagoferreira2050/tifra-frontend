@@ -72,19 +72,21 @@ export default function StorePage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await apiFetch("/api/store/settings");
+        const storeData = await apiFetch("/api/store/me");
+const settingsData = await apiFetch("/api/store-settings/me");
 
-        setStore({
-          name: data.store?.name ?? "",
-          description: data.store?.description ?? "",
-          logoUrl: data.store?.logoUrl ?? null,
-          coverImage: data.store?.coverImage ?? null,
-        });
+setStore({
+  name: storeData.name ?? "",
+  description: storeData.description ?? "",
+  logoUrl: storeData.logoUrl ?? null,
+  coverImage: storeData.coverImage ?? null,
+});
 
-        setSettings({
-          whatsapp: data.settings?.whatsapp ?? "",
-          minOrderValue: data.settings?.minOrderValue ?? 0,
-        });
+setSettings({
+  whatsapp: settingsData.whatsapp ?? "",
+  minOrderValue: settingsData.minOrderValue ?? 0,
+});
+
       } catch (err) {
         console.error("Erro ao carregar loja:", err);
         alert("Erro ao carregar dados da loja");
@@ -110,17 +112,25 @@ export default function StorePage() {
     try {
       setSaving(true);
 
-      await apiFetch("/api/store/settings", {
-        method: "PUT",
-        body: JSON.stringify({
-          name: store.name.trim(),
-          description: store.description.trim(),
-          logoUrl: store.logoUrl,
-          coverImage: store.coverImage,
-          whatsapp: settings.whatsapp,
-          minOrderValue: settings.minOrderValue,
-        }),
-      });
+      // 1️⃣ Atualiza dados da loja
+await apiFetch("/api/store/update", {
+  method: "PUT",
+  body: JSON.stringify({
+    name: store.name.trim(),
+    description: store.description.trim(),
+    logoUrl: store.logoUrl,
+    coverImage: store.coverImage,
+  }),
+});
+
+// 2️⃣ Atualiza configurações da loja
+await apiFetch("/api/store-settings/update", {
+  method: "PUT",
+  body: JSON.stringify({
+    whatsapp: settings.whatsapp,
+    minOrderValue: settings.minOrderValue,
+  }),
+});
 
       alert("Dados da loja salvos com sucesso ✅");
     } catch (err) {

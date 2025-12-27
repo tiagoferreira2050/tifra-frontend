@@ -64,7 +64,10 @@ export default function OrderModal({
 
         {/* ================= DADOS DO PEDIDO ================= */}
         <div className="space-y-1 text-sm mb-3">
-          <p><b>Pedido:</b> #{order.id}</p>
+          <p>
+  <b>Pedido:</b>{" "}
+  {order.orderCode ?? "—"}
+</p>
           <p><b>Cliente:</b> {order.customer}</p>
           <p><b>Telefone:</b> {order.phone || "-"}</p>
           <p><b>Endereço:</b> {order.address || "-"}</p>
