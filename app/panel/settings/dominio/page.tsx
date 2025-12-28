@@ -32,7 +32,9 @@ export default function DomainSettingsPage() {
   // 🔹 SAVE SUBDOMÍNIO
   // ===============================
   async function save() {
-    if (!subdomain?.trim()) {
+    const normalized = generateSubdomain(subdomain);
+
+    if (!normalized) {
       alert("Subdomínio inválido");
       return;
     }
@@ -41,12 +43,13 @@ export default function DomainSettingsPage() {
       setLoading(true);
 
       await apiFetch("/api/store/update-subdomain", {
-        method: "POST", // 🔥 alinhado com backend
+        method: "PUT", // ✅ CORRETO (bate com o backend)
         body: JSON.stringify({
-          subdomain: generateSubdomain(subdomain),
+          subdomain: normalized,
         }),
       });
 
+      setSubdomain(normalized);
       alert("Subdomínio atualizado com sucesso!");
     } catch (err) {
       console.error("Erro ao atualizar subdomínio:", err);
