@@ -1,10 +1,19 @@
 // app/store/layout.tsx
-import { ReactNode } from "react";
+import type { Metadata } from "next";
 
-export default function StoreLayout({
+export const metadata: Metadata = {
+  title: "Cardápio",
+  description: "Cardápio online",
+};
+
+export default function StoreRootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <main>{children}</main>
+    </div>
+  );
 }
