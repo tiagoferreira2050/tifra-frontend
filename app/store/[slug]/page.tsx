@@ -45,9 +45,9 @@ const { store, settings } = await settingsRes.json();
      2️⃣ CATEGORIAS E PRODUTOS
   =============================== */
   const productsRes = await fetch(
-    `${API_URL}/stores/by-subdomain/${slug}`,
-    { cache: "no-store" }
-  );
+  `${API_URL}/api/store/by-subdomain/${slug}`,
+  { cache: "no-store" }
+);
 
   const productsData = productsRes.ok
     ? await productsRes.json()
