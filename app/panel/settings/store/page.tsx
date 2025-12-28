@@ -23,7 +23,7 @@ function formatPhone(value: string) {
 }
 
 /* ===============================
-   CLOUDINARY UPLOAD (IGUAL PRODUTO)
+   CLOUDINARY UPLOAD
 =============================== */
 async function uploadImage(file: File): Promise<string> {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -67,7 +67,7 @@ export default function StorePage() {
   });
 
   /* ===============================
-     LOAD (FONTE ÚNICA)
+     LOAD (NÃO MEXER)
   =============================== */
   useEffect(() => {
     async function load() {
@@ -97,41 +97,39 @@ export default function StorePage() {
   }, []);
 
   /* ===============================
-     SAVE
+     SAVE (BLINDADO)
   =============================== */
   async function handleSave() {
-  if (saving) return;
+    if (saving) return;
 
-  if (!settings.whatsapp) {
-    alert("WhatsApp é obrigatório");
-    return;
+    if (!settings.whatsapp?.trim()) {
+      alert("WhatsApp é obrigatório");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await apiFetch("/api/store/settings", {
+        method: "PUT",
+        body: JSON.stringify({
+          name: store.name?.trim() || "",
+          description: store.description?.trim() || "",
+          logoUrl: store.logoUrl || null,
+          coverImage: store.coverImage || null,
+          whatsapp: settings.whatsapp.trim(),
+          minOrderValue: Number(settings.minOrderValue) || 0,
+        }),
+      });
+
+      alert("Dados da loja salvos com sucesso ✅");
+    } catch (err) {
+      console.error("Erro ao salvar:", err);
+      alert("Erro ao salvar dados da loja");
+    } finally {
+      setSaving(false);
+    }
   }
-
-  try {
-    setSaving(true);
-
-    await apiFetch("/api/store/settings", {
-      method: "PUT",
-      body: JSON.stringify({
-        name: store.name.trim(),
-        description: store.description.trim(),
-        logoUrl: store.logoUrl,
-        coverImage: store.coverImage,
-        whatsapp: settings.whatsapp,
-        minOrderValue: settings.minOrderValue,
-      }),
-    });
-
-    alert("Dados da loja salvos com sucesso ✅");
-  } catch (err) {
-    console.error("Erro ao salvar:", err);
-    alert("Erro ao salvar dados da loja");
-  } finally {
-    setSaving(false);
-  }
-}
-
-
 
   if (loading) {
     return <p className="p-6">Carregando dados da loja...</p>;
