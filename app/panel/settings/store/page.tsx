@@ -55,7 +55,6 @@ export default function StorePage() {
      STATE
   =============================== */
   const [store, setStore] = useState({
-    id: "", // 🔥 ESSENCIAL
     name: "",
     description: "",
     logoUrl: null as string | null,
@@ -76,7 +75,6 @@ export default function StorePage() {
         const data = await apiFetch("/api/store/settings");
 
         setStore({
-          id: data.store?.id ?? "", // 🔥 SALVA O ID
           name: data.store?.name ?? "",
           description: data.store?.description ?? "",
           logoUrl: data.store?.logoUrl ?? null,
@@ -99,18 +97,13 @@ export default function StorePage() {
   }, []);
 
   /* ===============================
-     SAVE (CORRIGIDO)
+     SAVE (FINAL / CORRETO)
   =============================== */
   async function handleSave() {
     if (saving) return;
 
-    if (!settings.whatsapp?.trim()) {
+    if (!settings.whatsapp.trim()) {
       alert("WhatsApp é obrigatório");
-      return;
-    }
-
-    if (!store.id) {
-      alert("ID da loja não encontrado");
       return;
     }
 
@@ -120,7 +113,6 @@ export default function StorePage() {
       await apiFetch("/api/store/settings", {
         method: "PUT",
         body: JSON.stringify({
-          storeId: store.id, // ✅ AGORA EXISTE
           name: store.name.trim(),
           description: store.description.trim(),
           logoUrl: store.logoUrl,
@@ -153,7 +145,10 @@ export default function StorePage() {
 
         <div className="relative w-full h-44 rounded-xl overflow-hidden border">
           {store.coverImage ? (
-            <img src={store.coverImage} className="w-full h-full object-cover" />
+            <img
+              src={store.coverImage}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               Capa da loja
@@ -225,7 +220,9 @@ export default function StorePage() {
         <label className="block font-medium mb-1">Nome da loja</label>
         <input
           value={store.name}
-          onChange={(e) => setStore({ ...store, name: e.target.value })}
+          onChange={(e) =>
+            setStore({ ...store, name: e.target.value })
+          }
           className="border rounded px-3 py-2 w-full"
         />
       </div>
@@ -247,7 +244,9 @@ export default function StorePage() {
 
       {/* WHATSAPP */}
       <div>
-        <label className="block font-medium mb-1">WhatsApp da loja</label>
+        <label className="block font-medium mb-1">
+          WhatsApp da loja
+        </label>
         <input
           value={settings.whatsapp}
           onChange={(e) =>
@@ -262,7 +261,9 @@ export default function StorePage() {
 
       {/* PEDIDO MÍNIMO */}
       <div>
-        <label className="block font-medium mb-1">Pedido mínimo (R$)</label>
+        <label className="block font-medium mb-1">
+          Pedido mínimo (R$)
+        </label>
         <input
           type="number"
           min={0}
