@@ -1,3 +1,4 @@
+// middleware.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -7,11 +8,12 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // IGNORAR ARQUIVOS / API
+  // 1️⃣ IGNORAR ARQUIVOS E API
   // ===============================
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    pathname.startsWith("/store") || // 🔥 MUITO IMPORTANTE
     pathname.includes(".")
   ) {
     return NextResponse.next();
@@ -21,27 +23,28 @@ export function middleware(req: NextRequest) {
   const mainDomain = "tifra.com.br";
 
   // ===============================
-  // 🔐 PAINEL — app.tifra.com.br
+  // 2️⃣ PAINEL — app.tifra.com.br
   // ===============================
-  if (cleanHost.startsWith("app.")) {
+  if (cleanHost === `app.${mainDomain}`) {
     const isPanelRoute = pathname.startsWith("/panel");
-    const isPublicRoute = pathname === "/login" || pathname === "/signup";
+    const isPublicRoute =
+      pathname === "/login" || pathname === "/signup";
 
-    // 🔓 rotas públicas
     if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // 🔐 proteger APENAS /panel
     if (isPanelRoute && !token) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(
+        new URL("/login", req.url)
+      );
     }
 
     return NextResponse.next();
   }
 
   // ===============================
-  // DOMÍNIO RAIZ
+  // 3️⃣ DOMÍNIO PRINCIPAL
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -51,9 +54,14 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // SUBDOMÍNIO → LOJA
+  // 4️⃣ SUBDOMÍNIO → LOJA
   // ===============================
   const subdomain = cleanHost.split(".")[0];
+
+  if (!subdomain) {
+    return NextResponse.next();
+  }
+
   const url = req.nextUrl.clone();
   url.pathname = `/store/${subdomain}`;
 
