@@ -13,7 +13,6 @@ export function middleware(req: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/store") || // 🔥 MUITO IMPORTANTE
     pathname.includes(".")
   ) {
     return NextResponse.next();
