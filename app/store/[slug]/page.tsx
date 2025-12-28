@@ -35,7 +35,6 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   const settingsData = await settingsRes.json();
-
   const { store, settings } = settingsData;
 
   if (!store) {
@@ -43,10 +42,10 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   // ===============================
-  // 2️⃣ CATEGORIAS E PRODUTOS
+  // 2️⃣ CATEGORIAS E PRODUTOS (🔥 ROTA CORRIGIDA)
   // ===============================
   const productsRes = await fetch(
-    `${API_URL}/stores/by-subdomain/${slug}`,
+    `${API_URL}/api/store/by-subdomain/${slug}`,
     { cache: "no-store" }
   );
 
@@ -55,7 +54,6 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   const productsData = await productsRes.json();
-
   const { categories } = productsData;
 
   // ===============================
@@ -63,11 +61,8 @@ export default async function StorePage({ params }: StorePageProps) {
   // ===============================
   return (
     <div>
-      {/* ===============================
-          HEADER DA LOJA
-      =============================== */}
+      {/* HEADER DA LOJA */}
       <div className="relative">
-        {/* CAPA */}
         {store.coverImage && (
           <img
             src={store.coverImage}
@@ -78,7 +73,6 @@ export default async function StorePage({ params }: StorePageProps) {
 
         <div className="max-w-2xl mx-auto px-4">
           <div className="-mt-16 bg-white rounded-xl p-4 shadow flex gap-4 items-center">
-            {/* LOGO */}
             {store.logoUrl && (
               <img
                 src={store.logoUrl}
@@ -88,9 +82,7 @@ export default async function StorePage({ params }: StorePageProps) {
             )}
 
             <div className="flex-1">
-              <h1 className="text-xl font-bold">
-                {store.name}
-              </h1>
+              <h1 className="text-xl font-bold">{store.name}</h1>
 
               {store.description && (
                 <p className="text-sm text-gray-500">
@@ -118,9 +110,7 @@ export default async function StorePage({ params }: StorePageProps) {
         </div>
       </div>
 
-      {/* ===============================
-          CATEGORIAS
-      =============================== */}
+      {/* CATEGORIAS */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories || []} />
       </div>
