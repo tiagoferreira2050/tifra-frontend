@@ -1,0 +1,10 @@
+// app/store/layout.tsx
+import { ReactNode } from "react";
+
+export default function StoreLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <>{children}</>;
+}
