@@ -44,7 +44,7 @@ export default async function StorePage({ params }: StorePageProps) {
      2️⃣ CATEGORIAS E PRODUTOS
   =============================== */
   const productsRes = await fetch(
-    `${API_URL}/api/store/by-subdomain/${slug}`,
+    `${API_URL}/stores/by-subdomain/${slug}`,
     { cache: "no-store" }
   );
 
