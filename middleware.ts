@@ -7,7 +7,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // 1️⃣ IGNORAR ARQUIVOS / API
+  // IGNORAR ARQUIVOS / API
   // ===============================
   if (
     pathname.startsWith("/_next") ||
@@ -21,30 +21,27 @@ export function middleware(req: NextRequest) {
   const mainDomain = "tifra.com.br";
 
   // ===============================
-  // 2️⃣ 🔐 PAINEL — app.tifra.com.br
+  // 🔐 PAINEL — app.tifra.com.br
   // ===============================
   if (cleanHost.startsWith("app.")) {
     const isPanelRoute = pathname.startsWith("/panel");
-    const isPublicRoute =
-      pathname === "/login" || pathname === "/signup";
+    const isPublicRoute = pathname === "/login" || pathname === "/signup";
 
-    // rotas públicas
+    // 🔓 rotas públicas
     if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // proteger APENAS /panel
+    // 🔐 proteger APENAS /panel
     if (isPanelRoute && !token) {
-      return NextResponse.redirect(
-        new URL("/login", req.url)
-      );
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
     return NextResponse.next();
   }
 
   // ===============================
-  // 3️⃣ DOMÍNIO RAIZ
+  // DOMÍNIO RAIZ
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -54,19 +51,9 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 4️⃣ SUBDOMÍNIO → LOJA
+  // SUBDOMÍNIO → LOJA
   // ===============================
-  const subdomain = cleanHost.replace(`.${mainDomain}`, "");
-
-  if (!subdomain) {
-    return NextResponse.next();
-  }
-
-  // evita loop de rewrite
-  if (pathname.startsWith("/store")) {
-    return NextResponse.next();
-  }
-
+  const subdomain = cleanHost.split(".")[0];
   const url = req.nextUrl.clone();
   url.pathname = `/store/${subdomain}`;
 
