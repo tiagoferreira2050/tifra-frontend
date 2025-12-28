@@ -22,9 +22,10 @@ export default async function StorePage({ params }: StorePageProps) {
     throw new Error("NEXT_PUBLIC_API_URL não configurada");
   }
 
-  // ===============================
-  // 1️⃣ DADOS DA LOJA (HEADER)
-  // ===============================
+  /* ===================================================
+     1️⃣ DADOS DA LOJA (CONFIGURAÇÃO PÚBLICA)
+     👉 /store/:slug/settings
+  =================================================== */
   const settingsRes = await fetch(
     `${API_URL}/store/${slug}/settings`,
     { cache: "no-store" }
@@ -41,9 +42,10 @@ export default async function StorePage({ params }: StorePageProps) {
     return notFound();
   }
 
-  // ===============================
-  // 2️⃣ CATEGORIAS E PRODUTOS (🔥 ROTA CORRIGIDA)
-  // ===============================
+  /* ===================================================
+     2️⃣ CATEGORIAS E PRODUTOS
+     👉 /api/store/by-subdomain/:slug
+  =================================================== */
   const productsRes = await fetch(
     `${API_URL}/api/store/by-subdomain/${slug}`,
     { cache: "no-store" }
@@ -56,13 +58,16 @@ export default async function StorePage({ params }: StorePageProps) {
   const productsData = await productsRes.json();
   const { categories } = productsData;
 
-  // ===============================
-  // RENDER
-  // ===============================
+  /* ===================================================
+     RENDER
+  =================================================== */
   return (
     <div>
-      {/* HEADER DA LOJA */}
+      {/* ===============================
+          HEADER DA LOJA
+      =============================== */}
       <div className="relative">
+        {/* CAPA */}
         {store.coverImage && (
           <img
             src={store.coverImage}
@@ -73,6 +78,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
         <div className="max-w-2xl mx-auto px-4">
           <div className="-mt-16 bg-white rounded-xl p-4 shadow flex gap-4 items-center">
+            {/* LOGO */}
             {store.logoUrl && (
               <img
                 src={store.logoUrl}
@@ -110,7 +116,9 @@ export default async function StorePage({ params }: StorePageProps) {
         </div>
       </div>
 
-      {/* CATEGORIAS */}
+      {/* ===============================
+          CATEGORIAS
+      =============================== */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories || []} />
       </div>
