@@ -26,15 +26,16 @@ export default async function StorePage({ params }: StorePageProps) {
      1️⃣ CONFIGURAÇÕES PÚBLICAS DA LOJA
   =============================== */
   const settingsRes = await fetch(
-    `${API_URL}/store/${slug}/settings`,
-    { cache: "no-store" }
-  );
+  `${API_URL}/api/store/${slug}/settings`,
+  { cache: "no-store" }
+);
 
-  if (!settingsRes.ok) {
-    return notFound();
-  }
+if (!settingsRes.ok) {
+  return notFound();
+}
 
-  const { store, settings } = await settingsRes.json();
+const { store, settings } = await settingsRes.json();
+
 
   if (!store) {
     return notFound();
