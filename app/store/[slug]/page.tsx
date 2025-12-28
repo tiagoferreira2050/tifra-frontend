@@ -24,7 +24,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   /* ===================================================
      1️⃣ DADOS DA LOJA (CONFIGURAÇÃO PÚBLICA)
-     👉 /store/:slug/settings
+     👉 GET /store/:slug/settings
   =================================================== */
   const settingsRes = await fetch(
     `${API_URL}/store/${slug}/settings`,
@@ -36,7 +36,8 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   const settingsData = await settingsRes.json();
-  const { store, settings } = settingsData;
+  const store = settingsData?.store;
+  const settings = settingsData?.settings;
 
   if (!store) {
     return notFound();
@@ -44,7 +45,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   /* ===================================================
      2️⃣ CATEGORIAS E PRODUTOS
-     👉 /api/store/by-subdomain/:slug
+     👉 GET /api/store/by-subdomain/:slug
   =================================================== */
   const productsRes = await fetch(
     `${API_URL}/api/store/by-subdomain/${slug}`,
@@ -56,7 +57,7 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   const productsData = await productsRes.json();
-  const { categories } = productsData;
+  const categories = productsData?.categories || [];
 
   /* ===================================================
      RENDER
@@ -120,7 +121,7 @@ export default async function StorePage({ params }: StorePageProps) {
           CATEGORIAS
       =============================== */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <CategoryList categories={categories || []} />
+        <CategoryList categories={categories} />
       </div>
     </div>
   );

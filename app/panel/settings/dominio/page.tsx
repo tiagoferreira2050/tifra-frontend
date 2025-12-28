@@ -8,33 +8,48 @@ export default function DomainSettingsPage() {
   const [subdomain, setSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔹 CARREGA APENAS O SUBDOMÍNIO DA STORE
+  // ===============================
+  // 🔹 LOAD SUBDOMÍNIO ATUAL
+  // ===============================
   useEffect(() => {
     async function loadStore() {
-      const data = await apiFetch("/api/store/me");
+      try {
+        const data = await apiFetch("/api/store/me");
 
-      if (data?.subdomain) {
-        setSubdomain(data.subdomain);
+        if (data?.subdomain) {
+          setSubdomain(data.subdomain);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar subdomínio:", err);
+        alert("Erro ao carregar subdomínio da loja");
       }
     }
 
-    loadStore().catch(() => {
-      alert("Erro ao carregar subdomínio da loja");
-    });
+    loadStore();
   }, []);
 
-  // 🔹 SALVA NOVO SUBDOMÍNIO
+  // ===============================
+  // 🔹 SAVE SUBDOMÍNIO
+  // ===============================
   async function save() {
+    if (!subdomain?.trim()) {
+      alert("Subdomínio inválido");
+      return;
+    }
+
     try {
       setLoading(true);
 
       await apiFetch("/api/store/update-subdomain", {
-        method: "POST",
-        body: JSON.stringify({ subdomain }),
+        method: "POST", // 🔥 alinhado com backend
+        body: JSON.stringify({
+          subdomain: generateSubdomain(subdomain),
+        }),
       });
 
       alert("Subdomínio atualizado com sucesso!");
-    } catch {
+    } catch (err) {
+      console.error("Erro ao atualizar subdomínio:", err);
       alert("Erro ao atualizar subdomínio");
     } finally {
       setLoading(false);
@@ -68,7 +83,7 @@ export default function DomainSettingsPage() {
       <p className="text-xs text-gray-600 mb-4">
         Seu site ficará em{" "}
         <span className="font-semibold">
-          https://{subdomain}.tifra.com.br
+          https://{subdomain || "sualoja"}.tifra.com.br
         </span>
       </p>
 
