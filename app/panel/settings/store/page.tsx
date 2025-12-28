@@ -111,16 +111,18 @@ export default function StorePage() {
       setSaving(true);
 
       await apiFetch("/api/store/settings", {
-        method: "PUT",
-        body: JSON.stringify({
-          name: store.name?.trim() || "",
-          description: store.description?.trim() || "",
-          logoUrl: store.logoUrl || null,
-          coverImage: store.coverImage || null,
-          whatsapp: settings.whatsapp.trim(),
-          minOrderValue: Number(settings.minOrderValue) || 0,
-        }),
-      });
+  method: "PUT",
+  body: JSON.stringify({
+    storeId: data.store.id, // 🔥 ESSENCIAL
+    name: store.name.trim(),
+    description: store.description.trim(),
+    logoUrl: store.logoUrl,
+    coverImage: store.coverImage,
+    whatsapp: settings.whatsapp,
+    minOrderValue: settings.minOrderValue,
+  }),
+});
+
 
       alert("Dados da loja salvos com sucesso ✅");
     } catch (err) {
