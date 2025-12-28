@@ -1,4 +1,3 @@
-// middleware.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -8,7 +7,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // 1️⃣ IGNORAR ARQUIVOS E API
+  // 1️⃣ IGNORAR ARQUIVOS / API
   // ===============================
   if (
     pathname.startsWith("/_next") ||
@@ -22,17 +21,19 @@ export function middleware(req: NextRequest) {
   const mainDomain = "tifra.com.br";
 
   // ===============================
-  // 2️⃣ PAINEL — app.tifra.com.br
+  // 2️⃣ 🔐 PAINEL — app.tifra.com.br
   // ===============================
-  if (cleanHost === `app.${mainDomain}`) {
+  if (cleanHost.startsWith("app.")) {
     const isPanelRoute = pathname.startsWith("/panel");
     const isPublicRoute =
       pathname === "/login" || pathname === "/signup";
 
+    // rotas públicas
     if (isPublicRoute) {
       return NextResponse.next();
     }
 
+    // proteger APENAS /panel
     if (isPanelRoute && !token) {
       return NextResponse.redirect(
         new URL("/login", req.url)
@@ -43,7 +44,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 3️⃣ DOMÍNIO PRINCIPAL
+  // 3️⃣ DOMÍNIO RAIZ
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -55,14 +56,13 @@ export function middleware(req: NextRequest) {
   // ===============================
   // 4️⃣ SUBDOMÍNIO → LOJA
   // ===============================
-  // Ex: acaibrasil.tifra.com.br → /store/acaibrasil
   const subdomain = cleanHost.replace(`.${mainDomain}`, "");
 
   if (!subdomain) {
     return NextResponse.next();
   }
 
-  // 🔴 EVITA REWRITE DUPLICADO
+  // evita loop de rewrite
   if (pathname.startsWith("/store")) {
     return NextResponse.next();
   }
