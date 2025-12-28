@@ -55,9 +55,15 @@ export function middleware(req: NextRequest) {
   // ===============================
   // 4️⃣ SUBDOMÍNIO → LOJA
   // ===============================
-  const subdomain = cleanHost.split(".")[0];
+  // Ex: acaibrasil.tifra.com.br → /store/acaibrasil
+  const subdomain = cleanHost.replace(`.${mainDomain}`, "");
 
   if (!subdomain) {
+    return NextResponse.next();
+  }
+
+  // 🔴 EVITA REWRITE DUPLICADO
+  if (pathname.startsWith("/store")) {
     return NextResponse.next();
   }
 
