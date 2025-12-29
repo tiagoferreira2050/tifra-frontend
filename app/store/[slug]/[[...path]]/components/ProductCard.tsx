@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface ProductCardProps {
   product: {
     id: string;
@@ -36,13 +34,12 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* IMAGEM */}
-      <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-        <Image
+      <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+        <img
           src={product.imageUrl || "/placeholder.jpg"}
           alt={product.name}
-          fill
-          sizes="96px"
-          className="object-cover"
+          loading="lazy"
+          className="w-full h-full object-cover"
         />
       </div>
     </button>
