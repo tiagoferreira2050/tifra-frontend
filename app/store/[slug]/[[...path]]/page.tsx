@@ -31,34 +31,36 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   /* ===============================
-     1️⃣ BUSCAR CONFIGURAÇÕES DA LOJA
+     🔓 CARDÁPIO PÚBLICO (BACKEND REAL)
+     GET /api/public/store/:subdomain
   =============================== */
   let store: any = null;
   let settings: any = null;
+  let categories: any[] = [];
 
   try {
-    const settingsRes = await fetch(
-      `${API_URL}/api/store/${slug}/settings`,
+    const res = await fetch(
+      `${API_URL}/api/public/store/${slug}`,
       { cache: "no-store" }
     );
 
-    if (settingsRes.ok) {
-      const data = await settingsRes.json();
-      store = data?.store ?? null;
-      settings = data?.settings ?? null;
-    } else {
+    if (!res.ok) {
       console.error(
-        "[STORE SETTINGS] Status:",
-        settingsRes.status,
+        "[PUBLIC STORE] Status:",
+        res.status,
         "Slug:",
         slug
       );
+    } else {
+      const data = await res.json();
+      store = data.store;
+      settings = data.settings;
+      categories = data.categories || [];
     }
   } catch (err) {
-    console.error("[STORE SETTINGS] Erro:", err);
+    console.error("[PUBLIC STORE] Erro:", err);
   }
 
-  // Se não achou a loja, MOSTRA MENSAGEM (não 404)
   if (!store) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center text-gray-500 px-4">
@@ -72,32 +74,6 @@ export default async function StorePage({ params }: StorePageProps) {
         </div>
       </div>
     );
-  }
-
-  /* ===============================
-     2️⃣ BUSCAR PRODUTOS / CATEGORIAS
-  =============================== */
-  let categories: any[] = [];
-
-  try {
-    const productsRes = await fetch(
-      `${API_URL}/api/store/by-subdomain/${slug}`,
-      { cache: "no-store" }
-    );
-
-    if (productsRes.ok) {
-      const data = await productsRes.json();
-      categories = data?.categories ?? [];
-    } else {
-      console.error(
-        "[STORE PRODUCTS] Status:",
-        productsRes.status,
-        "Slug:",
-        slug
-      );
-    }
-  } catch (err) {
-    console.error("[STORE PRODUCTS] Erro:", err);
   }
 
   /* ===============================
@@ -156,7 +132,7 @@ export default async function StorePage({ params }: StorePageProps) {
         </div>
       </div>
 
-      {/* CATEGORIAS */}
+      {/* CATEGORIAS / PRODUTOS */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories} />
       </div>
