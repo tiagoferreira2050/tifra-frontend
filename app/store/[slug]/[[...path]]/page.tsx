@@ -1,5 +1,3 @@
-// app/store/[slug]/[[...path]]/page.tsx
-
 import { CategoryList } from "./components/CategoryList";
 
 interface StorePageProps {
@@ -58,9 +56,7 @@ export default async function StorePage({ params }: StorePageProps) {
           <h1 className="text-xl font-bold mb-2">
             Loja não encontrada
           </h1>
-          <p>
-            Esse cardápio pode estar indisponível no momento.
-          </p>
+          <p>Esse cardápio pode estar indisponível.</p>
         </div>
       </div>
     );
@@ -71,56 +67,64 @@ export default async function StorePage({ params }: StorePageProps) {
   =============================== */
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ================= CARD DA LOJA ================= */}
-      <div className="max-w-2xl mx-auto px-4 pt-6">
-        <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-4 items-center">
-          {/* LOGO */}
-          {store.logoUrl && (
+      {/* ================= HEADER ================= */}
+      <div className="relative">
+        {/* BANNER */}
+        <div className="h-56 w-full overflow-hidden">
+          {store.coverImage ? (
             <img
-              src={store.logoUrl}
-              className="w-20 h-20 rounded-full border object-cover"
+              src={store.coverImage}
               alt={store.name}
+              className="w-full h-full object-cover"
             />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
           )}
+        </div>
 
-          {/* INFO */}
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">
-              {store.name}
-            </h1>
+        {/* CARD (NUVEM) SOBRE O BANNER */}
+        <div className="absolute left-0 right-0 -bottom-16">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="bg-white rounded-2xl shadow-xl p-4 flex gap-4 items-center">
+              {/* LOGO */}
+              {store.logoUrl && (
+                <img
+                  src={store.logoUrl}
+                  alt={store.name}
+                  className="w-20 h-20 rounded-full border object-cover"
+                />
+              )}
 
-            {store.description && (
-              <p className="text-sm text-gray-500 mt-1">
-                {store.description}
-              </p>
-            )}
+              {/* INFO */}
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-gray-900">
+                  {store.name}
+                </h1>
 
-            <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-              <span className="font-medium text-green-600">
-                🟢 Aberto
-              </span>
-              <span>⏱ 40–50 min</span>
-              <span>Sem pedido mínimo</span>
+                {store.description && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {store.description}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
+                  <span className="font-medium text-green-600">
+                    ● Aberto
+                  </span>
+                  <span>⏱ 40–50 min</span>
+                  <span>Sem pedido mínimo</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ================= BANNER ================= */}
-      <div className="mt-6 h-44 w-full overflow-hidden">
-        {store.coverImage ? (
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
-        )}
-      </div>
+      {/* ESPAÇO PARA COMPENSAR A SOBREPOSIÇÃO */}
+      <div className="h-24" />
 
-      {/* ================= CATEGORIAS / PRODUTOS ================= */}
-      <div className="max-w-2xl mx-auto px-4 py-10">
+      {/* ================= PRODUTOS ================= */}
+      <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories} />
       </div>
     </div>
