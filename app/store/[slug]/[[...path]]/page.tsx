@@ -1,6 +1,5 @@
 // app/store/[slug]/[[...path]]/page.tsx
 
-import { notFound } from "next/navigation";
 import { CategoryList } from "./components/CategoryList";
 
 interface StorePageProps {
@@ -16,44 +15,90 @@ export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
   if (!slug) {
-    return notFound();
+    return (
+      <div className="text-center mt-10 text-gray-500">
+        Loja inválida
+      </div>
+    );
   }
 
   if (!API_URL) {
-    throw new Error("NEXT_PUBLIC_API_URL não configurada");
+    return (
+      <div className="text-center mt-10 text-red-500">
+        API não configurada
+      </div>
+    );
   }
 
   /* ===============================
-     1️⃣ CONFIGURAÇÕES PÚBLICAS DA LOJA
+     1️⃣ BUSCAR CONFIGURAÇÕES DA LOJA
   =============================== */
-  const settingsRes = await fetch(
-    `${API_URL}/api/store/${slug}/settings`,
-    { cache: "no-store" }
-  );
+  let store: any = null;
+  let settings: any = null;
 
-  if (!settingsRes.ok) {
-    return notFound();
+  try {
+    const settingsRes = await fetch(
+      `${API_URL}/api/store/${slug}/settings`,
+      { cache: "no-store" }
+    );
+
+    if (settingsRes.ok) {
+      const data = await settingsRes.json();
+      store = data?.store ?? null;
+      settings = data?.settings ?? null;
+    } else {
+      console.error(
+        "[STORE SETTINGS] Status:",
+        settingsRes.status,
+        "Slug:",
+        slug
+      );
+    }
+  } catch (err) {
+    console.error("[STORE SETTINGS] Erro:", err);
   }
 
-  const { store, settings } = await settingsRes.json();
-
+  // Se não achou a loja, MOSTRA MENSAGEM (não 404)
   if (!store) {
-    return notFound();
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center text-gray-500 px-4">
+        <div>
+          <h1 className="text-xl font-bold mb-2">
+            Loja não encontrada
+          </h1>
+          <p>
+            Esse cardápio pode estar indisponível no momento.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   /* ===============================
-     2️⃣ CATEGORIAS E PRODUTOS
+     2️⃣ BUSCAR PRODUTOS / CATEGORIAS
   =============================== */
-  const productsRes = await fetch(
-    `${API_URL}/api/store/by-subdomain/${slug}`,
-    { cache: "no-store" }
-  );
+  let categories: any[] = [];
 
-  const productsData = productsRes.ok
-    ? await productsRes.json()
-    : { categories: [] };
+  try {
+    const productsRes = await fetch(
+      `${API_URL}/api/store/by-subdomain/${slug}`,
+      { cache: "no-store" }
+    );
 
-  const categories = productsData?.categories || [];
+    if (productsRes.ok) {
+      const data = await productsRes.json();
+      categories = data?.categories ?? [];
+    } else {
+      console.error(
+        "[STORE PRODUCTS] Status:",
+        productsRes.status,
+        "Slug:",
+        slug
+      );
+    }
+  } catch (err) {
+    console.error("[STORE PRODUCTS] Erro:", err);
+  }
 
   /* ===============================
      RENDER
@@ -81,7 +126,9 @@ export default async function StorePage({ params }: StorePageProps) {
             )}
 
             <div className="flex-1">
-              <h1 className="text-xl font-bold">{store.name}</h1>
+              <h1 className="text-xl font-bold">
+                {store.name}
+              </h1>
 
               {store.description && (
                 <p className="text-sm text-gray-500">
