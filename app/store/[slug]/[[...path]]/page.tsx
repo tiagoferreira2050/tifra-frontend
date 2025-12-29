@@ -32,7 +32,6 @@ export default async function StorePage({ params }: StorePageProps) {
 
   /* ===============================
      🔥 BUSCAR LOJA + CATEGORIAS
-     GET /api/store/by-subdomain/:subdomain
   =============================== */
   let store: any = null;
   let categories: any[] = [];
@@ -43,14 +42,7 @@ export default async function StorePage({ params }: StorePageProps) {
       { cache: "no-store" }
     );
 
-    if (!res.ok) {
-      console.error(
-        "[STORE BY SUBDOMAIN] status:",
-        res.status,
-        "slug:",
-        slug
-      );
-    } else {
+    if (res.ok) {
       const data = await res.json();
       store = data.store ?? null;
       categories = data.categories ?? [];
@@ -79,56 +71,52 @@ export default async function StorePage({ params }: StorePageProps) {
   =============================== */
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ================= HEADER ================= */}
-      <div className="relative">
-        {/* CAPA */}
-        <div className="h-48 w-full overflow-hidden">
-          {store.coverImage ? (
+      {/* ================= CARD DA LOJA ================= */}
+      <div className="max-w-2xl mx-auto px-4 pt-6">
+        <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-4 items-center">
+          {/* LOGO */}
+          {store.logoUrl && (
             <img
-              src={store.coverImage}
+              src={store.logoUrl}
+              className="w-20 h-20 rounded-full border object-cover"
               alt={store.name}
-              className="w-full h-full object-cover"
             />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
           )}
-        </div>
 
-        {/* CARD DA LOJA */}
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="-mt-16 bg-white rounded-2xl shadow-lg p-4 flex gap-4 items-center">
-            {/* LOGO */}
-            {store.logoUrl && (
-              <img
-                src={store.logoUrl}
-                className="w-20 h-20 rounded-full border object-cover"
-                alt={store.name}
-              />
+          {/* INFO */}
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-900">
+              {store.name}
+            </h1>
+
+            {store.description && (
+              <p className="text-sm text-gray-500 mt-1">
+                {store.description}
+              </p>
             )}
 
-            {/* INFO */}
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">
-                {store.name}
-              </h1>
-
-              {store.description && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {store.description}
-                </p>
-              )}
-
-              {/* Infos fixas por enquanto (depois vêm do backend) */}
-              <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-                <span className="font-medium text-green-600">
-                  🟢 Aberto
-                </span>
-                <span>⏱ 40–50 min</span>
-                <span>Sem pedido mínimo</span>
-              </div>
+            <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
+              <span className="font-medium text-green-600">
+                🟢 Aberto
+              </span>
+              <span>⏱ 40–50 min</span>
+              <span>Sem pedido mínimo</span>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ================= BANNER ================= */}
+      <div className="mt-6 h-44 w-full overflow-hidden">
+        {store.coverImage ? (
+          <img
+            src={store.coverImage}
+            alt={store.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
+        )}
       </div>
 
       {/* ================= CATEGORIAS / PRODUTOS ================= */}
