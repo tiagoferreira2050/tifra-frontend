@@ -8,12 +8,17 @@ interface ProductCardProps {
     price: number;
     imageUrl?: string | null;
   };
+  onOpen: (product: any) => void;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  onOpen,
+}: ProductCardProps) {
   return (
     <button
       type="button"
+      onClick={() => onOpen(product)}
       className="w-full bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-4 flex gap-4 text-left active:scale-[0.98]"
     >
       {/* TEXTO */}
