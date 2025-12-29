@@ -30,6 +30,10 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
+  /* ===============================
+     🔥 BUSCAR LOJA + CATEGORIAS
+     GET /api/store/by-subdomain/:subdomain
+  =============================== */
   let store: any = null;
   let categories: any[] = [];
 
@@ -48,8 +52,8 @@ export default async function StorePage({ params }: StorePageProps) {
       );
     } else {
       const data = await res.json();
-      store = data.store;
-      categories = data.categories || [];
+      store = data.store ?? null;
+      categories = data.categories ?? [];
     }
   } catch (err) {
     console.error("[STORE BY SUBDOMAIN] erro:", err);
@@ -70,6 +74,9 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
+  /* ===============================
+     RENDER
+  =============================== */
   return (
     <div>
       {/* HEADER */}
@@ -96,12 +103,18 @@ export default async function StorePage({ params }: StorePageProps) {
               <h1 className="text-xl font-bold">
                 {store.name}
               </h1>
+
+              {store.description && (
+                <p className="text-sm text-gray-500">
+                  {store.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* CATEGORIAS */}
+      {/* CATEGORIAS / PRODUTOS */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories} />
       </div>
