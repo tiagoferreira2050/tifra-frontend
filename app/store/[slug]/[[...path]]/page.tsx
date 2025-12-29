@@ -30,35 +30,29 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
-  /* ===============================
-     🔓 CARDÁPIO PÚBLICO (BACKEND REAL)
-     GET /api/public/store/:subdomain
-  =============================== */
   let store: any = null;
-  let settings: any = null;
   let categories: any[] = [];
 
   try {
     const res = await fetch(
-      `${API_URL}/api/public/store/${slug}`,
+      `${API_URL}/api/store/by-subdomain/${slug}`,
       { cache: "no-store" }
     );
 
     if (!res.ok) {
       console.error(
-        "[PUBLIC STORE] Status:",
+        "[STORE BY SUBDOMAIN] status:",
         res.status,
-        "Slug:",
+        "slug:",
         slug
       );
     } else {
       const data = await res.json();
       store = data.store;
-      settings = data.settings;
       categories = data.categories || [];
     }
   } catch (err) {
-    console.error("[PUBLIC STORE] Erro:", err);
+    console.error("[STORE BY SUBDOMAIN] erro:", err);
   }
 
   if (!store) {
@@ -76,9 +70,6 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
-  /* ===============================
-     RENDER
-  =============================== */
   return (
     <div>
       {/* HEADER */}
@@ -105,34 +96,12 @@ export default async function StorePage({ params }: StorePageProps) {
               <h1 className="text-xl font-bold">
                 {store.name}
               </h1>
-
-              {store.description && (
-                <p className="text-sm text-gray-500">
-                  {store.description}
-                </p>
-              )}
-
-              <div className="flex gap-4 text-xs text-gray-600 mt-2">
-                <span>
-                  {settings?.isOpen ? "🟢 Aberto" : "🔴 Fechado"}
-                </span>
-
-                {settings?.estimatedTime && (
-                  <span>⏱ {settings.estimatedTime}</span>
-                )}
-
-                <span>
-                  {settings?.minOrderValue > 0
-                    ? `Pedido mínimo R$ ${settings.minOrderValue}`
-                    : "Sem pedido mínimo"}
-                </span>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* CATEGORIAS / PRODUTOS */}
+      {/* CATEGORIAS */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <CategoryList categories={categories} />
       </div>
