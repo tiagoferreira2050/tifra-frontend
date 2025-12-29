@@ -7,11 +7,14 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // IGNORAR ARQUIVOS / API
+  // 1️⃣ IGNORAR ROTAS INTERNAS DO NEXT / API / ARQUIVOS
   // ===============================
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/robots") ||
+    pathname.startsWith("/sitemap") ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
@@ -21,18 +24,19 @@ export function middleware(req: NextRequest) {
   const mainDomain = "tifra.com.br";
 
   // ===============================
-  // 🔐 PAINEL — app.tifra.com.br
+  // 2️⃣ PAINEL — app.tifra.com.br
   // ===============================
   if (cleanHost.startsWith("app.")) {
     const isPanelRoute = pathname.startsWith("/panel");
-    const isPublicRoute = pathname === "/login" || pathname === "/signup";
+    const isPublicRoute =
+      pathname === "/login" || pathname === "/signup";
 
-    // 🔓 rotas públicas
+    // rotas públicas do painel
     if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // 🔐 proteger APENAS /panel
+    // proteger APENAS /panel
     if (isPanelRoute && !token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -41,7 +45,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // DOMÍNIO RAIZ
+  // 3️⃣ DOMÍNIO RAIZ — tifra.com.br
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -51,11 +55,16 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // SUBDOMÍNIO → LOJA
+  // 4️⃣ SUBDOMÍNIO → LOJA PÚBLICA
   // ===============================
   const subdomain = cleanHost.split(".")[0];
   const url = req.nextUrl.clone();
-  url.pathname = `/store/${subdomain}`;
+
+  // mantém o pathname para não quebrar rotas internas
+  url.pathname =
+    pathname === "/"
+      ? `/store/${subdomain}`
+      : `/store/${subdomain}${pathname}`;
 
   return NextResponse.rewrite(url);
 }
