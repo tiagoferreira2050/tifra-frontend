@@ -47,16 +47,17 @@ export default function ProductCard({
       </div>
 
       {/* IMAGEM */}
-      <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100">
-        <Image
-          src={product.imageUrl || "/placeholder.jpg"}
-          alt={product.name}
-          fill
-          className="object-cover"
-          sizes="96px"
-          priority={false}
-        />
-      </div>
+      {product.imageUrl && (
+        <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="96px"
+          />
+        </div>
+      )}
     </button>
   );
 }

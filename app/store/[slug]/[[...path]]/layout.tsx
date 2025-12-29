@@ -1,4 +1,4 @@
-// app/store/[slug]/layout.tsx
+// app/store/[slug]/[[...path]]/layout.tsx
 
 import type { Metadata } from "next";
 
@@ -19,7 +19,6 @@ export default function StoreLayout({
         Header visual fica no page.tsx
         Aqui é só estrutura global
       */}
-
       <main>{children}</main>
 
       {/* 

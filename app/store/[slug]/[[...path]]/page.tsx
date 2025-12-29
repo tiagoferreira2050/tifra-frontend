@@ -1,4 +1,4 @@
-// app/store/[slug]/page.tsx
+// app/store/[slug]/[[...path]]/page.tsx
 
 import { notFound } from "next/navigation";
 import { CategoryList } from "./components/CategoryList";
@@ -6,6 +6,7 @@ import { CategoryList } from "./components/CategoryList";
 interface StorePageProps {
   params: {
     slug: string;
+    path?: string[];
   };
 }
 
@@ -14,7 +15,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default async function StorePage({ params }: StorePageProps) {
   const { slug } = params;
 
-  if (!slug || typeof slug !== "string") {
+  if (!slug) {
     return notFound();
   }
 
@@ -26,16 +27,15 @@ export default async function StorePage({ params }: StorePageProps) {
      1️⃣ CONFIGURAÇÕES PÚBLICAS DA LOJA
   =============================== */
   const settingsRes = await fetch(
-  `${API_URL}/api/store/${slug}/settings`,
-  { cache: "no-store" }
-);
+    `${API_URL}/api/store/${slug}/settings`,
+    { cache: "no-store" }
+  );
 
-if (!settingsRes.ok) {
-  return notFound();
-}
+  if (!settingsRes.ok) {
+    return notFound();
+  }
 
-const { store, settings } = await settingsRes.json();
-
+  const { store, settings } = await settingsRes.json();
 
   if (!store) {
     return notFound();
@@ -45,9 +45,9 @@ const { store, settings } = await settingsRes.json();
      2️⃣ CATEGORIAS E PRODUTOS
   =============================== */
   const productsRes = await fetch(
-  `${API_URL}/api/store/by-subdomain/${slug}`,
-  { cache: "no-store" }
-);
+    `${API_URL}/api/store/by-subdomain/${slug}`,
+    { cache: "no-store" }
+  );
 
   const productsData = productsRes.ok
     ? await productsRes.json()

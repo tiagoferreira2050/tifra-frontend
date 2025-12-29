@@ -32,7 +32,9 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
             {/* PRODUTOS */}
             <div className="space-y-4">
               {category.products
-                .filter((product: any) => product?.active !== false)
+                .filter(
+                  (product: any) => product?.active !== false
+                )
                 .map((product: any) => (
                   <ProductCard
                     key={product.id}

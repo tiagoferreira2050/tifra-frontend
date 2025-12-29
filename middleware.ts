@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
   // ===============================
   // 2️⃣ PAINEL — app.tifra.com.br
   // ===============================
-  if (cleanHost.startsWith("app.")) {
+  if (cleanHost === `app.${mainDomain}`) {
     const isPanelRoute = pathname.startsWith("/panel");
     const isPublicRoute =
       pathname === "/login" || pathname === "/signup";
@@ -57,7 +57,7 @@ export function middleware(req: NextRequest) {
   // ===============================
   // 4️⃣ SUBDOMÍNIO → LOJA PÚBLICA
   // ===============================
-  const subdomain = cleanHost.split(".")[0];
+  const subdomain = cleanHost.replace(`.${mainDomain}`, "");
   const url = req.nextUrl.clone();
 
   // mantém o pathname para não quebrar rotas internas
