@@ -53,12 +53,13 @@ export default function ProductModal({
 
   /* =======================
      LOAD PRODUTO COMPLETO
-     🔥 ROTA PÚBLICA NOVA
+     (ROTA PÚBLICA)
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
 
     setLoading(true);
+    setFullProduct(null);
     setSelected({});
     setQty(1);
     setObservation("");
@@ -71,7 +72,6 @@ export default function ProductModal({
         setFullProduct(data);
       } catch (err) {
         console.error("Erro ao carregar produto público", err);
-        setFullProduct(product);
       } finally {
         setLoading(false);
       }
@@ -82,7 +82,11 @@ export default function ProductModal({
 
   if (!product) return null;
 
-  if (loading) {
+  /* =======================
+     🔒 TRAVA CRÍTICA
+     (SEM ISSO NÃO FUNCIONA)
+  ======================= */
+  if (loading || !fullProduct) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl px-6 py-4">
@@ -92,7 +96,7 @@ export default function ProductModal({
     );
   }
 
-  const productData = fullProduct || product;
+  const productData = fullProduct;
   const groups = productData.complementItems ?? [];
 
   /* =======================
@@ -310,7 +314,7 @@ export default function ProductModal({
             );
           })}
 
-          {/* OBSERVAÇÃO */}
+          {/* OBS */}
           <div className="mt-6">
             <label className="text-sm font-medium">
               Observações
