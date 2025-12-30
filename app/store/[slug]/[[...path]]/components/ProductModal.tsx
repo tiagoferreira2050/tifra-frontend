@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
 
 /* =======================
-   TIPOS (IGUAL BACKEND)
+   TIPOS
 ======================= */
 type ComplementOption = {
   id: string;
@@ -36,10 +35,10 @@ interface ProductModalProps {
   onClose: () => void;
 }
 
-export default function ProductModal({
-  product,
-  onClose,
-}: ProductModalProps) {
+/* =======================
+   COMPONENT
+======================= */
+export default function ProductModal({ product, onClose }: ProductModalProps) {
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -52,28 +51,39 @@ export default function ProductModal({
   >({});
 
   /* =======================
-     LOAD PRODUTO COMPLETO
-     (ROTA PÚBLICA)
+     LOAD PRODUTO (API REAL)
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!API_URL) {
+      console.error("NEXT_PUBLIC_API_URL não definida");
+      return;
+    }
+
     setLoading(true);
-    setFullProduct(null);
     setSelected({});
     setQty(1);
     setObservation("");
 
     async function load() {
       try {
-        const data = await apiFetch(
-  `/api/public/products/${product.id}`
-);
+        const res = await fetch(
+          `${API_URL}/api/public/products/${product.id}`,
+          { cache: "no-store" }
+        );
 
+        if (!res.ok) {
+          throw new Error("Erro ao buscar produto público");
+        }
 
+        const data = await res.json();
         setFullProduct(data);
       } catch (err) {
         console.error("Erro ao carregar produto público", err);
+        setFullProduct(product);
       } finally {
         setLoading(false);
       }
@@ -84,11 +94,7 @@ export default function ProductModal({
 
   if (!product) return null;
 
-  /* =======================
-     🔒 TRAVA CRÍTICA
-     (SEM ISSO NÃO FUNCIONA)
-  ======================= */
-  if (loading || !fullProduct) {
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl px-6 py-4">
@@ -98,31 +104,26 @@ export default function ProductModal({
     );
   }
 
-  const productData = fullProduct;
+  const productData = fullProduct || product;
   const groups = productData.complementItems ?? [];
 
   /* =======================
-     HELPERS (IGUAL GESTOR)
+     HELPERS
   ======================= */
   function getTotalSelected(groupId: string) {
     const g = selected[groupId] ?? {};
     return Object.values(g).reduce((acc, v) => acc + v, 0);
   }
 
-  function toggleOption(
-    group: ComplementGroup,
-    option: ComplementOption
-  ) {
-    setSelected((prev) => {
+  function toggleOption(group: ComplementGroup, option: ComplementOption) {
+    setSelected(prev => {
       const current = prev[group.id] ?? {};
       const totalSelected = getTotalSelected(group.id);
 
-      // SINGLE
       if (group.type === "single") {
         return { ...prev, [group.id]: { [option.id]: 1 } };
       }
 
-      // MULTIPLE
       if (group.type === "multiple") {
         if (current[option.id]) {
           const copy = { ...current };
@@ -143,7 +144,6 @@ export default function ProductModal({
         };
       }
 
-      // ADDABLE
       if (
         typeof group.maxChoose === "number" &&
         totalSelected >= group.maxChoose
@@ -162,18 +162,12 @@ export default function ProductModal({
   }
 
   function isValid() {
-    return groups.every((g) => {
+    return groups.every(g => {
       const chosen = selected[g.id] ?? {};
-      const total = Object.values(chosen).reduce(
-        (a, b) => a + b,
-        0
-      );
+      const total = Object.values(chosen).reduce((a, b) => a + b, 0);
 
       if (g.required && total === 0) return false;
-      if (
-        typeof g.minChoose === "number" &&
-        total < g.minChoose
-      )
+      if (typeof g.minChoose === "number" && total < g.minChoose)
         return false;
 
       return true;
@@ -190,7 +184,7 @@ export default function ProductModal({
     return (
       acc +
       Object.entries(chosen).reduce((sum, [optId, q]) => {
-        const opt = g.options.find((o) => o.id === optId);
+        const opt = g.options.find(o => o.id === optId);
         return sum + Number(opt?.price ?? 0) * q;
       }, 0)
     );
@@ -221,9 +215,7 @@ export default function ProductModal({
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-xl font-semibold">
-            {productData.name}
-          </h2>
+          <h2 className="text-xl font-semibold">{productData.name}</h2>
 
           {productData.description && (
             <p className="text-sm text-gray-600 mt-2">
@@ -236,15 +228,12 @@ export default function ProductModal({
           </div>
 
           {/* COMPLEMENTOS */}
-          {groups.map((group) => {
+          {groups.map(group => {
             const chosen = selected[group.id] ?? {};
             const totalSelected = getTotalSelected(group.id);
 
             return (
-              <div
-                key={group.id}
-                className="mt-6 border rounded-lg p-3"
-              >
+              <div key={group.id} className="mt-6 border rounded-lg p-3">
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">
                     {group.title}
@@ -260,7 +249,7 @@ export default function ProductModal({
                   )}
                 </div>
 
-                {group.options.map((opt) => {
+                {group.options.map(opt => {
                   const q = chosen[opt.id] ?? 0;
                   const disabled =
                     group.maxChoose &&
@@ -284,29 +273,20 @@ export default function ProductModal({
                       </div>
 
                       {group.type === "addable" ? (
-                        <div className="flex gap-2 items-center">
-                          <button
-                            onClick={() =>
-                              toggleOption(group, opt)
-                            }
-                            className="border px-2 rounded"
-                          >
-                            +
-                          </button>
-                          <span>{q}</span>
-                        </div>
+                        <button
+                          onClick={() => toggleOption(group, opt)}
+                          className="border px-2 rounded"
+                        >
+                          +
+                        </button>
                       ) : (
                         <input
                           type={
-                            group.type === "single"
-                              ? "radio"
-                              : "checkbox"
+                            group.type === "single" ? "radio" : "checkbox"
                           }
                           checked={q > 0}
                           disabled={disabled}
-                          onChange={() =>
-                            toggleOption(group, opt)
-                          }
+                          onChange={() => toggleOption(group, opt)}
                         />
                       )}
                     </div>
@@ -318,14 +298,10 @@ export default function ProductModal({
 
           {/* OBS */}
           <div className="mt-6">
-            <label className="text-sm font-medium">
-              Observações
-            </label>
+            <label className="text-sm font-medium">Observações</label>
             <textarea
               value={observation}
-              onChange={(e) =>
-                setObservation(e.target.value)
-              }
+              onChange={e => setObservation(e.target.value)}
               className="w-full mt-2 border rounded-lg p-2 text-sm"
             />
           </div>
@@ -336,19 +312,9 @@ export default function ProductModal({
           <div className="flex justify-between mb-3">
             <span>Quantidade</span>
             <div className="flex gap-2">
-              <button
-                onClick={() =>
-                  setQty((q) => Math.max(1, q - 1))
-                }
-              >
-                −
-              </button>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
               <span>{qty}</span>
-              <button
-                onClick={() => setQty((q) => q + 1)}
-              >
-                +
-              </button>
+              <button onClick={() => setQty(q => q + 1)}>+</button>
             </div>
           </div>
 
