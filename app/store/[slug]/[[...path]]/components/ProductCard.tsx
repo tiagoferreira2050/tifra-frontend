@@ -1,52 +1,41 @@
 "use client";
 
-interface ProductCardProps {
-  product: {
-    id: string;
-    name: string;
-    description?: string | null;
-    price: number;
-    imageUrl?: string | null;
-  };
-  onOpen: (product: any) => void;
-}
+import { useState } from "react";
+import ProductModal from "./ProductModal";
 
-export default function ProductCard({
-  product,
-  onOpen,
-}: ProductCardProps) {
+export default function ProductCard({ product }: { product: any }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(product)}
-      className="w-full bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-4 flex gap-4 text-left active:scale-[0.98]"
-    >
-      {/* TEXTO */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-base font-semibold text-gray-900 truncate">
-          {product.name}
-        </h3>
-
-        {product.description && (
-          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-            {product.description}
+    <>
+      {/* CARD */}
+      <div
+        onClick={() => setOpen(true)}
+        className="cursor-pointer border rounded-xl p-3 flex justify-between items-center"
+      >
+        <div>
+          <h3 className="font-semibold">{product.name}</h3>
+          <p className="text-sm text-gray-500">
+            R$ {Number(product.price).toFixed(2)}
           </p>
-        )}
-
-        <div className="mt-3 text-purple-600 font-bold">
-          R$ {Number(product.price).toFixed(2)}
         </div>
+
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-16 h-16 object-cover rounded-lg"
+          />
+        )}
       </div>
 
-      {/* IMAGEM */}
-      <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-        <img
-          src={product.imageUrl || "/placeholder.jpg"}
-          alt={product.name}
-          loading="lazy"
-          className="w-full h-full object-cover"
+      {/* MODAL */}
+      {open && (
+        <ProductModal
+          product={product}   // 🔥 ISSO É O MAIS IMPORTANTE
+          onClose={() => setOpen(false)}
         />
-      </div>
-    </button>
+      )}
+    </>
   );
 }
