@@ -26,7 +26,7 @@ type Product = {
   description?: string;
   price: number;
   imageUrl?: string;
-  complementGroups: ComplementGroup[];
+  complementGroups?: ComplementGroup[]; // ⚠️ opcional por segurança
 };
 
 interface ProductModalProps {
@@ -43,6 +43,9 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   const [observation, setObservation] = useState("");
 
   if (!product) return null;
+
+  // ✅ fallback seguro (produto sem complemento não quebra)
+  const complementGroups: ComplementGroup[] = product.complementGroups || [];
 
   /* =======================
      HELPERS
@@ -69,7 +72,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   function calculateTotal() {
     let total = product.price;
 
-    product.complementGroups.forEach(group => {
+    complementGroups.forEach(group => {
       group.items.forEach(item => {
         if (selected[group.id]?.includes(item.id)) {
           total += item.price;
@@ -81,7 +84,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   }
 
   function isValid() {
-    return product.complementGroups.every(group => {
+    return complementGroups.every(group => {
       const count = selected[group.id]?.length || 0;
       if (group.min && count < group.min) return false;
       if (group.max && count > group.max) return false;
@@ -126,13 +129,14 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           </div>
 
           {/* COMPLEMENTOS */}
-          {product.complementGroups.map(group => {
+          {complementGroups.map(group => {
             const selectedCount = selected[group.id]?.length || 0;
 
             return (
               <div key={group.id} className="mt-6">
                 <div className="flex justify-between items-center">
                   <h3 className="font-semibold">{group.title}</h3>
+
                   {group.max && (
                     <span className="text-xs text-gray-500">
                       {selectedCount}/{group.max}
@@ -141,10 +145,16 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                 </div>
 
                 {(group.min || group.max) && (
-                  <p className="text-xs text-gray-500 mb-2">
+                  <p className="text-xs text-gray-500 mb-1">
                     {group.min
                       ? `Escolha no mínimo ${group.min}`
                       : `Escolha até ${group.max}`}
+                  </p>
+                )}
+
+                {group.min && selectedCount < group.min && (
+                  <p className="text-xs text-red-500 mb-2">
+                    Escolha pelo menos {group.min}
                   </p>
                 )}
 

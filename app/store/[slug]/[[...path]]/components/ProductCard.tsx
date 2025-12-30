@@ -8,7 +8,6 @@ export default function ProductCard({ product }: { product: any }) {
 
   return (
     <>
-      {/* CARD */}
       <div
         onClick={() => setOpen(true)}
         className="cursor-pointer border rounded-xl p-3 flex justify-between items-center"
@@ -29,10 +28,9 @@ export default function ProductCard({ product }: { product: any }) {
         )}
       </div>
 
-      {/* MODAL */}
       {open && (
         <ProductModal
-          product={product}   // 🔥 ISSO É O MAIS IMPORTANTE
+          product={product}
           onClose={() => setOpen(false)}
         />
       )}
