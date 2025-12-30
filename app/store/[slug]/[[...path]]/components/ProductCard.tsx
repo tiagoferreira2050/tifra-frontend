@@ -8,11 +8,9 @@ export default function ProductCard({ product }: { product: any }) {
 
   return (
     <>
+      {/* CARD */}
       <div
-        onClick={() => {
-          console.log("🟢 CLIQUE NO PRODUTO:", product.id);
-          setOpen(true);
-        }}
+        onClick={() => setOpen(true)}
         className="
           cursor-pointer
           bg-white
@@ -23,21 +21,50 @@ export default function ProductCard({ product }: { product: any }) {
           justify-between
           items-center
           hover:bg-gray-50
+          transition
         "
       >
-        <div className="flex-1 pr-3">
-          <h3 className="font-medium">{product.name}</h3>
-          <p className="text-sm font-semibold">
+        {/* TEXTO */}
+        <div className="pr-3 flex-1">
+          <h3 className="text-base font-medium text-gray-900 leading-snug">
+            {product.name}
+          </h3>
+
+          {product.description && (
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">
+              {product.description}
+            </p>
+          )}
+
+          {/* PREÇO NORMAL (SEM "A PARTIR DE") */}
+          <p className="mt-2 text-sm font-semibold text-gray-800">
             R$ {Number(product.price).toFixed(2)}
           </p>
         </div>
+
+        {/* IMAGEM */}
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="
+              w-20
+              h-20
+              object-cover
+              rounded-lg
+              flex-shrink-0
+            "
+          />
+        )}
       </div>
 
-      <ProductModal
-        open={open}
-        productId={product.id}
-        onClose={() => setOpen(false)}
-      />
+      {/* MODAL */}
+      {open && (
+        <ProductModal
+          product={product}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }
