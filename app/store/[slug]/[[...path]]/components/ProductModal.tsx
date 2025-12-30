@@ -10,7 +10,7 @@ type ComplementOption = {
   id: string;
   name: string;
   price: number;
-   imageUrl?: string | null;
+  imageUrl?: string | null;
 };
 
 type ComplementGroup = {
@@ -62,11 +62,9 @@ export default function ProductModal({ product, onClose }: Props) {
 
     apiFetch(`/api/public/menu/products/${product.id}`)
       .then((data) => {
-        console.log("✅ PRODUTO:", data);
         setFullProduct(data);
       })
-      .catch((err) => {
-        console.error("❌ Erro public menu", err);
+      .catch(() => {
         setFullProduct(product);
       })
       .finally(() => setLoading(false));
@@ -102,10 +100,12 @@ export default function ProductModal({ product, onClose }: Props) {
       const current = prev[group.id] ?? {};
       const total = getTotalSelected(group.id);
 
+      // SINGLE
       if (group.type === "single") {
         return { ...prev, [group.id]: { [option.id]: 1 } };
       }
 
+      // MULTIPLE
       if (group.type === "multiple") {
         if (current[option.id]) {
           const copy = { ...current };
@@ -113,7 +113,9 @@ export default function ProductModal({ product, onClose }: Props) {
           return { ...prev, [group.id]: copy };
         }
 
-        if (group.maxChoose && total >= group.maxChoose) return prev;
+        if (typeof group.maxChoose === "number" && total >= group.maxChoose) {
+          return prev;
+        }
 
         return {
           ...prev,
@@ -121,8 +123,10 @@ export default function ProductModal({ product, onClose }: Props) {
         };
       }
 
-      // addable
-      if (group.maxChoose && total >= group.maxChoose) return prev;
+      // ADDABLE
+      if (typeof group.maxChoose === "number" && total >= group.maxChoose) {
+        return prev;
+      }
 
       return {
         ...prev,
@@ -160,7 +164,7 @@ export default function ProductModal({ product, onClose }: Props) {
     return groups.every((g) => {
       const total = getTotalSelected(g.id);
       if (g.required && total === 0) return false;
-      if (g.minChoose && total < g.minChoose) return false;
+      if (typeof g.minChoose === "number" && total < g.minChoose) return false;
       return true;
     });
   }
@@ -232,7 +236,7 @@ export default function ProductModal({ product, onClose }: Props) {
                     <span className="text-red-500"> *</span>
                   )}
                 </span>
-                {group.maxChoose && (
+                {typeof group.maxChoose === "number" && (
                   <span className="text-xs text-gray-500">
                     até {group.maxChoose}
                   </span>
@@ -248,33 +252,32 @@ export default function ProductModal({ product, onClose }: Props) {
                     className="flex justify-between items-center mb-2"
                   >
                     <div className="flex items-center gap-3">
-  {/* IMAGEM DO ITEM */}
-  {opt.imageUrl && (
-    <img
-      src={opt.imageUrl}
-      alt={opt.name}
-      className="w-10 h-10 rounded-md object-cover"
-    />
-  )}
+                      {opt.imageUrl ? (
+                        <img
+                          src={opt.imageUrl}
+                          alt={opt.name}
+                          className="w-12 h-12 rounded-lg object-cover border bg-gray-100"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                          +
+                        </div>
+                      )}
 
-  {/* TEXTO */}
-  <div className="flex flex-col">
-    <span>{opt.name}</span>
-
-    {opt.price > 0 && (
-      <span className="text-xs text-gray-500">
-        + R$ {opt.price.toFixed(2).replace(".", ",")}
-      </span>
-    )}
-  </div>
-</div>
+                      <div className="flex flex-col">
+                        <span>{opt.name}</span>
+                        {opt.price > 0 && (
+                          <span className="text-xs text-gray-500">
+                            + R$ {opt.price.toFixed(2).replace(".", ",")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
                     {group.type === "addable" ? (
                       <div className="flex gap-2 items-center">
                         <button
-                          onClick={() =>
-                            changeAddableQty(group, opt, -1)
-                          }
+                          onClick={() => changeAddableQty(group, opt, -1)}
                           className="border px-2 rounded"
                         >
                           −
