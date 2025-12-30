@@ -26,7 +26,7 @@ type Product = {
   description?: string;
   price: number;
   imageUrl?: string;
-  complementGroups?: ComplementGroup[]; // ⚠️ opcional por segurança
+  complementGroups?: ComplementGroup[]; // segurança
 };
 
 interface ProductModalProps {
@@ -44,7 +44,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
   if (!product) return null;
 
-  // ✅ fallback seguro (produto sem complemento não quebra)
+  // fallback seguro
   const complementGroups: ComplementGroup[] = product.complementGroups || [];
 
   /* =======================
@@ -97,18 +97,43 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   ======================= */
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
-
-        {/* HEADER */}
+      <div
+        className="
+          bg-white
+          w-full
+          sm:max-w-lg
+          rounded-t-2xl
+          sm:rounded-2xl
+          overflow-hidden
+          max-h-[90vh]
+          flex
+          flex-col
+          border
+          border-gray-200
+          shadow-xl
+        "
+      >
+        {/* HEADER / IMAGEM */}
         <div className="relative">
           <img
             src={product.imageUrl || "/placeholder.jpg"}
             alt={product.name}
-            className="w-full h-56 object-cover"
+            className="w-full h-64 object-cover"
           />
+
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 bg-white rounded-full px-3 py-1 text-sm shadow"
+            className="
+              absolute
+              top-3
+              right-3
+              bg-white
+              rounded-full
+              px-3
+              py-1
+              text-sm
+              shadow
+            "
           >
             ✕
           </button>
@@ -116,15 +141,17 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-lg font-bold">{product.name}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 leading-snug">
+            {product.name}
+          </h2>
 
           {product.description && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
               {product.description}
             </p>
           )}
 
-          <div className="mt-3 text-lg font-bold text-purple-600">
+          <div className="mt-4 text-base font-semibold text-gray-800">
             R$ {Number(product.price).toFixed(2)}
           </div>
 
@@ -135,7 +162,9 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
             return (
               <div key={group.id} className="mt-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">{group.title}</h3>
+                  <h3 className="font-medium text-gray-900">
+                    {group.title}
+                  </h3>
 
                   {group.max && (
                     <span className="text-xs text-gray-500">
@@ -145,7 +174,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                 </div>
 
                 {(group.min || group.max) && (
-                  <p className="text-xs text-gray-500 mb-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     {group.min
                       ? `Escolha no mínimo ${group.min}`
                       : `Escolha até ${group.max}`}
@@ -153,12 +182,12 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                 )}
 
                 {group.min && selectedCount < group.min && (
-                  <p className="text-xs text-red-500 mb-2">
+                  <p className="text-xs text-red-500 mt-1">
                     Escolha pelo menos {group.min}
                   </p>
                 )}
 
-                <div className="space-y-2">
+                <div className="mt-3 space-y-2">
                   {group.items.map(item => {
                     const active =
                       selected[group.id]?.includes(item.id) || false;
@@ -167,14 +196,29 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                       <button
                         key={item.id}
                         onClick={() => toggleItem(group, item.id)}
-                        className={`w-full flex justify-between items-center border rounded-lg px-3 py-2 text-sm ${
-                          active
-                            ? "border-purple-600 bg-purple-50"
-                            : "border-gray-200"
-                        }`}
+                        className={`
+                          w-full
+                          flex
+                          justify-between
+                          items-center
+                          border
+                          rounded-lg
+                          px-3
+                          py-2
+                          text-sm
+                          transition
+                          ${
+                            active
+                              ? "border-purple-600 bg-purple-50"
+                              : "border-gray-200 hover:bg-gray-50"
+                          }
+                        `}
                       >
-                        <span>{item.name}</span>
-                        <span className="text-sm font-medium">
+                        <span className="text-gray-800">
+                          {item.name}
+                        </span>
+
+                        <span className="text-sm font-medium text-gray-700">
                           {item.price > 0
                             ? `+ R$ ${item.price.toFixed(2)}`
                             : "Grátis"}
@@ -189,12 +233,26 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
           {/* OBSERVAÇÃO */}
           <div className="mt-6">
-            <label className="text-sm font-medium">Observações</label>
+            <label className="text-sm font-medium text-gray-900">
+              Observações
+            </label>
+
             <textarea
               value={observation}
               onChange={e => setObservation(e.target.value)}
               placeholder="Ex: sem granola, bem caprichado..."
-              className="w-full mt-2 border rounded-lg p-2 text-sm"
+              className="
+                w-full
+                mt-2
+                border
+                border-gray-300
+                rounded-lg
+                p-2
+                text-sm
+                focus:outline-none
+                focus:ring-1
+                focus:ring-purple-500
+              "
               rows={3}
             />
           </div>
@@ -204,18 +262,23 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
         <div className="p-4 border-t space-y-3">
           {/* QUANTIDADE */}
           <div className="flex justify-between items-center">
-            <span className="font-medium">Quantidade</span>
+            <span className="font-medium text-gray-900">
+              Quantidade
+            </span>
+
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full border"
+                className="w-8 h-8 rounded-full border text-lg"
               >
                 −
               </button>
+
               <span>{quantity}</span>
+
               <button
                 onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full border"
+                className="w-8 h-8 rounded-full border text-lg"
               >
                 +
               </button>
@@ -225,11 +288,19 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           {/* BOTÃO */}
           <button
             disabled={!isValid()}
-            className={`w-full rounded-xl py-3 font-semibold text-white ${
-              isValid()
-                ? "bg-purple-600"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`
+              w-full
+              rounded-xl
+              py-3
+              font-semibold
+              text-white
+              transition
+              ${
+                isValid()
+                  ? "bg-purple-600 hover:bg-purple-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }
+            `}
           >
             Adicionar • R$ {calculateTotal()}
           </button>

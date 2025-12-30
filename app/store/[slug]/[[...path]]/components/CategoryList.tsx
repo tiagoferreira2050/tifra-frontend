@@ -37,21 +37,17 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
             id={`category-${category.id}`}
             className="space-y-6"
           >
-            {/* HEADER DA CATEGORIA */}
-            <div className="flex flex-col items-center text-center gap-1">
+            {/* NOME DA CATEGORIA */}
+            <div className="flex flex-col items-center text-center gap-2">
               <h2 className="text-lg font-semibold text-gray-900">
                 {category.name}
               </h2>
 
-              <span className="text-xs text-gray-400">
-                {products.length} itens
-              </span>
-
               {/* divisória sutil */}
-              <div className="mt-2 w-12 h-[2px] bg-gray-200 rounded-full" />
+              <div className="w-10 h-[2px] bg-gray-200 rounded-full" />
             </div>
 
-            {/* LISTA DE PRODUTOS */}
+            {/* PRODUTOS */}
             <div className="space-y-4">
               {products.map((product: any) => (
                 <ProductCard
