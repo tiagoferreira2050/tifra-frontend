@@ -4,21 +4,20 @@ import { useState } from "react";
 import ProductModal from "./ProductModal";
 
 export default function ProductCard({ product }: { product: any }) {
-  const [openProductId, setOpenProductId] = useState<string | null>(null);
-
-  function openModal() {
-    setOpenProductId(product.id);
-  }
+  const [open, setOpen] = useState(false);
 
   function closeModal() {
-    setOpenProductId(null);
+    setOpen(false);
   }
 
   return (
     <>
       {/* CARD */}
       <div
-        onClick={openModal}
+        onClick={() => {
+          console.log("🟢 CLICOU NO PRODUTO:", product.id);
+          setOpen(true);
+        }}
         className="
           cursor-pointer
           bg-white
@@ -32,38 +31,35 @@ export default function ProductCard({ product }: { product: any }) {
           transition
         "
       >
-        {/* TEXTO */}
         <div className="pr-3 flex-1">
-          <h3 className="text-base font-medium text-gray-900 leading-snug">
+          <h3 className="text-base font-medium text-gray-900">
             {product.name}
           </h3>
 
           {product.description && (
-            <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">
+            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
               {product.description}
             </p>
           )}
 
-          {/* PREÇO NORMAL */}
           <p className="mt-2 text-sm font-semibold text-gray-800">
             R$ {Number(product.price).toFixed(2)}
           </p>
         </div>
 
-        {/* IMAGEM */}
         {product.imageUrl && (
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+            className="w-20 h-20 object-cover rounded-lg"
           />
         )}
       </div>
 
-      {/* MODAL (sempre montado corretamente) */}
+      {/* MODAL */}
       <ProductModal
-        open={!!openProductId}
-        productId={openProductId}
+        open={open}
+        productId={product.id}
         onClose={closeModal}
       />
     </>
