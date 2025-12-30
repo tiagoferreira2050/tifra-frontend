@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 /* =======================
-   TIPOS (IGUAL GESTOR)
+   TIPOS (IGUAL BACKEND)
 ======================= */
 type ComplementOption = {
   id: string;
@@ -36,9 +36,12 @@ interface ProductModalProps {
   onClose: () => void;
 }
 
-export default function ProductModal({ product, onClose }: ProductModalProps) {
+export default function ProductModal({
+  product,
+  onClose,
+}: ProductModalProps) {
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [qty, setQty] = useState(1);
   const [observation, setObservation] = useState("");
@@ -50,14 +53,25 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
   /* =======================
      LOAD PRODUTO COMPLETO
+     🔥 ROTA PÚBLICA NOVA
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
 
+    setLoading(true);
+    setSelected({});
+    setQty(1);
+    setObservation("");
+
     async function load() {
       try {
-        const data = await apiFetch(`/store/product/${product.id}`);
+        const data = await apiFetch(
+          `/public/products/${product.id}`
+        );
         setFullProduct(data);
+      } catch (err) {
+        console.error("Erro ao carregar produto público", err);
+        setFullProduct(product);
       } finally {
         setLoading(false);
       }
@@ -89,8 +103,11 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
     return Object.values(g).reduce((acc, v) => acc + v, 0);
   }
 
-  function toggleOption(group: ComplementGroup, option: ComplementOption) {
-    setSelected(prev => {
+  function toggleOption(
+    group: ComplementGroup,
+    option: ComplementOption
+  ) {
+    setSelected((prev) => {
       const current = prev[group.id] ?? {};
       const totalSelected = getTotalSelected(group.id);
 
@@ -139,12 +156,18 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   }
 
   function isValid() {
-    return groups.every(g => {
+    return groups.every((g) => {
       const chosen = selected[g.id] ?? {};
-      const total = Object.values(chosen).reduce((a, b) => a + b, 0);
+      const total = Object.values(chosen).reduce(
+        (a, b) => a + b,
+        0
+      );
 
       if (g.required && total === 0) return false;
-      if (typeof g.minChoose === "number" && total < g.minChoose)
+      if (
+        typeof g.minChoose === "number" &&
+        total < g.minChoose
+      )
         return false;
 
       return true;
@@ -161,7 +184,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
     return (
       acc +
       Object.entries(chosen).reduce((sum, [optId, q]) => {
-        const opt = g.options.find(o => o.id === optId);
+        const opt = g.options.find((o) => o.id === optId);
         return sum + Number(opt?.price ?? 0) * q;
       }, 0)
     );
@@ -192,7 +215,9 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-xl font-semibold">{productData.name}</h2>
+          <h2 className="text-xl font-semibold">
+            {productData.name}
+          </h2>
 
           {productData.description && (
             <p className="text-sm text-gray-600 mt-2">
@@ -205,12 +230,15 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           </div>
 
           {/* COMPLEMENTOS */}
-          {groups.map(group => {
+          {groups.map((group) => {
             const chosen = selected[group.id] ?? {};
             const totalSelected = getTotalSelected(group.id);
 
             return (
-              <div key={group.id} className="mt-6 border rounded-lg p-3">
+              <div
+                key={group.id}
+                className="mt-6 border rounded-lg p-3"
+              >
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">
                     {group.title}
@@ -218,6 +246,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                       <span className="text-red-500"> *</span>
                     )}
                   </span>
+
                   {group.maxChoose && (
                     <span className="text-xs text-gray-500">
                       até {group.maxChoose}
@@ -225,7 +254,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                   )}
                 </div>
 
-                {group.options.map(opt => {
+                {group.options.map((opt) => {
                   const q = chosen[opt.id] ?? 0;
                   const disabled =
                     group.maxChoose &&
@@ -249,7 +278,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                       </div>
 
                       {group.type === "addable" ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <button
                             onClick={() =>
                               toggleOption(group, opt)
@@ -268,10 +297,10 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                               : "checkbox"
                           }
                           checked={q > 0}
+                          disabled={disabled}
                           onChange={() =>
                             toggleOption(group, opt)
                           }
-                          disabled={disabled}
                         />
                       )}
                     </div>
@@ -281,12 +310,16 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
             );
           })}
 
-          {/* OBS */}
+          {/* OBSERVAÇÃO */}
           <div className="mt-6">
-            <label className="text-sm font-medium">Observações</label>
+            <label className="text-sm font-medium">
+              Observações
+            </label>
             <textarea
               value={observation}
-              onChange={e => setObservation(e.target.value)}
+              onChange={(e) =>
+                setObservation(e.target.value)
+              }
               className="w-full mt-2 border rounded-lg p-2 text-sm"
             />
           </div>
@@ -297,9 +330,19 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           <div className="flex justify-between mb-3">
             <span>Quantidade</span>
             <div className="flex gap-2">
-              <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+              <button
+                onClick={() =>
+                  setQty((q) => Math.max(1, q - 1))
+                }
+              >
+                −
+              </button>
               <span>{qty}</span>
-              <button onClick={() => setQty(q => q + 1)}>+</button>
+              <button
+                onClick={() => setQty((q) => q + 1)}
+              >
+                +
+              </button>
             </div>
           </div>
 

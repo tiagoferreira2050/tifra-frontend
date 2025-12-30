@@ -36,8 +36,9 @@ export default function ProductCard({ product }: { product: any }) {
             </p>
           )}
 
+          {/* PREÇO NORMAL (SEM "A PARTIR DE") */}
           <p className="mt-2 text-sm font-semibold text-gray-800">
-            A partir de R$ {Number(product.price).toFixed(2)}
+            R$ {Number(product.price).toFixed(2)}
           </p>
         </div>
 
