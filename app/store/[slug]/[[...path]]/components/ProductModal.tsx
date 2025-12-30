@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 /* =======================
-   TIPOS (IGUAL PUBLIC ROUTE)
+   TIPOS (PUBLIC MENU)
 ======================= */
 type ComplementOption = {
   id: string;
@@ -31,15 +31,12 @@ type Product = {
   complementItems?: ComplementGroup[];
 };
 
-interface ProductModalProps {
+interface Props {
   product: Product | null;
   onClose: () => void;
 }
 
-export default function ProductModal({
-  product,
-  onClose,
-}: ProductModalProps) {
+export default function ProductModal({ product, onClose }: Props) {
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +50,7 @@ export default function ProductModal({
 
   /* =======================
      LOAD PRODUTO + COMPLEMENTOS
-     🔥 PUBLIC ROUTE
+     🔥 /api/public/menu
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
@@ -66,10 +63,10 @@ export default function ProductModal({
     async function load() {
       try {
         const data = await apiFetch(
-          `/api/public/products/${product.id}`
+          `/api/public/menu/products/${product.id}`
         );
 
-        console.log("✅ PRODUTO PÚBLICO:", data);
+        console.log("✅ PRODUTO:", data);
         console.log("✅ COMPLEMENTOS:", data.complementItems);
 
         setFullProduct(data);
@@ -86,6 +83,9 @@ export default function ProductModal({
 
   if (!product) return null;
 
+  /* =======================
+     LOADING
+  ======================= */
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -100,17 +100,14 @@ export default function ProductModal({
   const groups = productData.complementItems ?? [];
 
   /* =======================
-     HELPERS (IGUAL GESTOR)
+     HELPERS
   ======================= */
   function getTotalSelected(groupId: string) {
     const g = selected[groupId] ?? {};
     return Object.values(g).reduce((acc, v) => acc + v, 0);
   }
 
-  function toggleOption(
-    group: ComplementGroup,
-    option: ComplementOption
-  ) {
+  function toggleOption(group: ComplementGroup, option: ComplementOption) {
     setSelected((prev) => {
       const current = prev[group.id] ?? {};
       const totalSelected = getTotalSelected(group.id);
@@ -165,11 +162,7 @@ export default function ProductModal({
       const total = Object.values(chosen).reduce((a, b) => a + b, 0);
 
       if (g.required && total === 0) return false;
-      if (
-        typeof g.minChoose === "number" &&
-        total < g.minChoose
-      )
-        return false;
+      if (typeof g.minChoose === "number" && total < g.minChoose) return false;
 
       return true;
     });
@@ -216,9 +209,7 @@ export default function ProductModal({
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-xl font-semibold">
-            {productData.name}
-          </h2>
+          <h2 className="text-xl font-semibold">{productData.name}</h2>
 
           {productData.description && (
             <p className="text-sm text-gray-600 mt-2">
@@ -227,7 +218,7 @@ export default function ProductModal({
           )}
 
           <div className="mt-3 font-semibold">
-            R$ {basePrice.toFixed(2)}
+            R$ {basePrice.toFixed(2).replace(".", ",")}
           </div>
 
           {/* COMPLEMENTOS */}
@@ -236,10 +227,7 @@ export default function ProductModal({
             const totalSelected = getTotalSelected(group.id);
 
             return (
-              <div
-                key={group.id}
-                className="mt-6 border rounded-lg p-3"
-              >
+              <div key={group.id} className="mt-6 border rounded-lg p-3">
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">
                     {group.title}
@@ -248,7 +236,7 @@ export default function ProductModal({
                     )}
                   </span>
 
-                  {group.maxChoose !== null && (
+                  {typeof group.maxChoose === "number" && (
                     <span className="text-xs text-gray-500">
                       até {group.maxChoose}
                     </span>
@@ -273,16 +261,14 @@ export default function ProductModal({
                         {opt.name}
                         {opt.price > 0 && (
                           <span className="ml-2 text-sm text-gray-500">
-                            + R$ {opt.price.toFixed(2)}
+                            + R$ {opt.price.toFixed(2).replace(".", ",")}
                           </span>
                         )}
                       </div>
 
                       {group.type === "addable" ? (
                         <button
-                          onClick={() =>
-                            toggleOption(group, opt)
-                          }
+                          onClick={() => toggleOption(group, opt)}
                           className="border px-2 rounded"
                         >
                           +
@@ -290,15 +276,11 @@ export default function ProductModal({
                       ) : (
                         <input
                           type={
-                            group.type === "single"
-                              ? "radio"
-                              : "checkbox"
+                            group.type === "single" ? "radio" : "checkbox"
                           }
                           checked={q > 0}
                           disabled={disabled}
-                          onChange={() =>
-                            toggleOption(group, opt)
-                          }
+                          onChange={() => toggleOption(group, opt)}
                         />
                       )}
                     </div>
@@ -310,14 +292,10 @@ export default function ProductModal({
 
           {/* OBS */}
           <div className="mt-6">
-            <label className="text-sm font-medium">
-              Observações
-            </label>
+            <label className="text-sm font-medium">Observações</label>
             <textarea
               value={observation}
-              onChange={(e) =>
-                setObservation(e.target.value)
-              }
+              onChange={(e) => setObservation(e.target.value)}
               className="w-full mt-2 border rounded-lg p-2 text-sm"
             />
           </div>
@@ -328,19 +306,11 @@ export default function ProductModal({
           <div className="flex justify-between mb-3">
             <span>Quantidade</span>
             <div className="flex gap-2">
-              <button
-                onClick={() =>
-                  setQty((q) => Math.max(1, q - 1))
-                }
-              >
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))}>
                 −
               </button>
               <span>{qty}</span>
-              <button
-                onClick={() => setQty((q) => q + 1)}
-              >
-                +
-              </button>
+              <button onClick={() => setQty((q) => q + 1)}>+</button>
             </div>
           </div>
 
@@ -348,7 +318,7 @@ export default function ProductModal({
             disabled={!isValid()}
             className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
           >
-            Adicionar • R$ {finalPrice.toFixed(2)}
+            Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
           </button>
         </div>
       </div>

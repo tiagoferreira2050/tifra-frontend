@@ -3,8 +3,19 @@
 import { useState } from "react";
 import ProductModal from "./ProductModal";
 
-export default function ProductCard({ product }: { product: any }) {
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string | null;
+}
+
+export default function ProductCard({ product }: { product: Product }) {
   const [open, setOpen] = useState(false);
+
+  // 🔒 segurança extra (evita crash silencioso)
+  if (!product?.id) return null;
 
   return (
     <>
@@ -61,7 +72,7 @@ export default function ProductCard({ product }: { product: any }) {
       {/* MODAL */}
       {open && (
         <ProductModal
-          product={product} // 🔥 só passa o produto base
+          product={product} // 🔥 produto base
           onClose={() => setOpen(false)}
         />
       )}

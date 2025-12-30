@@ -9,11 +9,11 @@ interface Category {
 }
 
 interface CategoryListProps {
-  categories: Category[];
+  categories?: Category[];
 }
 
 export function CategoryList({ categories = [] }: CategoryListProps) {
-  if (!categories.length) {
+  if (!Array.isArray(categories) || categories.length === 0) {
     return (
       <div className="text-center text-gray-500 mt-16">
         Nenhum produto disponível no momento
@@ -25,9 +25,11 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
     <div className="space-y-14 pb-32">
       {categories.map((category) => {
         const products =
-          category.products?.filter(
-            (product: any) => product?.active !== false
-          ) || [];
+          Array.isArray(category.products)
+            ? category.products.filter(
+                (product: any) => product?.active !== false
+              )
+            : [];
 
         if (!products.length) return null;
 
@@ -42,8 +44,6 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
               <h2 className="text-lg font-semibold text-gray-900">
                 {category.name}
               </h2>
-
-              {/* divisória sutil */}
               <div className="w-10 h-[2px] bg-gray-200 rounded-full" />
             </div>
 
