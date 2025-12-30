@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 /* =======================
-   TIPOS (IGUAL BACKEND)
+   TIPOS (IGUAL PUBLIC ROUTE)
 ======================= */
 type ComplementOption = {
   id: string;
@@ -18,7 +18,7 @@ type ComplementGroup = {
   type: "single" | "multiple" | "addable";
   required?: boolean;
   minChoose?: number;
-  maxChoose?: number;
+  maxChoose?: number | null;
   options: ComplementOption[];
 };
 
@@ -27,7 +27,7 @@ type Product = {
   name: string;
   description?: string;
   price: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
   complementItems?: ComplementGroup[];
 };
 
@@ -52,8 +52,8 @@ export default function ProductModal({
   >({});
 
   /* =======================
-     LOAD PRODUTO COMPLETO
-     🔥 ROTA PÚBLICA NOVA
+     LOAD PRODUTO + COMPLEMENTOS
+     🔥 PUBLIC ROUTE
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
@@ -66,11 +66,15 @@ export default function ProductModal({
     async function load() {
       try {
         const data = await apiFetch(
-          `/public/products/${product.id}`
+          `/api/public/products/${product.id}`
         );
+
+        console.log("✅ PRODUTO PÚBLICO:", data);
+        console.log("✅ COMPLEMENTOS:", data.complementItems);
+
         setFullProduct(data);
       } catch (err) {
-        console.error("Erro ao carregar produto público", err);
+        console.error("❌ Erro ao carregar produto público", err);
         setFullProduct(product);
       } finally {
         setLoading(false);
@@ -111,12 +115,12 @@ export default function ProductModal({
       const current = prev[group.id] ?? {};
       const totalSelected = getTotalSelected(group.id);
 
-      // SINGLE
+      // 🔘 SINGLE
       if (group.type === "single") {
         return { ...prev, [group.id]: { [option.id]: 1 } };
       }
 
-      // MULTIPLE
+      // ☑️ MULTIPLE
       if (group.type === "multiple") {
         if (current[option.id]) {
           const copy = { ...current };
@@ -137,7 +141,7 @@ export default function ProductModal({
         };
       }
 
-      // ADDABLE
+      // ➕ ADDABLE
       if (
         typeof group.maxChoose === "number" &&
         totalSelected >= group.maxChoose
@@ -158,10 +162,7 @@ export default function ProductModal({
   function isValid() {
     return groups.every((g) => {
       const chosen = selected[g.id] ?? {};
-      const total = Object.values(chosen).reduce(
-        (a, b) => a + b,
-        0
-      );
+      const total = Object.values(chosen).reduce((a, b) => a + b, 0);
 
       if (g.required && total === 0) return false;
       if (
@@ -247,7 +248,7 @@ export default function ProductModal({
                     )}
                   </span>
 
-                  {group.maxChoose && (
+                  {group.maxChoose !== null && (
                     <span className="text-xs text-gray-500">
                       até {group.maxChoose}
                     </span>
@@ -257,7 +258,7 @@ export default function ProductModal({
                 {group.options.map((opt) => {
                   const q = chosen[opt.id] ?? 0;
                   const disabled =
-                    group.maxChoose &&
+                    typeof group.maxChoose === "number" &&
                     totalSelected >= group.maxChoose &&
                     q === 0;
 
@@ -278,17 +279,14 @@ export default function ProductModal({
                       </div>
 
                       {group.type === "addable" ? (
-                        <div className="flex gap-2 items-center">
-                          <button
-                            onClick={() =>
-                              toggleOption(group, opt)
-                            }
-                            className="border px-2 rounded"
-                          >
-                            +
-                          </button>
-                          <span>{q}</span>
-                        </div>
+                        <button
+                          onClick={() =>
+                            toggleOption(group, opt)
+                          }
+                          className="border px-2 rounded"
+                        >
+                          +
+                        </button>
                       ) : (
                         <input
                           type={
@@ -310,7 +308,7 @@ export default function ProductModal({
             );
           })}
 
-          {/* OBSERVAÇÃO */}
+          {/* OBS */}
           <div className="mt-6">
             <label className="text-sm font-medium">
               Observações

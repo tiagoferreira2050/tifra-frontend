@@ -36,9 +36,9 @@ export default function ProductCard({ product }: { product: any }) {
             </p>
           )}
 
-          {/* PREÇO NORMAL (SEM "A PARTIR DE") */}
+          {/* PREÇO */}
           <p className="mt-2 text-sm font-semibold text-gray-800">
-            R$ {Number(product.price).toFixed(2)}
+            R$ {Number(product.price).toFixed(2).replace(".", ",")}
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default function ProductCard({ product }: { product: any }) {
       {/* MODAL */}
       {open && (
         <ProductModal
-          product={product}
+          product={product} // 🔥 só passa o produto base
           onClose={() => setOpen(false)}
         />
       )}
