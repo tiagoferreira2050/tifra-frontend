@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 /* =======================
    TIPOS
@@ -26,7 +27,7 @@ type Product = {
   description?: string;
   price: number;
   imageUrl?: string;
-  complementGroups?: ComplementGroup[]; // segurança
+  complementGroups?: ComplementGroup[];
 };
 
 interface ProductModalProps {
@@ -38,14 +39,49 @@ interface ProductModalProps {
    COMPONENT
 ======================= */
 export default function ProductModal({ product, onClose }: ProductModalProps) {
+  const [fullProduct, setFullProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [selected, setSelected] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
   const [observation, setObservation] = useState("");
 
+  /* =======================
+     LOAD PRODUTO COMPLETO
+  ======================= */
+  useEffect(() => {
+    if (!product?.id) return;
+
+    async function loadProduct() {
+      try {
+        const data = await apiFetch(`/store/product/${product.id}`);
+        setFullProduct(data);
+      } catch (err) {
+        console.error("Erro ao carregar produto completo", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProduct();
+  }, [product?.id]);
+
   if (!product) return null;
 
-  // fallback seguro
-  const complementGroups: ComplementGroup[] = product.complementGroups || [];
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="bg-white rounded-xl px-6 py-4 shadow">
+          Carregando opções...
+        </div>
+      </div>
+    );
+  }
+
+  const productData = fullProduct || product;
+
+  const complementGroups: ComplementGroup[] =
+    productData.complementGroups || [];
 
   /* =======================
      HELPERS
@@ -70,7 +106,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   }
 
   function calculateTotal() {
-    let total = product.price;
+    let total = productData.price;
 
     complementGroups.forEach(group => {
       group.items.forEach(item => {
@@ -113,27 +149,17 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           shadow-xl
         "
       >
-        {/* HEADER / IMAGEM */}
+        {/* HEADER */}
         <div className="relative">
           <img
-            src={product.imageUrl || "/placeholder.jpg"}
-            alt={product.name}
+            src={productData.imageUrl || "/placeholder.jpg"}
+            alt={productData.name}
             className="w-full h-64 object-cover"
           />
 
           <button
             onClick={onClose}
-            className="
-              absolute
-              top-3
-              right-3
-              bg-white
-              rounded-full
-              px-3
-              py-1
-              text-sm
-              shadow
-            "
+            className="absolute top-3 right-3 bg-white rounded-full px-3 py-1 text-sm shadow"
           >
             ✕
           </button>
@@ -141,18 +167,18 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-xl font-semibold text-gray-900 leading-snug">
-            {product.name}
+          <h2 className="text-xl font-semibold text-gray-900">
+            {productData.name}
           </h2>
 
-          {product.description && (
+          {productData.description && (
             <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-              {product.description}
+              {productData.description}
             </p>
           )}
 
           <div className="mt-4 text-base font-semibold text-gray-800">
-            R$ {Number(product.price).toFixed(2)}
+            R$ {Number(productData.price).toFixed(2)}
           </div>
 
           {/* COMPLEMENTOS */}
@@ -214,11 +240,8 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                           }
                         `}
                       >
-                        <span className="text-gray-800">
-                          {item.name}
-                        </span>
-
-                        <span className="text-sm font-medium text-gray-700">
+                        <span>{item.name}</span>
+                        <span className="font-medium text-sm">
                           {item.price > 0
                             ? `+ R$ ${item.price.toFixed(2)}`
                             : "Grátis"}
@@ -233,7 +256,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
           {/* OBSERVAÇÃO */}
           <div className="mt-6">
-            <label className="text-sm font-medium text-gray-900">
+            <label className="text-sm font-medium">
               Observações
             </label>
 
@@ -241,18 +264,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
               value={observation}
               onChange={e => setObservation(e.target.value)}
               placeholder="Ex: sem granola, bem caprichado..."
-              className="
-                w-full
-                mt-2
-                border
-                border-gray-300
-                rounded-lg
-                p-2
-                text-sm
-                focus:outline-none
-                focus:ring-1
-                focus:ring-purple-500
-              "
+              className="w-full mt-2 border rounded-lg p-2 text-sm"
               rows={3}
             />
           </div>
@@ -260,16 +272,13 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
         {/* FOOTER */}
         <div className="p-4 border-t space-y-3">
-          {/* QUANTIDADE */}
           <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">
-              Quantidade
-            </span>
+            <span className="font-medium">Quantidade</span>
 
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full border text-lg"
+                className="w-8 h-8 rounded-full border"
               >
                 −
               </button>
@@ -278,29 +287,20 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
               <button
                 onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full border text-lg"
+                className="w-8 h-8 rounded-full border"
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* BOTÃO */}
           <button
             disabled={!isValid()}
-            className={`
-              w-full
-              rounded-xl
-              py-3
-              font-semibold
-              text-white
-              transition
-              ${
-                isValid()
-                  ? "bg-purple-600 hover:bg-purple-700"
-                  : "bg-gray-400 cursor-not-allowed"
-              }
-            `}
+            className={`w-full rounded-xl py-3 font-semibold text-white ${
+              isValid()
+                ? "bg-purple-600 hover:bg-purple-700"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
             Adicionar • R$ {calculateTotal()}
           </button>
