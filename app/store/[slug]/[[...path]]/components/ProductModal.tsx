@@ -3,69 +3,62 @@
 import { X } from "lucide-react";
 
 export default function ProductModal({
+  open,
   product,
   onClose,
 }: {
+  open: boolean;
   product: any;
   onClose: () => void;
 }) {
-  if (!product) return null;
+  if (!open || !product) return null;
 
   const groups = product.complementItems ?? [];
 
-  console.log("🧪 PRODUCT NO MODAL:", product);
-  console.log("🧪 COMPLEMENT ITEMS:", groups);
+  console.log("🧪 PRODUTO RECEBIDO NO MODAL:", product);
+  console.log("🧪 COMPLEMENTOS:", groups);
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[500px] max-h-[80vh] rounded-lg shadow-lg p-6 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 w-full max-w-[620px] max-h-[90vh] overflow-y-auto">
 
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">
+        <div className="flex justify-between mb-4">
+          <h3 className="font-semibold text-lg">
             {product.name}
-          </h2>
+          </h3>
           <button onClick={onClose}>
-            <X size={20} />
+            <X />
           </button>
         </div>
 
         {/* DEBUG */}
         <div className="mb-4 text-xs bg-gray-100 p-2 rounded">
-          <strong>DEBUG:</strong> {groups.length} grupos encontrados
+          Complementos encontrados: {groups.length}
         </div>
 
         {/* SEM COMPLEMENTOS */}
         {groups.length === 0 && (
-          <div className="text-center text-sm text-red-500">
-            ⚠️ Nenhum complemento veio para este produto
+          <div className="text-center text-red-500 text-sm">
+            ❌ Nenhum complemento chegou nesse produto
           </div>
         )}
 
-        {/* COMPLEMENTOS */}
+        {/* COMPLEMENTOS (IGUAL GESTOR) */}
         {groups.map((group: any) => (
-          <div
-            key={group.id}
-            className="border rounded p-3 mb-4"
-          >
-            <div className="font-medium mb-2">
+          <div key={group.id} className="border rounded p-3 mb-4">
+            <p className="font-medium mb-2">
               {group.title}
-            </div>
+            </p>
 
-            {(group.options ?? []).length === 0 && (
-              <p className="text-xs text-gray-400">
-                Grupo sem opções
-              </p>
-            )}
-
-            {group.options?.map((opt: any) => (
+            {(group.options ?? []).map((opt: any) => (
               <div
                 key={opt.id}
                 className="flex justify-between text-sm py-1"
               >
                 <span>{opt.name}</span>
                 <span className="text-gray-500">
-                  R$ {Number(opt.price).toFixed(2)}
+                  R$ {Number(opt.price).toFixed(2).replace(".", ",")}
                 </span>
               </div>
             ))}
