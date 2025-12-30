@@ -10,6 +10,7 @@ type ComplementOption = {
   id: string;
   name: string;
   price: number;
+   imageUrl?: string | null;
 };
 
 type ComplementGroup = {
@@ -246,14 +247,27 @@ export default function ProductModal({ product, onClose }: Props) {
                     key={opt.id}
                     className="flex justify-between items-center mb-2"
                   >
-                    <div>
-                      {opt.name}
-                      {opt.price > 0 && (
-                        <span className="ml-2 text-sm text-gray-500">
-                          + R$ {opt.price.toFixed(2).replace(".", ",")}
-                        </span>
-                      )}
-                    </div>
+                    <div className="flex items-center gap-3">
+  {/* IMAGEM DO ITEM */}
+  {opt.imageUrl && (
+    <img
+      src={opt.imageUrl}
+      alt={opt.name}
+      className="w-10 h-10 rounded-md object-cover"
+    />
+  )}
+
+  {/* TEXTO */}
+  <div className="flex flex-col">
+    <span>{opt.name}</span>
+
+    {opt.price > 0 && (
+      <span className="text-xs text-gray-500">
+        + R$ {opt.price.toFixed(2).replace(".", ",")}
+      </span>
+    )}
+  </div>
+</div>
 
                     {group.type === "addable" ? (
                       <div className="flex gap-2 items-center">
