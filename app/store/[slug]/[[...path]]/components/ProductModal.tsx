@@ -31,22 +31,30 @@ type Product = {
 };
 
 interface Props {
+  open: boolean;
   productId: string | null;
   onClose: () => void;
 }
 
-export default function ProductModal({ productId, onClose }: Props) {
+export default function ProductModal({
+  open,
+  productId,
+  onClose,
+}: Props) {
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   /* =======================
-     LOAD PRODUTO PÚBLICO
+     LOAD PRODUTO + COMPLEMENTOS
   ======================= */
   useEffect(() => {
-    if (!productId) return;
+    if (!open || !productId) return;
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
-    if (!API_URL) return;
+    if (!API_URL) {
+      console.error("NEXT_PUBLIC_API_URL não definida");
+      return;
+    }
 
     setLoading(true);
     setProduct(null);
@@ -54,22 +62,25 @@ export default function ProductModal({ productId, onClose }: Props) {
     fetch(`${API_URL}/api/public/products/${productId}`, {
       cache: "no-store",
     })
-      .then(res => {
-        if (!res.ok) throw new Error("Erro ao buscar produto");
+      .then((res) => {
+        if (!res.ok) throw new Error("Erro ao buscar produto público");
         return res.json();
       })
-      .then(data => {
-        console.log("✅ PRODUTO PÚBLICO:", data);
+      .then((data) => {
+        console.log("✅ PRODUTO:", data);
         console.log("✅ COMPLEMENTOS:", data.complementItems);
         setProduct(data);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("❌ ERRO MODAL:", err);
       })
       .finally(() => setLoading(false));
-  }, [productId]);
+  }, [open, productId]);
 
-  if (!productId) return null;
+  /* =======================
+     CONTROLE DE ABERTURA
+  ======================= */
+  if (!open) return null;
 
   /* =======================
      LOADING
@@ -78,7 +89,7 @@ export default function ProductModal({ productId, onClose }: Props) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div className="bg-white px-6 py-4 rounded">
-          Carregando produto...
+          Carregando produto…
         </div>
       </div>
     );
@@ -112,12 +123,12 @@ export default function ProductModal({ productId, onClose }: Props) {
         {/* SEM COMPLEMENTOS */}
         {product.complementItems.length === 0 && (
           <div className="text-center text-red-500 text-sm">
-            ❌ Produto sem complementos
+            ❌ Produto sem complementos vinculados
           </div>
         )}
 
-        {/* COMPLEMENTOS */}
-        {product.complementItems.map(group => (
+        {/* COMPLEMENTOS (IGUAL GESTOR) */}
+        {product.complementItems.map((group) => (
           <div key={group.id} className="border rounded p-3 mb-4">
             <div className="flex justify-between mb-2">
               <span className="font-medium">
@@ -126,14 +137,15 @@ export default function ProductModal({ productId, onClose }: Props) {
                   <span className="text-red-500"> *</span>
                 )}
               </span>
-              {group.maxChoose && (
+
+              {group.maxChoose !== null && (
                 <span className="text-xs text-gray-500">
                   até {group.maxChoose}
                 </span>
               )}
             </div>
 
-            {group.options.map(opt => (
+            {group.options.map((opt) => (
               <div
                 key={opt.id}
                 className="flex justify-between text-sm py-1"

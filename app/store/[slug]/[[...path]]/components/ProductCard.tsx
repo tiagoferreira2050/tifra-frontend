@@ -4,13 +4,21 @@ import { useState } from "react";
 import ProductModal from "./ProductModal";
 
 export default function ProductCard({ product }: { product: any }) {
-  const [open, setOpen] = useState(false);
+  const [openProductId, setOpenProductId] = useState<string | null>(null);
+
+  function openModal() {
+    setOpenProductId(product.id);
+  }
+
+  function closeModal() {
+    setOpenProductId(null);
+  }
 
   return (
     <>
       {/* CARD */}
       <div
-        onClick={() => setOpen(true)}
+        onClick={openModal}
         className="
           cursor-pointer
           bg-white
@@ -36,7 +44,7 @@ export default function ProductCard({ product }: { product: any }) {
             </p>
           )}
 
-          {/* PREÇO NORMAL (SEM "A PARTIR DE") */}
+          {/* PREÇO NORMAL */}
           <p className="mt-2 text-sm font-semibold text-gray-800">
             R$ {Number(product.price).toFixed(2)}
           </p>
@@ -47,24 +55,17 @@ export default function ProductCard({ product }: { product: any }) {
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="
-              w-20
-              h-20
-              object-cover
-              rounded-lg
-              flex-shrink-0
-            "
+            className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
           />
         )}
       </div>
 
-      {/* MODAL */}
-      {open && (
-        <ProductModal
-          product={product}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {/* MODAL (sempre montado corretamente) */}
+      <ProductModal
+        open={!!openProductId}
+        productId={openProductId}
+        onClose={closeModal}
+      />
     </>
   );
 }
