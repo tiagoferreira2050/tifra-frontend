@@ -49,8 +49,7 @@ export default function ProductModal({ product, onClose }: Props) {
   >({});
 
   /* =======================
-     LOAD PRODUTO + COMPLEMENTOS
-     🔥 /api/public/menu
+     LOAD PRODUTO COMPLETO
   ======================= */
   useEffect(() => {
     if (!product?.id) return;
@@ -60,32 +59,20 @@ export default function ProductModal({ product, onClose }: Props) {
     setQty(1);
     setObservation("");
 
-    async function load() {
-      try {
-        const data = await apiFetch(
-          `/api/public/menu/products/${product.id}`
-        );
-
+    apiFetch(`/api/public/menu/products/${product.id}`)
+      .then((data) => {
         console.log("✅ PRODUTO:", data);
-        console.log("✅ COMPLEMENTOS:", data.complementItems);
-
         setFullProduct(data);
-      } catch (err) {
-        console.error("❌ Erro ao carregar produto público", err);
+      })
+      .catch((err) => {
+        console.error("❌ Erro public menu", err);
         setFullProduct(product);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
+      })
+      .finally(() => setLoading(false));
   }, [product?.id]);
 
   if (!product) return null;
 
-  /* =======================
-     LOADING
-  ======================= */
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -103,21 +90,21 @@ export default function ProductModal({ product, onClose }: Props) {
      HELPERS
   ======================= */
   function getTotalSelected(groupId: string) {
-    const g = selected[groupId] ?? {};
-    return Object.values(g).reduce((acc, v) => acc + v, 0);
+    return Object.values(selected[groupId] ?? {}).reduce(
+      (a, b) => a + b,
+      0
+    );
   }
 
   function toggleOption(group: ComplementGroup, option: ComplementOption) {
     setSelected((prev) => {
       const current = prev[group.id] ?? {};
-      const totalSelected = getTotalSelected(group.id);
+      const total = getTotalSelected(group.id);
 
-      // 🔘 SINGLE
       if (group.type === "single") {
         return { ...prev, [group.id]: { [option.id]: 1 } };
       }
 
-      // ☑️ MULTIPLE
       if (group.type === "multiple") {
         if (current[option.id]) {
           const copy = { ...current };
@@ -125,12 +112,7 @@ export default function ProductModal({ product, onClose }: Props) {
           return { ...prev, [group.id]: copy };
         }
 
-        if (
-          typeof group.maxChoose === "number" &&
-          totalSelected >= group.maxChoose
-        ) {
-          return prev;
-        }
+        if (group.maxChoose && total >= group.maxChoose) return prev;
 
         return {
           ...prev,
@@ -138,13 +120,8 @@ export default function ProductModal({ product, onClose }: Props) {
         };
       }
 
-      // ➕ ADDABLE
-      if (
-        typeof group.maxChoose === "number" &&
-        totalSelected >= group.maxChoose
-      ) {
-        return prev;
-      }
+      // addable
+      if (group.maxChoose && total >= group.maxChoose) return prev;
 
       return {
         ...prev,
@@ -156,14 +133,33 @@ export default function ProductModal({ product, onClose }: Props) {
     });
   }
 
+  function changeAddableQty(
+    group: ComplementGroup,
+    option: ComplementOption,
+    delta: number
+  ) {
+    setSelected((prev) => {
+      const current = prev[group.id] ?? {};
+      const next = (current[option.id] ?? 0) + delta;
+
+      if (next <= 0) {
+        const copy = { ...current };
+        delete copy[option.id];
+        return { ...prev, [group.id]: copy };
+      }
+
+      return {
+        ...prev,
+        [group.id]: { ...current, [option.id]: next },
+      };
+    });
+  }
+
   function isValid() {
     return groups.every((g) => {
-      const chosen = selected[g.id] ?? {};
-      const total = Object.values(chosen).reduce((a, b) => a + b, 0);
-
+      const total = getTotalSelected(g.id);
       if (g.required && total === 0) return false;
-      if (typeof g.minChoose === "number" && total < g.minChoose) return false;
-
+      if (g.minChoose && total < g.minChoose) return false;
       return true;
     });
   }
@@ -174,10 +170,9 @@ export default function ProductModal({ product, onClose }: Props) {
   const basePrice = Number(productData.price);
 
   const complementsTotal = groups.reduce((acc, g) => {
-    const chosen = selected[g.id] ?? {};
     return (
       acc +
-      Object.entries(chosen).reduce((sum, [optId, q]) => {
+      Object.entries(selected[g.id] ?? {}).reduce((sum, [optId, q]) => {
         const opt = g.options.find((o) => o.id === optId);
         return sum + Number(opt?.price ?? 0) * q;
       }, 0)
@@ -221,74 +216,77 @@ export default function ProductModal({ product, onClose }: Props) {
             R$ {basePrice.toFixed(2).replace(".", ",")}
           </div>
 
-          {/* COMPLEMENTOS */}
-          {groups.map((group) => {
-            const chosen = selected[group.id] ?? {};
-            const totalSelected = getTotalSelected(group.id);
+          {groups.length === 0 && (
+            <p className="mt-6 text-sm text-gray-500 text-center">
+              Este produto não possui adicionais
+            </p>
+          )}
 
-            return (
-              <div key={group.id} className="mt-6 border rounded-lg p-3">
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium">
-                    {group.title}
-                    {group.required && (
-                      <span className="text-red-500"> *</span>
-                    )}
-                  </span>
-
-                  {typeof group.maxChoose === "number" && (
-                    <span className="text-xs text-gray-500">
-                      até {group.maxChoose}
-                    </span>
+          {groups.map((group) => (
+            <div key={group.id} className="mt-6 border rounded-lg p-3">
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">
+                  {group.title}
+                  {group.required && (
+                    <span className="text-red-500"> *</span>
                   )}
-                </div>
+                </span>
+                {group.maxChoose && (
+                  <span className="text-xs text-gray-500">
+                    até {group.maxChoose}
+                  </span>
+                )}
+              </div>
 
-                {group.options.map((opt) => {
-                  const q = chosen[opt.id] ?? 0;
-                  const disabled =
-                    typeof group.maxChoose === "number" &&
-                    totalSelected >= group.maxChoose &&
-                    q === 0;
+              {group.options.map((opt) => {
+                const q = selected[group.id]?.[opt.id] ?? 0;
 
-                  return (
-                    <div
-                      key={opt.id}
-                      className={`flex justify-between items-center mb-2 ${
-                        disabled ? "opacity-40" : ""
-                      }`}
-                    >
-                      <div>
-                        {opt.name}
-                        {opt.price > 0 && (
-                          <span className="ml-2 text-sm text-gray-500">
-                            + R$ {opt.price.toFixed(2).replace(".", ",")}
-                          </span>
-                        )}
-                      </div>
+                return (
+                  <div
+                    key={opt.id}
+                    className="flex justify-between items-center mb-2"
+                  >
+                    <div>
+                      {opt.name}
+                      {opt.price > 0 && (
+                        <span className="ml-2 text-sm text-gray-500">
+                          + R$ {opt.price.toFixed(2).replace(".", ",")}
+                        </span>
+                      )}
+                    </div>
 
-                      {group.type === "addable" ? (
+                    {group.type === "addable" ? (
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() =>
+                            changeAddableQty(group, opt, -1)
+                          }
+                          className="border px-2 rounded"
+                        >
+                          −
+                        </button>
+                        <span>{q}</span>
                         <button
                           onClick={() => toggleOption(group, opt)}
                           className="border px-2 rounded"
                         >
                           +
                         </button>
-                      ) : (
-                        <input
-                          type={
-                            group.type === "single" ? "radio" : "checkbox"
-                          }
-                          checked={q > 0}
-                          disabled={disabled}
-                          onChange={() => toggleOption(group, opt)}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+                      </div>
+                    ) : (
+                      <input
+                        type={
+                          group.type === "single" ? "radio" : "checkbox"
+                        }
+                        checked={q > 0}
+                        onChange={() => toggleOption(group, opt)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
 
           {/* OBS */}
           <div className="mt-6">
