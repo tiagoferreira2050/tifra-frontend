@@ -4,21 +4,22 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 /* =======================
-   TIPOS
+   TIPOS (IGUAL GESTOR)
 ======================= */
-type ComplementItem = {
+type ComplementOption = {
   id: string;
   name: string;
   price: number;
-  imageUrl?: string;
 };
 
 type ComplementGroup = {
   id: string;
   title: string;
-  min: number | null;
-  max: number | null;
-  items: ComplementItem[];
+  type: "single" | "multiple" | "addable";
+  required?: boolean;
+  minChoose?: number;
+  maxChoose?: number;
+  options: ComplementOption[];
 };
 
 type Product = {
@@ -27,7 +28,7 @@ type Product = {
   description?: string;
   price: number;
   imageUrl?: string;
-  complementGroups?: ComplementGroup[];
+  complementItems?: ComplementGroup[];
 };
 
 interface ProductModalProps {
@@ -35,16 +36,17 @@ interface ProductModalProps {
   onClose: () => void;
 }
 
-/* =======================
-   COMPONENT
-======================= */
 export default function ProductModal({ product, onClose }: ProductModalProps) {
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [selected, setSelected] = useState<Record<string, string[]>>({});
-  const [quantity, setQuantity] = useState(1);
+  const [qty, setQty] = useState(1);
   const [observation, setObservation] = useState("");
+
+  // groupId -> optionId -> qty
+  const [selected, setSelected] = useState<
+    Record<string, Record<string, number>>
+  >({});
 
   /* =======================
      LOAD PRODUTO COMPLETO
@@ -52,26 +54,24 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   useEffect(() => {
     if (!product?.id) return;
 
-    async function loadProduct() {
+    async function load() {
       try {
         const data = await apiFetch(`/store/product/${product.id}`);
         setFullProduct(data);
-      } catch (err) {
-        console.error("Erro ao carregar produto completo", err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadProduct();
+    load();
   }, [product?.id]);
 
   if (!product) return null;
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-        <div className="bg-white rounded-xl px-6 py-4 shadow">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl px-6 py-4">
           Carregando opções...
         </div>
       </div>
@@ -79,87 +79,112 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
   }
 
   const productData = fullProduct || product;
-
-  const complementGroups: ComplementGroup[] =
-    productData.complementGroups || [];
+  const groups = productData.complementItems ?? [];
 
   /* =======================
-     HELPERS
+     HELPERS (IGUAL GESTOR)
   ======================= */
-  function toggleItem(group: ComplementGroup, itemId: string) {
-    const current = selected[group.id] || [];
-
-    if (current.includes(itemId)) {
-      setSelected(prev => ({
-        ...prev,
-        [group.id]: current.filter(id => id !== itemId),
-      }));
-      return;
-    }
-
-    if (group.max && current.length >= group.max) return;
-
-    setSelected(prev => ({
-      ...prev,
-      [group.id]: [...current, itemId],
-    }));
+  function getTotalSelected(groupId: string) {
+    const g = selected[groupId] ?? {};
+    return Object.values(g).reduce((acc, v) => acc + v, 0);
   }
 
-  function calculateTotal() {
-    let total = productData.price;
+  function toggleOption(group: ComplementGroup, option: ComplementOption) {
+    setSelected(prev => {
+      const current = prev[group.id] ?? {};
+      const totalSelected = getTotalSelected(group.id);
 
-    complementGroups.forEach(group => {
-      group.items.forEach(item => {
-        if (selected[group.id]?.includes(item.id)) {
-          total += item.price;
+      // SINGLE
+      if (group.type === "single") {
+        return { ...prev, [group.id]: { [option.id]: 1 } };
+      }
+
+      // MULTIPLE
+      if (group.type === "multiple") {
+        if (current[option.id]) {
+          const copy = { ...current };
+          delete copy[option.id];
+          return { ...prev, [group.id]: copy };
         }
-      });
-    });
 
-    return (total * quantity).toFixed(2);
+        if (
+          typeof group.maxChoose === "number" &&
+          totalSelected >= group.maxChoose
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [group.id]: { ...current, [option.id]: 1 },
+        };
+      }
+
+      // ADDABLE
+      if (
+        typeof group.maxChoose === "number" &&
+        totalSelected >= group.maxChoose
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [group.id]: {
+          ...current,
+          [option.id]: (current[option.id] ?? 0) + 1,
+        },
+      };
+    });
   }
 
   function isValid() {
-    return complementGroups.every(group => {
-      const count = selected[group.id]?.length || 0;
-      if (group.min && count < group.min) return false;
-      if (group.max && count > group.max) return false;
+    return groups.every(g => {
+      const chosen = selected[g.id] ?? {};
+      const total = Object.values(chosen).reduce((a, b) => a + b, 0);
+
+      if (g.required && total === 0) return false;
+      if (typeof g.minChoose === "number" && total < g.minChoose)
+        return false;
+
       return true;
     });
   }
 
   /* =======================
+     PREÇO
+  ======================= */
+  const basePrice = Number(productData.price);
+
+  const complementsTotal = groups.reduce((acc, g) => {
+    const chosen = selected[g.id] ?? {};
+    return (
+      acc +
+      Object.entries(chosen).reduce((sum, [optId, q]) => {
+        const opt = g.options.find(o => o.id === optId);
+        return sum + Number(opt?.price ?? 0) * q;
+      }, 0)
+    );
+  }, 0);
+
+  const finalPrice = (basePrice + complementsTotal) * qty;
+
+  /* =======================
      RENDER
   ======================= */
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
-      <div
-        className="
-          bg-white
-          w-full
-          sm:max-w-lg
-          rounded-t-2xl
-          sm:rounded-2xl
-          overflow-hidden
-          max-h-[90vh]
-          flex
-          flex-col
-          border
-          border-gray-200
-          shadow-xl
-        "
-      >
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+      <div className="bg-white w-full sm:max-w-lg rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
         {/* HEADER */}
         <div className="relative">
           <img
             src={productData.imageUrl || "/placeholder.jpg"}
-            alt={productData.name}
             className="w-full h-64 object-cover"
           />
-
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 bg-white rounded-full px-3 py-1 text-sm shadow"
+            className="absolute top-3 right-3 bg-white rounded-full px-3 py-1"
           >
             ✕
           </button>
@@ -167,142 +192,122 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
         {/* BODY */}
         <div className="p-4 overflow-y-auto flex-1">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {productData.name}
-          </h2>
+          <h2 className="text-xl font-semibold">{productData.name}</h2>
 
           {productData.description && (
-            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+            <p className="text-sm text-gray-600 mt-2">
               {productData.description}
             </p>
           )}
 
-          <div className="mt-4 text-base font-semibold text-gray-800">
-            R$ {Number(productData.price).toFixed(2)}
+          <div className="mt-3 font-semibold">
+            R$ {basePrice.toFixed(2)}
           </div>
 
           {/* COMPLEMENTOS */}
-          {complementGroups.map(group => {
-            const selectedCount = selected[group.id]?.length || 0;
+          {groups.map(group => {
+            const chosen = selected[group.id] ?? {};
+            const totalSelected = getTotalSelected(group.id);
 
             return (
-              <div key={group.id} className="mt-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium text-gray-900">
+              <div key={group.id} className="mt-6 border rounded-lg p-3">
+                <div className="flex justify-between mb-2">
+                  <span className="font-medium">
                     {group.title}
-                  </h3>
-
-                  {group.max && (
+                    {group.required && (
+                      <span className="text-red-500"> *</span>
+                    )}
+                  </span>
+                  {group.maxChoose && (
                     <span className="text-xs text-gray-500">
-                      {selectedCount}/{group.max}
+                      até {group.maxChoose}
                     </span>
                   )}
                 </div>
 
-                {(group.min || group.max) && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {group.min
-                      ? `Escolha no mínimo ${group.min}`
-                      : `Escolha até ${group.max}`}
-                  </p>
-                )}
+                {group.options.map(opt => {
+                  const q = chosen[opt.id] ?? 0;
+                  const disabled =
+                    group.maxChoose &&
+                    totalSelected >= group.maxChoose &&
+                    q === 0;
 
-                {group.min && selectedCount < group.min && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Escolha pelo menos {group.min}
-                  </p>
-                )}
+                  return (
+                    <div
+                      key={opt.id}
+                      className={`flex justify-between items-center mb-2 ${
+                        disabled ? "opacity-40" : ""
+                      }`}
+                    >
+                      <div>
+                        {opt.name}
+                        {opt.price > 0 && (
+                          <span className="ml-2 text-sm text-gray-500">
+                            + R$ {opt.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
 
-                <div className="mt-3 space-y-2">
-                  {group.items.map(item => {
-                    const active =
-                      selected[group.id]?.includes(item.id) || false;
-
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => toggleItem(group, item.id)}
-                        className={`
-                          w-full
-                          flex
-                          justify-between
-                          items-center
-                          border
-                          rounded-lg
-                          px-3
-                          py-2
-                          text-sm
-                          transition
-                          ${
-                            active
-                              ? "border-purple-600 bg-purple-50"
-                              : "border-gray-200 hover:bg-gray-50"
+                      {group.type === "addable" ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              toggleOption(group, opt)
+                            }
+                            className="border px-2 rounded"
+                          >
+                            +
+                          </button>
+                          <span>{q}</span>
+                        </div>
+                      ) : (
+                        <input
+                          type={
+                            group.type === "single"
+                              ? "radio"
+                              : "checkbox"
                           }
-                        `}
-                      >
-                        <span>{item.name}</span>
-                        <span className="font-medium text-sm">
-                          {item.price > 0
-                            ? `+ R$ ${item.price.toFixed(2)}`
-                            : "Grátis"}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          checked={q > 0}
+                          onChange={() =>
+                            toggleOption(group, opt)
+                          }
+                          disabled={disabled}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
 
-          {/* OBSERVAÇÃO */}
+          {/* OBS */}
           <div className="mt-6">
-            <label className="text-sm font-medium">
-              Observações
-            </label>
-
+            <label className="text-sm font-medium">Observações</label>
             <textarea
               value={observation}
               onChange={e => setObservation(e.target.value)}
-              placeholder="Ex: sem granola, bem caprichado..."
               className="w-full mt-2 border rounded-lg p-2 text-sm"
-              rows={3}
             />
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="p-4 border-t space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="font-medium">Quantidade</span>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full border"
-              >
-                −
-              </button>
-
-              <span>{quantity}</span>
-
-              <button
-                onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full border"
-              >
-                +
-              </button>
+        <div className="p-4 border-t">
+          <div className="flex justify-between mb-3">
+            <span>Quantidade</span>
+            <div className="flex gap-2">
+              <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+              <span>{qty}</span>
+              <button onClick={() => setQty(q => q + 1)}>+</button>
             </div>
           </div>
 
           <button
             disabled={!isValid()}
-            className={`w-full rounded-xl py-3 font-semibold text-white ${
-              isValid()
-                ? "bg-purple-600 hover:bg-purple-700"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
           >
-            Adicionar • R$ {calculateTotal()}
+            Adicionar • R$ {finalPrice.toFixed(2)}
           </button>
         </div>
       </div>
