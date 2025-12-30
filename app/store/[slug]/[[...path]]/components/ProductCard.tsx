@@ -8,26 +8,56 @@ export default function ProductCard({ product }: { product: any }) {
 
   return (
     <>
+      {/* CARD */}
       <div
         onClick={() => setOpen(true)}
-        className="cursor-pointer border rounded-xl p-3 flex justify-between items-center"
+        className="
+          cursor-pointer
+          bg-white
+          rounded-xl
+          px-4
+          py-3
+          flex
+          justify-between
+          items-center
+          hover:bg-gray-50
+          transition
+        "
       >
-        <div>
-          <h3 className="font-semibold">{product.name}</h3>
-          <p className="text-sm text-gray-500">
-            R$ {Number(product.price).toFixed(2)}
+        {/* TEXTO */}
+        <div className="pr-3 flex-1">
+          <h3 className="text-base font-medium text-gray-900 leading-snug">
+            {product.name}
+          </h3>
+
+          {product.description && (
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">
+              {product.description}
+            </p>
+          )}
+
+          <p className="mt-2 text-sm font-semibold text-gray-800">
+            A partir de R$ {Number(product.price).toFixed(2)}
           </p>
         </div>
 
+        {/* IMAGEM */}
         {product.imageUrl && (
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="w-16 h-16 object-cover rounded-lg"
+            className="
+              w-20
+              h-20
+              object-cover
+              rounded-lg
+              flex-shrink-0
+            "
           />
         )}
       </div>
 
+      {/* MODAL */}
       {open && (
         <ProductModal
           product={product}

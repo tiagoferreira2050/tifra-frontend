@@ -22,7 +22,7 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
   }
 
   return (
-    <div className="space-y-12 pb-32">
+    <div className="space-y-14 pb-32">
       {categories.map((category) => {
         const products =
           category.products?.filter(
@@ -35,17 +35,20 @@ export function CategoryList({ categories = [] }: CategoryListProps) {
           <section
             key={category.id}
             id={`category-${category.id}`}
-            className="space-y-5"
+            className="space-y-6"
           >
             {/* HEADER DA CATEGORIA */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-gray-900">
+            <div className="flex flex-col items-center text-center gap-1">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {category.name}
               </h2>
 
               <span className="text-xs text-gray-400">
                 {products.length} itens
               </span>
+
+              {/* divisória sutil */}
+              <div className="mt-2 w-12 h-[2px] bg-gray-200 rounded-full" />
             </div>
 
             {/* LISTA DE PRODUTOS */}
