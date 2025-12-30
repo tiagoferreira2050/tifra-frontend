@@ -67,8 +67,10 @@ export default function ProductModal({
     async function load() {
       try {
         const data = await apiFetch(
-          `/public/products/${product.id}`
-        );
+  `/api/public/products/${product.id}`
+);
+
+
         setFullProduct(data);
       } catch (err) {
         console.error("Erro ao carregar produto público", err);
