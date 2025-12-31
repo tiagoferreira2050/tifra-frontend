@@ -2,18 +2,21 @@
 
 import { createContext, useContext, useState } from "react";
 
-type CartItem = {
+export type CartItem = {
   id: string;
   productId: string;
   name: string;
   qty: number;
-  price: number;
-  complements?: any[];
+  unitPrice: number; // preço unitário correto
+  complements?: Record<string, Record<string, number>>;
 };
 
 type CartContextType = {
   items: CartItem[];
   addItem: (item: CartItem) => void;
+  updateQty: (id: string, qty: number) => void;
+  removeItem: (id: string) => void;
+  total: number;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -25,8 +28,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => [...prev, item]);
   }
 
+  function updateQty(id: string, qty: number) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, qty } : item
+      )
+    );
+  }
+
+  function removeItem(id: string) {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  const total = items.reduce(
+    (acc, item) => acc + item.unitPrice * item.qty,
+    0
+  );
+
   return (
-    <CartContext.Provider value={{ items, addItem }}>
+    <CartContext.Provider
+      value={{ items, addItem, updateQty, removeItem, total }}
+    >
       {children}
     </CartContext.Provider>
   );
