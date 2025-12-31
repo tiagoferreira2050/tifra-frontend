@@ -7,7 +7,7 @@ export default function MiniCartBar() {
 
   if (!items || items.length === 0) return null;
 
-  // 🔥 soma correta (unitPrice * qty)
+  // 🔥 total correto: unitPrice * qty
   const total = items.reduce(
     (acc, item) => acc + item.unitPrice * item.qty,
     0
@@ -36,7 +36,7 @@ export default function MiniCartBar() {
       <button
         className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
         onClick={() => {
-          // depois podemos abrir drawer / ir pro checkout
+          // próximo passo: abrir drawer ou ir pro checkout
           console.log("ver carrinho");
         }}
       >
