@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "../contexts/CartContext";
+import { useCart } from "../../../../../src/contexts/CartContext";
 import CartModal from "./CartModal"; // ajuste o path se necessário
 
 export default function MiniCartBar() {
