@@ -338,16 +338,33 @@ const { addItem } = useCart();
 <button
   disabled={!isValid()}
   onClick={() => {
-  addItem({
-  id: `${productData.id}-${Date.now()}`,
-  productId: productData.id,
-  name: productData.name,
-  qty,
-  unitPrice: basePrice + complementsTotal,
-  complements: selected,
-});
+    const complementsFormatted =
+      groups.flatMap((group) =>
+        Object.entries(selected[group.id] ?? {}).map(
+          ([optionId, q]) => {
+            const opt = group.options.find(
+              (o) => o.id === optionId
+            );
 
+            return {
+              optionId,
+              optionName: opt?.name || "Adicional",
+              qty: q,
+            };
+          }
+        )
+      );
 
+    addItem({
+      id: `${productData.id}-${Date.now()}`,
+      productId: productData.id,
+      name: productData.name,
+      imageUrl:
+        productData.imageUrl || "/placeholder.jpg",
+      qty,
+      unitPrice: basePrice + complementsTotal,
+      complements: complementsFormatted,
+    });
 
     onClose();
   }}
@@ -355,6 +372,7 @@ const { addItem } = useCart();
 >
   Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
 </button>
+
         </div>
       </div>
     </div>

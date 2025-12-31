@@ -16,13 +16,20 @@ const CART_TTL_MS = 45 * 60 * 1000; // 45 minutos
 /* =======================
    TYPES
 ======================= */
+export type CartComplement = {
+  optionId: string;
+  optionName: string;
+  qty: number;
+};
+
 export type CartItem = {
   id: string;
   productId: string;
   name: string;
+  imageUrl?: string;
   qty: number;
-  unitPrice: number; // 🔥 preço UNITÁRIO (produto + complementos)
-  complements?: Record<string, Record<string, number>>;
+  unitPrice: number; // 🔥 preço unitário (produto + complementos)
+  complements?: CartComplement[];
 };
 
 type StoredCart = {
@@ -64,7 +71,7 @@ export function CartProvider({
 
       const stored: StoredCart = JSON.parse(raw);
 
-      // ⏱️ expirou
+      // ⏱️ expirado
       if (Date.now() > stored.expiresAt) {
         localStorage.removeItem(CART_STORAGE_KEY);
         return;
@@ -87,7 +94,7 @@ export function CartProvider({
 
     const payload: StoredCart = {
       items,
-      expiresAt: Date.now() + CART_TTL_MS, // renova o tempo
+      expiresAt: Date.now() + CART_TTL_MS, // renova TTL
     };
 
     localStorage.setItem(
@@ -106,7 +113,9 @@ export function CartProvider({
   function updateQty(id: string, qty: number) {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, qty } : item
+        item.id === id
+          ? { ...item, qty }
+          : item
       )
     );
   }
