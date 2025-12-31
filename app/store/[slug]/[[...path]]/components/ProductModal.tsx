@@ -338,7 +338,7 @@ const { addItem } = useCart();
 <button
   disabled={!isValid()}
   onClick={() => {
-    addItem({
+  addItem({
   id: `${productData.id}-${Date.now()}`,
   productId: productData.id,
   name: productData.name,
@@ -346,6 +346,7 @@ const { addItem } = useCart();
   unitPrice: basePrice + complementsTotal,
   complements: selected,
 });
+
 
 
     onClose();

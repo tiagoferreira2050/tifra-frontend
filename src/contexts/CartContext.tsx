@@ -2,12 +2,15 @@
 
 import { createContext, useContext, useState } from "react";
 
+/* =======================
+   TYPES
+======================= */
 export type CartItem = {
   id: string;
   productId: string;
   name: string;
   qty: number;
-  unitPrice: number; // preço unitário correto
+  unitPrice: number; // 🔥 preço UNITÁRIO (produto + complementos)
   complements?: Record<string, Record<string, number>>;
 };
 
@@ -19,9 +22,19 @@ type CartContextType = {
   total: number;
 };
 
+/* =======================
+   CONTEXT
+======================= */
 const CartContext = createContext<CartContextType | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+/* =======================
+   PROVIDER
+======================= */
+export function CartProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   function addItem(item: CartItem) {
@@ -37,7 +50,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   function removeItem(id: string) {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) =>
+      prev.filter((item) => item.id !== id)
+    );
   }
 
   const total = items.reduce(
@@ -47,15 +62,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, updateQty, removeItem, total }}
+      value={{
+        items,
+        addItem,
+        updateQty,
+        removeItem,
+        total,
+      }}
     >
       {children}
     </CartContext.Provider>
   );
 }
 
+/* =======================
+   HOOK
+======================= */
 export function useCart() {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart deve estar dentro do CartProvider");
+  if (!ctx) {
+    throw new Error(
+      "useCart deve estar dentro do CartProvider"
+    );
+  }
   return ctx;
 }

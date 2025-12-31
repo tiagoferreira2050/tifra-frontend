@@ -1,17 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCart } from "../contexts/CartContext";
 
 export default function MiniCartBar() {
-  const { items } = useCart();
+  const router = useRouter();
+  const { items, total } = useCart();
 
   if (!items || items.length === 0) return null;
-
-  // 🔥 total correto: unitPrice * qty
-  const total = items.reduce(
-    (acc, item) => acc + item.unitPrice * item.qty,
-    0
-  );
 
   return (
     <div
@@ -36,8 +32,7 @@ export default function MiniCartBar() {
       <button
         className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
         onClick={() => {
-          // próximo passo: abrir drawer ou ir pro checkout
-          console.log("ver carrinho");
+          router.push("checkout");
         }}
       >
         Ver carrinho
