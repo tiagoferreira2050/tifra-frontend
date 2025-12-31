@@ -6,7 +6,6 @@ import { apiFetch } from "@/lib/api";
 import { useCart } from "../../../../../src/contexts/CartContext";
 
 
-
 /* =======================
    TIPOS (PUBLIC MENU)
 ======================= */
@@ -42,14 +41,15 @@ interface Props {
 }
 
 export default function ProductModal({ product, onClose }: Props) {
-  const { addItem } = useCart();
-
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [qty, setQty] = useState(1);
   const [observation, setObservation] = useState("");
 
+const { addItem } = useCart();
+
+  // groupId -> optionId -> qty
   const [selected, setSelected] = useState<
     Record<string, Record<string, number>>
   >({});
@@ -66,8 +66,12 @@ export default function ProductModal({ product, onClose }: Props) {
     setObservation("");
 
     apiFetch(`/api/public/menu/products/${product.id}`)
-      .then(setFullProduct)
-      .catch(() => setFullProduct(product))
+      .then((data) => {
+        setFullProduct(data);
+      })
+      .catch(() => {
+        setFullProduct(product);
+      })
       .finally(() => setLoading(false));
   }, [product?.id]);
 
@@ -90,7 +94,10 @@ export default function ProductModal({ product, onClose }: Props) {
      HELPERS
   ======================= */
   function getTotalSelected(groupId: string) {
-    return Object.values(selected[groupId] ?? {}).reduce((a, b) => a + b, 0);
+    return Object.values(selected[groupId] ?? {}).reduce(
+      (a, b) => a + b,
+      0
+    );
   }
 
   function toggleOption(group: ComplementGroup, option: ComplementOption) {
@@ -98,10 +105,12 @@ export default function ProductModal({ product, onClose }: Props) {
       const current = prev[group.id] ?? {};
       const total = getTotalSelected(group.id);
 
+      // SINGLE
       if (group.type === "single") {
         return { ...prev, [group.id]: { [option.id]: 1 } };
       }
 
+      // MULTIPLE
       if (group.type === "multiple") {
         if (current[option.id]) {
           const copy = { ...current };
@@ -119,6 +128,7 @@ export default function ProductModal({ product, onClose }: Props) {
         };
       }
 
+      // ADDABLE
       if (typeof group.maxChoose === "number" && total >= group.maxChoose) {
         return prev;
       }
@@ -129,6 +139,28 @@ export default function ProductModal({ product, onClose }: Props) {
           ...current,
           [option.id]: (current[option.id] ?? 0) + 1,
         },
+      };
+    });
+  }
+
+  function changeAddableQty(
+    group: ComplementGroup,
+    option: ComplementOption,
+    delta: number
+  ) {
+    setSelected((prev) => {
+      const current = prev[group.id] ?? {};
+      const next = (current[option.id] ?? 0) + delta;
+
+      if (next <= 0) {
+        const copy = { ...current };
+        delete copy[option.id];
+        return { ...prev, [group.id]: copy };
+      }
+
+      return {
+        ...prev,
+        [group.id]: { ...current, [option.id]: next },
       };
     });
   }
@@ -157,8 +189,7 @@ export default function ProductModal({ product, onClose }: Props) {
     );
   }, 0);
 
-  const unitPrice = basePrice + complementsTotal;
-  const finalPrice = unitPrice * qty;
+  const finalPrice = (basePrice + complementsTotal) * qty;
 
   /* =======================
      RENDER
@@ -195,48 +226,91 @@ export default function ProductModal({ product, onClose }: Props) {
             R$ {basePrice.toFixed(2).replace(".", ",")}
           </div>
 
+          {groups.length === 0 && (
+            <p className="mt-6 text-sm text-gray-500 text-center">
+              Este produto não possui adicionais
+            </p>
+          )}
+
           {groups.map((group) => (
             <div key={group.id} className="mt-6 border rounded-lg p-3">
-              <p className="font-medium mb-2">{group.title}</p>
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">
+                  {group.title}
+                  {group.required && (
+                    <span className="text-red-500"> *</span>
+                  )}
+                </span>
+                {typeof group.maxChoose === "number" && (
+                  <span className="text-xs text-gray-500">
+                    até {group.maxChoose}
+                  </span>
+                )}
+              </div>
 
               {group.options.map((opt) => {
                 const q = selected[group.id]?.[opt.id] ?? 0;
 
                 return (
-                  <div key={opt.id} className="flex justify-between items-center mb-2">
+                  <div
+                    key={opt.id}
+                    className="flex justify-between items-center mb-2"
+                  >
                     <div className="flex items-center gap-3">
                       {opt.imageUrl ? (
                         <img
                           src={opt.imageUrl}
-                          className="w-12 h-12 rounded-lg object-cover border"
+                          alt={opt.name}
+                          className="w-12 h-12 rounded-lg object-cover border bg-gray-100"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-xs">
+                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-xs text-gray-500">
                           +
                         </div>
                       )}
 
-                      <div>
+                      <div className="flex flex-col">
                         <span>{opt.name}</span>
                         {opt.price > 0 && (
-                          <div className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500">
                             + R$ {opt.price.toFixed(2).replace(".", ",")}
-                          </div>
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    <input
-                      type={group.type === "single" ? "radio" : "checkbox"}
-                      checked={q > 0}
-                      onChange={() => toggleOption(group, opt)}
-                    />
+                    {group.type === "addable" ? (
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => changeAddableQty(group, opt, -1)}
+                          className="border px-2 rounded"
+                        >
+                          −
+                        </button>
+                        <span>{q}</span>
+                        <button
+                          onClick={() => toggleOption(group, opt)}
+                          className="border px-2 rounded"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type={
+                          group.type === "single" ? "radio" : "checkbox"
+                        }
+                        checked={q > 0}
+                        onChange={() => toggleOption(group, opt)}
+                      />
+                    )}
                   </div>
                 );
               })}
             </div>
           ))}
 
+          {/* OBS */}
           <div className="mt-6">
             <label className="text-sm font-medium">Observações</label>
             <textarea
@@ -252,27 +326,37 @@ export default function ProductModal({ product, onClose }: Props) {
           <div className="flex justify-between mb-3">
             <span>Quantidade</span>
             <div className="flex gap-2">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))}>
+                −
+              </button>
               <span>{qty}</span>
               <button onClick={() => setQty((q) => q + 1)}>+</button>
             </div>
           </div>
 
+
+<button
+  disabled={!isValid()}
+  onClick={() => {
+    addItem({
+      id: `${productData.id}-${Date.now()}`,
+      productId: productData.id,
+      name: productData.name,
+      qty,
+      price: finalPrice,
+      complements: selected,
+    });
+
+    onClose(); // 🔥 FECHA MODAL
+  }}
+  className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
+>
+  Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
+</button>
+
+
           <button
             disabled={!isValid()}
-            onClick={() => {
-              addItem({
-                id: `${productData.id}-${Date.now()}`,
-                productId: productData.id,
-                name: productData.name,
-                qty,
-                unitPrice,
-                complements: selected,
-                observation,
-              });
-
-              onClose();
-            }}
             className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
           >
             Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
