@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "../../../../../src/contexts/CartContext";
 
 interface Props {
   open: boolean;
