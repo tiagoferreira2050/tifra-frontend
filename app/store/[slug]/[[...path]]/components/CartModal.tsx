@@ -8,31 +8,13 @@ interface Props {
 }
 
 /* =======================
-   HELPER – COMPLEMENTOS
+   TYPES
 ======================= */
-function renderComplements(
-  complements?: Record<string, Record<string, number>>
-) {
-  if (!complements) return null;
-
-  return Object.entries(complements).map(
-    ([groupId, options]) => (
-      <div key={groupId} className="mt-1">
-        {Object.entries(options).map(
-          ([optionId, qty]) => (
-            <p
-              key={optionId}
-              className="text-xs text-gray-500 ml-2"
-            >
-              • {optionId}
-              {qty > 1 ? ` x${qty}` : ""}
-            </p>
-          )
-        )}
-      </div>
-    )
-  );
-}
+type CartComplement = {
+  optionId: string;
+  optionName: string;
+  qty: number;
+};
 
 export default function CartModal({ open, onClose }: Props) {
   const { items, updateQty, removeItem, total } = useCart();
@@ -51,10 +33,7 @@ export default function CartModal({ open, onClose }: Props) {
       <div className="relative w-full sm:w-[420px] bg-white h-full flex flex-col">
         {/* HEADER */}
         <div className="p-4 border-b flex items-center justify-between">
-          <button
-            onClick={onClose}
-            className="text-xl"
-          >
+          <button onClick={onClose} className="text-xl">
             ←
           </button>
 
@@ -80,9 +59,12 @@ export default function CartModal({ open, onClose }: Props) {
                 >
                   {/* FOTO */}
                   <img
-                    src="/placeholder.jpg"
+                    src={
+                      item.imageUrl ||
+                      "/placeholder.jpg"
+                    }
                     alt={item.name}
-                    className="w-20 h-20 rounded-lg object-cover"
+                    className="w-20 h-20 rounded-lg object-cover bg-gray-100"
                   />
 
                   {/* INFO */}
@@ -92,12 +74,35 @@ export default function CartModal({ open, onClose }: Props) {
                     </p>
 
                     {/* COMPLEMENTOS */}
-                    {renderComplements(item.complements)}
+                    {Array.isArray(
+                      item.complements
+                    ) &&
+                      item.complements.length >
+                        0 && (
+                        <div className="mt-1">
+                          {(
+                            item.complements as CartComplement[]
+                          ).map((c, i) => (
+                            <p
+                              key={i}
+                              className="text-xs text-gray-500"
+                            >
+                              • {c.optionName}
+                              {c.qty > 1
+                                ? ` x${c.qty}`
+                                : ""}
+                            </p>
+                          ))}
+                        </div>
+                      )}
 
                     {/* PREÇO */}
                     <p className="mt-2 font-semibold">
                       R${" "}
-                      {(item.unitPrice * item.qty)
+                      {(
+                        item.unitPrice *
+                        item.qty
+                      )
                         .toFixed(2)
                         .replace(".", ",")}
                     </p>
@@ -106,7 +111,9 @@ export default function CartModal({ open, onClose }: Props) {
                   {/* AÇÕES */}
                   <div className="flex flex-col items-end gap-2">
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() =>
+                        removeItem(item.id)
+                      }
                       className="text-gray-400"
                     >
                       ✕
@@ -117,7 +124,10 @@ export default function CartModal({ open, onClose }: Props) {
                         onClick={() =>
                           updateQty(
                             item.id,
-                            Math.max(1, item.qty - 1)
+                            Math.max(
+                              1,
+                              item.qty - 1
+                            )
                           )
                         }
                         className="px-2"
@@ -152,11 +162,12 @@ export default function CartModal({ open, onClose }: Props) {
             <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span>
-                R$ {total.toFixed(2).replace(".", ",")}
+                R${" "}
+                {total
+                  .toFixed(2)
+                  .replace(".", ",")}
               </span>
             </div>
-
-    
 
             <button
               onClick={() => {
