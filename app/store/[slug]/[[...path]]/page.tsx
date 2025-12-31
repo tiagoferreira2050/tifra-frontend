@@ -1,4 +1,6 @@
 import { CategoryList } from "./components/CategoryList";
+import { CartProvider } from "@/contexts/CartContext";
+import MiniCartBar from "@/components/MiniCartBar";
 
 interface StorePageProps {
   params: {
@@ -28,9 +30,6 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
-  /* ===============================
-     🔥 BUSCAR LOJA + CATEGORIAS
-  =============================== */
   let store: any = null;
   let categories: any[] = [];
 
@@ -62,71 +61,71 @@ export default async function StorePage({ params }: StorePageProps) {
     );
   }
 
-  /* ===============================
-     RENDER
-  =============================== */
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* ================= HEADER ================= */}
-      <div className="relative">
-        {/* BANNER */}
-        <div className="h-56 w-full overflow-hidden">
-          {store.coverImage ? (
-            <img
-              src={store.coverImage}
-              alt={store.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
-          )}
-        </div>
+    <CartProvider>
+      <div className="bg-gray-50 min-h-screen relative">
 
-        {/* CARD (NUVEM) SOBRE O BANNER */}
-        <div className="absolute left-0 right-0 -bottom-16">
-          <div className="max-w-2xl mx-auto px-4">
-            <div className="bg-white rounded-2xl shadow-xl p-4 flex gap-4 items-center">
-              {/* LOGO */}
-              {store.logoUrl && (
-                <img
-                  src={store.logoUrl}
-                  alt={store.name}
-                  className="w-20 h-20 rounded-full border object-cover"
-                />
-              )}
+        {/* ================= HEADER ================= */}
+        <div className="relative">
+          <div className="h-56 w-full overflow-hidden">
+            {store.coverImage ? (
+              <img
+                src={store.coverImage}
+                alt={store.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-purple-600 to-purple-400" />
+            )}
+          </div>
 
-              {/* INFO */}
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-900">
-                  {store.name}
-                </h1>
-
-                {store.description && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {store.description}
-                  </p>
+          <div className="absolute left-0 right-0 -bottom-16">
+            <div className="max-w-2xl mx-auto px-4">
+              <div className="bg-white rounded-2xl shadow-xl p-4 flex gap-4 items-center">
+                {store.logoUrl && (
+                  <img
+                    src={store.logoUrl}
+                    alt={store.name}
+                    className="w-20 h-20 rounded-full border object-cover"
+                  />
                 )}
 
-                <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-                  <span className="font-medium text-green-600">
-                    ● Aberto
-                  </span>
-                  <span>⏱ 40–50 min</span>
-                  <span>Sem pedido mínimo</span>
+                <div className="flex-1">
+                  <h1 className="text-xl font-bold text-gray-900">
+                    {store.name}
+                  </h1>
+
+                  {store.description && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {store.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
+                    <span className="font-medium text-green-600">
+                      ● Aberto
+                    </span>
+                    <span>⏱ 40–50 min</span>
+                    <span>Sem pedido mínimo</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ESPAÇO PARA COMPENSAR A SOBREPOSIÇÃO */}
-      <div className="h-24" />
+        {/* COMPENSA SOBREPOSIÇÃO */}
+        <div className="h-24" />
 
-      {/* ================= PRODUTOS ================= */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <CategoryList categories={categories} />
+        {/* ================= PRODUTOS ================= */}
+        <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
+          <CategoryList categories={categories} />
+        </div>
+
+        {/* ================= MINI CARRINHO ================= */}
+        <MiniCartBar />
+
       </div>
-    </div>
+    </CartProvider>
   );
 }
