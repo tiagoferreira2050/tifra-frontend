@@ -156,9 +156,7 @@ export default function CartModal({ open, onClose }: Props) {
               </span>
             </div>
 
-            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
-              Só mais R$ 5,03 para entrega grátis!
-            </div>
+    
 
             <button
               onClick={() => {
