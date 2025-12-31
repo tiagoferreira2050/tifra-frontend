@@ -347,20 +347,12 @@ const { addItem } = useCart();
       complements: selected,
     });
 
-    onClose(); // 🔥 FECHA MODAL
+    onClose();
   }}
   className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
 >
   Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
 </button>
-
-
-          <button
-            disabled={!isValid()}
-            className="w-full bg-purple-600 text-white py-3 rounded-xl disabled:opacity-50"
-          >
-            Adicionar • R$ {finalPrice.toFixed(2).replace(".", ",")}
-          </button>
         </div>
       </div>
     </div>
