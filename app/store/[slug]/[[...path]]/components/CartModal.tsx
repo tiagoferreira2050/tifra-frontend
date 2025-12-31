@@ -1,7 +1,6 @@
 "use client";
 
-import { useCart } from "../../../../../src/contexts/CartContext";
-import { Fragment } from "react";
+import { useCart } from "@/contexts/CartContext";
 
 interface Props {
   open: boolean;
@@ -9,7 +8,7 @@ interface Props {
 }
 
 /* =======================
-   HELPER: formatar complementos
+   HELPER – COMPLEMENTOS
 ======================= */
 function renderComplements(
   complements?: Record<string, Record<string, number>>
@@ -18,12 +17,12 @@ function renderComplements(
 
   return Object.entries(complements).map(
     ([groupId, options]) => (
-      <div key={groupId} className="mt-1 ml-2">
+      <div key={groupId} className="mt-1">
         {Object.entries(options).map(
           ([optionId, qty]) => (
             <p
               key={optionId}
-              className="text-xs text-gray-500"
+              className="text-xs text-gray-500 ml-2"
             >
               • {optionId}
               {qty > 1 ? ` x${qty}` : ""}
@@ -36,12 +35,7 @@ function renderComplements(
 }
 
 export default function CartModal({ open, onClose }: Props) {
-  const {
-    items,
-    updateQty,
-    removeItem,
-    total,
-  } = useCart();
+  const { items, updateQty, removeItem, total } = useCart();
 
   if (!open) return null;
 
@@ -56,16 +50,19 @@ export default function CartModal({ open, onClose }: Props) {
       {/* MODAL */}
       <div className="relative w-full sm:w-[420px] bg-white h-full flex flex-col">
         {/* HEADER */}
-        <div className="p-4 border-b flex justify-between items-center">
+        <div className="p-4 border-b flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="text-xl"
+          >
+            ←
+          </button>
+
           <h2 className="text-lg font-semibold">
             Sua sacola
           </h2>
-          <button
-            onClick={onClose}
-            className="text-xl leading-none"
-          >
-            ✕
-          </button>
+
+          <span />
         </div>
 
         {/* BODY */}
@@ -79,31 +76,43 @@ export default function CartModal({ open, onClose }: Props) {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="border rounded-lg p-3"
+                  className="flex gap-3 border-b pb-4"
                 >
-                  {/* PRODUTO */}
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {item.name}
-                      </p>
+                  {/* FOTO */}
+                  <img
+                    src="/placeholder.jpg"
+                    alt={item.name}
+                    className="w-20 h-20 rounded-lg object-cover"
+                  />
 
-                      {/* COMPLEMENTOS */}
-                      {renderComplements(item.complements)}
-                    </div>
+                  {/* INFO */}
+                  <div className="flex-1">
+                    <p className="font-medium">
+                      {item.name}
+                    </p>
 
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-red-500 text-xs"
-                    >
-                      Remover
-                    </button>
+                    {/* COMPLEMENTOS */}
+                    {renderComplements(item.complements)}
+
+                    {/* PREÇO */}
+                    <p className="mt-2 font-semibold">
+                      R${" "}
+                      {(item.unitPrice * item.qty)
+                        .toFixed(2)
+                        .replace(".", ",")}
+                    </p>
                   </div>
 
-                  {/* QTD + PREÇOS */}
-                  <div className="flex justify-between items-center mt-3">
-                    {/* QUANTIDADE */}
-                    <div className="flex items-center gap-2">
+                  {/* AÇÕES */}
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-gray-400"
+                    >
+                      ✕
+                    </button>
+
+                    <div className="flex items-center gap-2 border rounded">
                       <button
                         onClick={() =>
                           updateQty(
@@ -111,7 +120,7 @@ export default function CartModal({ open, onClose }: Props) {
                             Math.max(1, item.qty - 1)
                           )
                         }
-                        className="border px-2 rounded"
+                        className="px-2"
                       >
                         −
                       </button>
@@ -125,26 +134,10 @@ export default function CartModal({ open, onClose }: Props) {
                             item.qty + 1
                           )
                         }
-                        className="border px-2 rounded"
+                        className="px-2"
                       >
                         +
                       </button>
-                    </div>
-
-                    {/* PREÇO */}
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">
-                        R${" "}
-                        {item.unitPrice
-                          .toFixed(2)
-                          .replace(".", ",")}
-                      </p>
-                      <p className="font-semibold">
-                        R${" "}
-                        {(item.unitPrice * item.qty)
-                          .toFixed(2)
-                          .replace(".", ",")}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -155,20 +148,24 @@ export default function CartModal({ open, onClose }: Props) {
 
         {/* FOOTER */}
         {items.length > 0 && (
-          <div className="border-t p-4">
-            <div className="flex justify-between font-semibold mb-4">
+          <div className="border-t p-4 space-y-3">
+            <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span>
                 R$ {total.toFixed(2).replace(".", ",")}
               </span>
             </div>
 
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+              Só mais R$ 5,03 para entrega grátis!
+            </div>
+
             <button
               onClick={() => {
                 onClose();
-                // FUTURO: abrir checkout (endereço)
+                // próximo passo: endereço
               }}
-              className="w-full bg-purple-600 text-white py-3 rounded-xl"
+              className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
             >
               Continuar
             </button>
