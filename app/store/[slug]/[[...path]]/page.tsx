@@ -1,6 +1,6 @@
 import { CategoryList } from "./components/CategoryList";
-import { CartProvider } from "@/contexts/CartContext";
-import MiniCartBar from "@/components/MiniCartBar";
+import { CartProvider } from "../../../../src/contexts/CartContext";
+import MiniCartBar from "../../../../src/components/MiniCartBar";
 
 interface StorePageProps {
   params: {
