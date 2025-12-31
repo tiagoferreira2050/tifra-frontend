@@ -339,13 +339,14 @@ const { addItem } = useCart();
   disabled={!isValid()}
   onClick={() => {
     addItem({
-      id: `${productData.id}-${Date.now()}`,
-      productId: productData.id,
-      name: productData.name,
-      qty,
-      price: finalPrice,
-      complements: selected,
-    });
+  id: `${productData.id}-${Date.now()}`,
+  productId: productData.id,
+  name: productData.name,
+  qty,
+  unitPrice: basePrice + complementsTotal,
+  complements: selected,
+});
+
 
     onClose();
   }}
