@@ -1,6 +1,17 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
+/* =======================
+   CONFIG
+======================= */
+const CART_STORAGE_KEY = "delivery_cart_v1";
+const CART_TTL_MS = 45 * 60 * 1000; // 45 minutos
 
 /* =======================
    TYPES
@@ -14,11 +25,17 @@ export type CartItem = {
   complements?: Record<string, Record<string, number>>;
 };
 
+type StoredCart = {
+  items: CartItem[];
+  expiresAt: number;
+};
+
 type CartContextType = {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   updateQty: (id: string, qty: number) => void;
   removeItem: (id: string) => void;
+  clearCart: () => void;
   total: number;
 };
 
@@ -37,6 +54,51 @@ export function CartProvider({
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
+  /* =======================
+     LOAD CART (INIT)
+  ======================= */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CART_STORAGE_KEY);
+      if (!raw) return;
+
+      const stored: StoredCart = JSON.parse(raw);
+
+      // ⏱️ expirou
+      if (Date.now() > stored.expiresAt) {
+        localStorage.removeItem(CART_STORAGE_KEY);
+        return;
+      }
+
+      setItems(stored.items);
+    } catch {
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+  }, []);
+
+  /* =======================
+     SAVE CART (ON CHANGE)
+  ======================= */
+  useEffect(() => {
+    if (items.length === 0) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return;
+    }
+
+    const payload: StoredCart = {
+      items,
+      expiresAt: Date.now() + CART_TTL_MS, // renova o tempo
+    };
+
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify(payload)
+    );
+  }, [items]);
+
+  /* =======================
+     ACTIONS
+  ======================= */
   function addItem(item: CartItem) {
     setItems((prev) => [...prev, item]);
   }
@@ -55,6 +117,14 @@ export function CartProvider({
     );
   }
 
+  function clearCart() {
+    setItems([]);
+    localStorage.removeItem(CART_STORAGE_KEY);
+  }
+
+  /* =======================
+     TOTAL
+  ======================= */
   const total = items.reduce(
     (acc, item) => acc + item.unitPrice * item.qty,
     0
@@ -67,6 +137,7 @@ export function CartProvider({
         addItem,
         updateQty,
         removeItem,
+        clearCart,
         total,
       }}
     >
