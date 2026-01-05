@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useJsApiLoader, GoogleMap } from "@react-google-maps/api";
 
-interface SavedAddress {
+export interface SavedAddress {
   street: string;
   neighborhood: string;
   city: string;
   state: string;
   number: string;
-  complement: string;
-  reference: string;
+  complement?: string;
+  reference?: string;
   lat: number;
   lng: number;
 }
@@ -28,7 +28,8 @@ const libraries: ("places")[] = ["places"];
 export default function AddressModal({ open, onClose, onSave }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteRef =
+    useRef<google.maps.places.Autocomplete | null>(null);
 
   const [step, setStep] = useState<Step>("search");
   const [position, setPosition] =
@@ -141,7 +142,10 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
     setAddress((prev) => ({
       ...prev,
       street: get("route"),
-      neighborhood: get("sublocality") || get("political"),
+      neighborhood:
+        get("sublocality") ||
+        get("neighborhood") ||
+        get("political"),
       city: get("administrative_area_level_2"),
       state: get("administrative_area_level_1"),
     }));
