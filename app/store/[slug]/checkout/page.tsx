@@ -36,8 +36,15 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
-function onlyNumbers(value: string) {
-  return value.replace(/\D/g, "");
+function normalizePhone(value: string) {
+  let phone = value.replace(/\D/g, "");
+
+  // remove DDI Brasil se existir
+  if (phone.startsWith("55") && phone.length > 11) {
+    phone = phone.slice(2);
+  }
+
+  return phone;
 }
 
 export default function CheckoutPage() {
@@ -45,12 +52,12 @@ export default function CheckoutPage() {
 
   /* ================= CONFIG ================= */
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const storeId = "STORE_ID_AQUI"; // 🔥 troque pelo real
+  const storeId = "STORE_ID_AQUI"; // 🔥 trocar depois pelo store real (subdomínio)
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   /* ================= ENTREGA ================= */
@@ -65,7 +72,7 @@ export default function CheckoutPage() {
 
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    const phone = onlyNumbers(customerPhone);
+    const phone = normalizePhone(customerPhone);
 
     if (phone.length < 10) return;
 
@@ -86,6 +93,7 @@ export default function CheckoutPage() {
           if (Array.isArray(data.addresses)) {
             setAddresses(
               data.addresses.map((addr: any) => ({
+                id: Date.now() + Math.random(),
                 ...addr,
                 fee: 4.99,
                 eta: "40 - 50 min",
@@ -94,7 +102,7 @@ export default function CheckoutPage() {
           }
         }
       } catch (err) {
-        console.error("Erro ao buscar cliente");
+        console.error("Erro ao buscar cliente", err);
       } finally {
         setLoadingCustomer(false);
       }
@@ -113,7 +121,7 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         storeId,
         name: customerName,
-        phone: onlyNumbers(customerPhone),
+        phone: normalizePhone(customerPhone),
       }),
     });
 
