@@ -19,12 +19,29 @@ type SavedAddress = {
   eta: string;
 };
 
+/* ================= HELPERS ================= */
+function formatPhone(value: string) {
+  const numbers = value.replace(/\D/g, "");
+
+  if (numbers.length <= 10) {
+    return numbers
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2")
+      .slice(0, 14);
+  }
+
+  return numbers
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .slice(0, 15);
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
 
   // ================= CLIENTE =================
-  const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
 
   // ================= ENTREGA =================
   const [deliveryType, setDeliveryType] = useState<
@@ -74,6 +91,27 @@ export default function CheckoutPage() {
 
           {/* ================= DADOS DO CLIENTE ================= */}
           <div className="space-y-4">
+
+            {/* TELEFONE */}
+            <div>
+              <label className="text-sm font-medium">
+                Telefone *
+              </label>
+              <input
+                type="tel"
+                value={customerPhone}
+                onChange={(e) =>
+                  setCustomerPhone(
+                    formatPhone(e.target.value)
+                  )
+                }
+                placeholder="(DDD) 99999-9999"
+                className="w-full mt-1 border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+
+            {/* NOME */}
             <div>
               <label className="text-sm font-medium">
                 Nome *
@@ -85,22 +123,6 @@ export default function CheckoutPage() {
                   setCustomerName(e.target.value)
                 }
                 placeholder="Seu nome"
-                className="w-full mt-1 border rounded-lg px-3 py-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">
-                Telefone *
-              </label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) =>
-                  setCustomerPhone(e.target.value)
-                }
-                placeholder="(DDD) 99999-9999"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
                 required
               />
@@ -247,9 +269,9 @@ export default function CheckoutPage() {
           <button
             className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
             onClick={() => {
-              if (!customerName || !customerPhone) {
+              if (!customerPhone || !customerName) {
                 alert(
-                  "Informe nome e telefone para continuar"
+                  "Informe telefone e nome para continuar"
                 );
                 return;
               }
