@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
   /* ================= CONFIG ================= */
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const storeId = "STORE_ID_AQUI"; // 🔥 trocar depois pelo store real (subdomínio)
+  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b"; // 🔥 trocar depois pelo store real (subdomínio)
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
