@@ -1,105 +1,80 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCart } from "../../../../src/contexts/CartContext";
+import { useState } from "react";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, total, updateQty, removeItem } = useCart();
 
-  if (!items || items.length === 0) {
-    return (
-      <div className="max-w-xl mx-auto p-6 text-center">
-        <h2 className="text-xl font-semibold mb-4">
-          Sua sacola está vazia 🛒
-        </h2>
-
-        <button
-          onClick={() => router.back()}
-          className="bg-purple-600 text-white px-6 py-3 rounded-xl"
-        >
-          Voltar ao cardápio
-        </button>
-      </div>
-    );
-  }
+  const [deliveryType, setDeliveryType] = useState<
+    "delivery" | "pickup" | "local"
+  >("delivery");
 
   return (
-    <div className="max-w-xl mx-auto p-6 pb-28">
-      <h1 className="text-2xl font-semibold mb-6">
-        Sua sacola
-      </h1>
+    <div className="max-w-xl mx-auto p-6">
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 rounded-full border flex items-center justify-center"
+        >
+          ←
+        </button>
 
+        <h1 className="text-xl font-semibold">
+          Endereço de entrega
+        </h1>
+      </div>
+
+      {/* TIPO DE PEDIDO */}
       <div className="space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex justify-between items-center border rounded-lg p-4"
-          >
-            <div>
-              <p className="font-medium">{item.name}</p>
+        <p className="text-sm text-gray-600">
+          Como deseja receber seu pedido?
+        </p>
 
-              <p className="text-sm text-gray-500">
-                R$ {item.unitPrice.toFixed(2).replace(".", ",")}
-              </p>
+        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
+          <input
+            type="radio"
+            checked={deliveryType === "delivery"}
+            onChange={() => setDeliveryType("delivery")}
+          />
+          <span>Receber no meu endereço</span>
+        </label>
 
-              <div className="flex items-center gap-3 mt-2">
-                <button
-                  className="border rounded px-2"
-                  onClick={() =>
-                    updateQty(
-                      item.id,
-                      Math.max(1, item.qty - 1)
-                    )
-                  }
-                >
-                  −
-                </button>
+        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
+          <input
+            type="radio"
+            checked={deliveryType === "local"}
+            onChange={() => setDeliveryType("local")}
+          />
+          <span>Consumir no restaurante</span>
+        </label>
 
-                <span>{item.qty}</span>
-
-                <button
-                  className="border rounded px-2"
-                  onClick={() =>
-                    updateQty(item.id, item.qty + 1)
-                  }
-                >
-                  +
-                </button>
-
-                <button
-                  className="text-red-500 text-sm ml-3"
-                  onClick={() => removeItem(item.id)}
-                >
-                  Remover
-                </button>
-              </div>
-            </div>
-
-            <div className="font-semibold">
-              R${" "}
-              {(item.unitPrice * item.qty)
-                .toFixed(2)
-                .replace(".", ",")}
-            </div>
-          </div>
-        ))}
+        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
+          <input
+            type="radio"
+            checked={deliveryType === "pickup"}
+            onChange={() => setDeliveryType("pickup")}
+          />
+          <span>Retirar no restaurante</span>
+        </label>
       </div>
 
-      {/* TOTAL */}
-      <div className="border-t mt-6 pt-4 flex justify-between font-semibold text-lg">
-        <span>Total</span>
-        <span>R$ {total.toFixed(2).replace(".", ",")}</span>
-      </div>
-
-      {/* CTA */}
+      {/* BOTÃO */}
       <button
-        className="w-full mt-6 bg-green-600 text-white py-3 rounded-xl"
+        className="w-full mt-8 bg-green-600 text-white py-3 rounded-xl font-semibold"
         onClick={() => {
-          console.log("Ir para pagamento");
+          // 👉 se for delivery, vai para endereço
+          if (deliveryType === "delivery") {
+            router.push("checkout/address");
+            return;
+          }
+
+          // 👉 se for retirada ou local, pula endereço
+          router.push("checkout/summary");
         }}
       >
-        Continuar para pagamento
+        Próximo
       </button>
     </div>
   );
