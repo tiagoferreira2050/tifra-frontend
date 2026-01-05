@@ -11,8 +11,8 @@ export default function CheckoutPage() {
   >("delivery");
 
   return (
-    <div className="max-w-xl mx-auto min-h-screen flex flex-col">
-      {/* HEADER */}
+    <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
+      {/* ================= HEADER ================= */}
       <div className="flex items-center gap-3 px-6 py-5 border-b">
         <button
           onClick={() => router.back()}
@@ -26,7 +26,7 @@ export default function CheckoutPage() {
         </h1>
       </div>
 
-      {/* CONTEÚDO */}
+      {/* ================= CONTEÚDO ================= */}
       <div className="flex-1 px-6 py-6">
         <p className="text-sm text-gray-600 mb-4">
           Como deseja receber seu pedido?
@@ -35,7 +35,7 @@ export default function CheckoutPage() {
         <div className="space-y-3">
           {/* DELIVERY */}
           <label
-            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
               deliveryType === "delivery"
                 ? "border-green-600 bg-green-50"
                 : ""
@@ -43,6 +43,7 @@ export default function CheckoutPage() {
           >
             <input
               type="radio"
+              name="deliveryType"
               checked={deliveryType === "delivery"}
               onChange={() => setDeliveryType("delivery")}
             />
@@ -51,7 +52,7 @@ export default function CheckoutPage() {
 
           {/* LOCAL */}
           <label
-            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
               deliveryType === "local"
                 ? "border-green-600 bg-green-50"
                 : ""
@@ -59,6 +60,7 @@ export default function CheckoutPage() {
           >
             <input
               type="radio"
+              name="deliveryType"
               checked={deliveryType === "local"}
               onChange={() => setDeliveryType("local")}
             />
@@ -67,7 +69,7 @@ export default function CheckoutPage() {
 
           {/* PICKUP */}
           <label
-            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
               deliveryType === "pickup"
                 ? "border-green-600 bg-green-50"
                 : ""
@@ -75,25 +77,39 @@ export default function CheckoutPage() {
           >
             <input
               type="radio"
+              name="deliveryType"
               checked={deliveryType === "pickup"}
               onChange={() => setDeliveryType("pickup")}
             />
             <span>Retirar no restaurante</span>
           </label>
         </div>
+
+        {/* ================= BOTÃO ADICIONAR ENDEREÇO ================= */}
+        {deliveryType === "delivery" && (
+          <button
+            className="w-full mt-6 border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+            onClick={() => {
+              // 🔥 próximo passo: abrir modal do Google
+              router.push("/checkout/address");
+            }}
+          >
+            📍 Adicionar novo endereço
+          </button>
+        )}
       </div>
 
-      {/* BOTÃO FIXO */}
+      {/* ================= BOTÃO FIXO ================= */}
       <div className="p-6 border-t">
         <button
-          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
           onClick={() => {
             if (deliveryType === "delivery") {
-              router.push("checkout/address");
+              router.push("/checkout/address");
               return;
             }
 
-            router.push("checkout/summary");
+            router.push("/checkout/summary");
           }}
         >
           Próximo
