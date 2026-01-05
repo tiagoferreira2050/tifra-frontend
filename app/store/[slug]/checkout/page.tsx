@@ -11,71 +11,94 @@ export default function CheckoutPage() {
   >("delivery");
 
   return (
-    <div className="max-w-xl mx-auto p-6">
+    <div className="max-w-xl mx-auto min-h-screen flex flex-col">
       {/* HEADER */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 px-6 py-5 border-b">
         <button
           onClick={() => router.back()}
-          className="w-8 h-8 rounded-full border flex items-center justify-center"
+          className="w-9 h-9 rounded-full border flex items-center justify-center"
         >
           ←
         </button>
 
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-lg font-semibold">
           Endereço de entrega
         </h1>
       </div>
 
-      {/* TIPO DE PEDIDO */}
-      <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+      {/* CONTEÚDO */}
+      <div className="flex-1 px-6 py-6">
+        <p className="text-sm text-gray-600 mb-4">
           Como deseja receber seu pedido?
         </p>
 
-        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
-          <input
-            type="radio"
-            checked={deliveryType === "delivery"}
-            onChange={() => setDeliveryType("delivery")}
-          />
-          <span>Receber no meu endereço</span>
-        </label>
+        <div className="space-y-3">
+          {/* DELIVERY */}
+          <label
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+              deliveryType === "delivery"
+                ? "border-green-600 bg-green-50"
+                : ""
+            }`}
+          >
+            <input
+              type="radio"
+              checked={deliveryType === "delivery"}
+              onChange={() => setDeliveryType("delivery")}
+            />
+            <span>Receber no meu endereço</span>
+          </label>
 
-        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
-          <input
-            type="radio"
-            checked={deliveryType === "local"}
-            onChange={() => setDeliveryType("local")}
-          />
-          <span>Consumir no restaurante</span>
-        </label>
+          {/* LOCAL */}
+          <label
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+              deliveryType === "local"
+                ? "border-green-600 bg-green-50"
+                : ""
+            }`}
+          >
+            <input
+              type="radio"
+              checked={deliveryType === "local"}
+              onChange={() => setDeliveryType("local")}
+            />
+            <span>Consumir no restaurante</span>
+          </label>
 
-        <label className="flex items-center gap-3 border rounded-lg p-4 cursor-pointer">
-          <input
-            type="radio"
-            checked={deliveryType === "pickup"}
-            onChange={() => setDeliveryType("pickup")}
-          />
-          <span>Retirar no restaurante</span>
-        </label>
+          {/* PICKUP */}
+          <label
+            className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+              deliveryType === "pickup"
+                ? "border-green-600 bg-green-50"
+                : ""
+            }`}
+          >
+            <input
+              type="radio"
+              checked={deliveryType === "pickup"}
+              onChange={() => setDeliveryType("pickup")}
+            />
+            <span>Retirar no restaurante</span>
+          </label>
+        </div>
       </div>
 
-      {/* BOTÃO */}
-      <button
-        className="w-full mt-8 bg-green-600 text-white py-3 rounded-xl font-semibold"
-        onClick={() => {
-          // 👉 se for delivery, vai para endereço
-          if (deliveryType === "delivery") {
-            router.push("checkout/address");
-            return;
-          }
+      {/* BOTÃO FIXO */}
+      <div className="p-6 border-t">
+        <button
+          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+          onClick={() => {
+            if (deliveryType === "delivery") {
+              router.push("checkout/address");
+              return;
+            }
 
-          // 👉 se for retirada ou local, pula endereço
-          router.push("checkout/summary");
-        }}
-      >
-        Próximo
-      </button>
+            router.push("checkout/summary");
+          }}
+        >
+          Próximo
+        </button>
+      </div>
     </div>
   );
 }
