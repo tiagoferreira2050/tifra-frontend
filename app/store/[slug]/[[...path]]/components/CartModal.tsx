@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCart } from "../../../../../src/contexts/CartContext";
 
 interface Props {
@@ -17,6 +18,7 @@ type CartComplement = {
 };
 
 export default function CartModal({ open, onClose }: Props) {
+  const router = useRouter();
   const { items, updateQty, removeItem, total } = useCart();
 
   if (!open) return null;
@@ -59,10 +61,7 @@ export default function CartModal({ open, onClose }: Props) {
                 >
                   {/* FOTO */}
                   <img
-                    src={
-                      item.imageUrl ||
-                      "/placeholder.jpg"
-                    }
+                    src={item.imageUrl || "/placeholder.jpg"}
                     alt={item.name}
                     className="w-20 h-20 rounded-lg object-cover bg-gray-100"
                   />
@@ -74,39 +73,33 @@ export default function CartModal({ open, onClose }: Props) {
                     </p>
 
                     {/* COMPLEMENTOS */}
-                    {Array.isArray(
-                      item.complements
-                    ) &&
-                      item.complements.length >
-                        0 && (
+                    {Array.isArray(item.complements) &&
+                      item.complements.length > 0 && (
                         <div className="mt-1">
-                          {(
-                            item.complements as CartComplement[]
-                          ).map((c, i) => (
-                            <p
-                              key={i}
-                              className="text-xs text-gray-500"
-                            >
-                              • {c.optionName}
-                              {c.qty > 1
-                                ? ` x${c.qty}`
-                                : ""}
-                            </p>
-                          ))}
+                          {(item.complements as CartComplement[]).map(
+                            (c, i) => (
+                              <p
+                                key={i}
+                                className="text-xs text-gray-500"
+                              >
+                                • {c.optionName}
+                                {c.qty > 1 ? ` x${c.qty}` : ""}
+                              </p>
+                            )
+                          )}
                         </div>
                       )}
-{item.observation && (
-  <p className="text-xs text-gray-500 italic mt-1">
-    Obs: {item.observation}
-  </p>
-)}
+
+                    {/* OBSERVAÇÃO */}
+                    {item.observation && (
+                      <p className="text-xs text-gray-500 italic mt-1">
+                        Obs: {item.observation}
+                      </p>
+                    )}
+
                     {/* PREÇO */}
                     <p className="mt-2 font-semibold">
-                      R${" "}
-                      {(
-                        item.unitPrice *
-                        item.qty
-                      )
+                      R$ {(item.unitPrice * item.qty)
                         .toFixed(2)
                         .replace(".", ",")}
                     </p>
@@ -115,9 +108,7 @@ export default function CartModal({ open, onClose }: Props) {
                   {/* AÇÕES */}
                   <div className="flex flex-col items-end gap-2">
                     <button
-                      onClick={() =>
-                        removeItem(item.id)
-                      }
+                      onClick={() => removeItem(item.id)}
                       className="text-gray-400"
                     >
                       ✕
@@ -128,10 +119,7 @@ export default function CartModal({ open, onClose }: Props) {
                         onClick={() =>
                           updateQty(
                             item.id,
-                            Math.max(
-                              1,
-                              item.qty - 1
-                            )
+                            Math.max(1, item.qty - 1)
                           )
                         }
                         className="px-2"
@@ -143,10 +131,7 @@ export default function CartModal({ open, onClose }: Props) {
 
                       <button
                         onClick={() =>
-                          updateQty(
-                            item.id,
-                            item.qty + 1
-                          )
+                          updateQty(item.id, item.qty + 1)
                         }
                         className="px-2"
                       >
@@ -166,17 +151,14 @@ export default function CartModal({ open, onClose }: Props) {
             <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span>
-                R${" "}
-                {total
-                  .toFixed(2)
-                  .replace(".", ",")}
+                R$ {total.toFixed(2).replace(".", ",")}
               </span>
             </div>
 
             <button
               onClick={() => {
                 onClose();
-                // próximo passo: endereço
+                router.push("/checkout");
               }}
               className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
             >
