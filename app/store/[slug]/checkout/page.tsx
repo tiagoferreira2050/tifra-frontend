@@ -22,6 +22,11 @@ type SavedAddress = {
 export default function CheckoutPage() {
   const router = useRouter();
 
+  // ================= CLIENTE =================
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+
+  // ================= ENTREGA =================
   const [deliveryType, setDeliveryType] = useState<
     "delivery" | "pickup" | "local"
   >("delivery");
@@ -36,7 +41,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<number | null>(null);
 
-  // 🔥 ENDEREÇO DA LOJA (mock)
+  // ================= ENDEREÇO DA LOJA (mock) =================
   const storeAddress = {
     street: "Avenida Olegário Maciel",
     number: "573",
@@ -65,13 +70,49 @@ export default function CheckoutPage() {
         </div>
 
         {/* ================= CONTEÚDO ================= */}
-        <div className="flex-1 px-6 py-6">
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="flex-1 px-6 py-6 space-y-6">
+
+          {/* ================= DADOS DO CLIENTE ================= */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">
+                Nome *
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) =>
+                  setCustomerName(e.target.value)
+                }
+                placeholder="Seu nome"
+                className="w-full mt-1 border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">
+                Telefone *
+              </label>
+              <input
+                type="tel"
+                value={customerPhone}
+                onChange={(e) =>
+                  setCustomerPhone(e.target.value)
+                }
+                placeholder="(DDD) 99999-9999"
+                className="w-full mt-1 border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+          </div>
+
+          {/* ================= ENTREGA ================= */}
+          <p className="text-sm text-gray-600">
             Como deseja receber seu pedido?
           </p>
 
           <div className="space-y-3">
-            {/* DELIVERY */}
             <label
               className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
                 deliveryType === "delivery"
@@ -81,7 +122,6 @@ export default function CheckoutPage() {
             >
               <input
                 type="radio"
-                name="deliveryType"
                 checked={deliveryType === "delivery"}
                 onChange={() =>
                   setDeliveryType("delivery")
@@ -90,7 +130,6 @@ export default function CheckoutPage() {
               <span>Receber no meu endereço</span>
             </label>
 
-            {/* LOCAL */}
             <label
               className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
                 deliveryType === "local"
@@ -100,7 +139,6 @@ export default function CheckoutPage() {
             >
               <input
                 type="radio"
-                name="deliveryType"
                 checked={deliveryType === "local"}
                 onChange={() =>
                   setDeliveryType("local")
@@ -109,7 +147,6 @@ export default function CheckoutPage() {
               <span>Consumir no restaurante</span>
             </label>
 
-            {/* PICKUP */}
             <label
               className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
                 deliveryType === "pickup"
@@ -119,7 +156,6 @@ export default function CheckoutPage() {
             >
               <input
                 type="radio"
-                name="deliveryType"
                 checked={deliveryType === "pickup"}
                 onChange={() =>
                   setDeliveryType("pickup")
@@ -129,10 +165,10 @@ export default function CheckoutPage() {
             </label>
           </div>
 
-          {/* ================= ENDEREÇO DA LOJA ================= */}
+          {/* ================= ENDEREÇO LOJA ================= */}
           {(deliveryType === "pickup" ||
             deliveryType === "local") && (
-            <div className="mt-6 border border-green-600 rounded-xl p-4 bg-green-50">
+            <div className="border border-green-600 rounded-xl p-4 bg-green-50">
               <p className="text-sm text-gray-600 mb-1">
                 Endereço do restaurante:
               </p>
@@ -153,8 +189,7 @@ export default function CheckoutPage() {
               <a
                 href={storeAddress.mapUrl}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 w-full border border-green-600 text-green-600 py-2 rounded-lg font-medium flex items-center justify-center gap-2"
+                className="mt-4 w-full border border-green-600 text-green-600 py-2 rounded-lg font-medium flex justify-center"
               >
                 📍 Ver no mapa
               </a>
@@ -165,7 +200,7 @@ export default function CheckoutPage() {
           {deliveryType === "delivery" && (
             <>
               <button
-                className="w-full mt-6 border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+                className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold"
                 onClick={() =>
                   setAddressModalOpen(true)
                 }
@@ -173,75 +208,52 @@ export default function CheckoutPage() {
                 📍 Adicionar novo endereço
               </button>
 
-              {addresses.length > 0 && (
-                <div className="mt-6 space-y-3">
-                  {addresses.map((addr) => (
-                    <div
-                      key={addr.id}
-                      onClick={() =>
-                        setSelectedAddressId(
-                          addr.id
-                        )
-                      }
-                      className={`border rounded-xl p-4 cursor-pointer transition ${
-                        selectedAddressId ===
-                        addr.id
-                          ? "border-green-600 bg-green-50"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold">
-                            {addr.street},{" "}
-                            {addr.number}
-                          </p>
-                          <p className="text-sm">
-                            {addr.neighborhood}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {addr.city} -{" "}
-                            {addr.state}
-                          </p>
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  onClick={() =>
+                    setSelectedAddressId(addr.id)
+                  }
+                  className={`border rounded-xl p-4 cursor-pointer ${
+                    selectedAddressId === addr.id
+                      ? "border-green-600 bg-green-50"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {addr.street}, {addr.number}
+                  </p>
+                  <p className="text-sm">
+                    {addr.neighborhood}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {addr.city} - {addr.state}
+                  </p>
 
-                          <div className="flex gap-4 mt-2 text-sm text-green-600">
-                            <span>
-                              ⏱ {addr.eta}
-                            </span>
-                            <span>
-                              🚴 R${" "}
-                              {addr.fee
-                                .toFixed(2)
-                                .replace(
-                                  ".",
-                                  ","
-                                )}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 ${
-                            selectedAddressId ===
-                            addr.id
-                              ? "border-green-600 bg-green-600"
-                              : "border-gray-400"
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex gap-4 mt-2 text-sm text-green-600">
+                    <span>⏱ {addr.eta}</span>
+                    <span>
+                      🚴 R$ {addr.fee.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-              )}
+              ))}
             </>
           )}
         </div>
 
-        {/* ================= BOTÃO FIXO ================= */}
+        {/* ================= BOTÃO ================= */}
         <div className="p-6 border-t">
           <button
             className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
             onClick={() => {
+              if (!customerName || !customerPhone) {
+                alert(
+                  "Informe nome e telefone para continuar"
+                );
+                return;
+              }
+
               if (
                 deliveryType === "delivery" &&
                 !selectedAddressId
@@ -258,7 +270,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* ================= MODAL GOOGLE ================= */}
+      {/* ================= MODAL ENDEREÇO ================= */}
       <AddressModal
         open={addressModalOpen}
         onClose={() =>
