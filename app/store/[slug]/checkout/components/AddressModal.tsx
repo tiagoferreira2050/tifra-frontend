@@ -13,11 +13,14 @@ const libraries: ("places")[] = ["places"];
 export default function AddressModal({ open, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries,
   });
 
+  // ===============================
+  // AUTOCOMPLETE GOOGLE
+  // ===============================
   useEffect(() => {
     if (!open) return;
     if (!isLoaded) return;
@@ -34,10 +37,34 @@ export default function AddressModal({ open, onClose }: Props) {
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
 
-      // 🔥 aqui depois você pode tratar endereço, lat/lng, etc
       console.log("ENDEREÇO SELECIONADO:", place);
+      // aqui depois você salva endereço, lat/lng, etc
     });
   }, [isLoaded, open]);
+
+  // ===============================
+  // GEOLOCALIZAÇÃO
+  // ===============================
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocalização não suportada pelo navegador");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        console.log("LOCALIZAÇÃO:", latitude, longitude);
+
+        // 🔥 depois você pode fazer reverse geocode aqui
+      },
+      () => {
+        alert("Não foi possível obter sua localização");
+      },
+      { enableHighAccuracy: true }
+    );
+  }
 
   if (!open) return null;
 
@@ -62,6 +89,7 @@ export default function AddressModal({ open, onClose }: Props) {
         {/* USAR LOCALIZAÇÃO */}
         <button
           type="button"
+          onClick={handleUseMyLocation}
           className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mb-4"
         >
           📍 Usar minha localização
@@ -76,9 +104,13 @@ export default function AddressModal({ open, onClose }: Props) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Para onde?"
+            placeholder={
+              loadError
+                ? "Erro ao carregar Google Maps"
+                : "Para onde?"
+            }
             className="w-full border rounded-lg py-3 px-10"
-            disabled={!isLoaded}
+            disabled={!isLoaded || !!loadError}
           />
           <span className="absolute left-3 top-3 text-gray-400">
             🔍
