@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  useJsApiLoader,
-  GoogleMap,
-  Marker,
-} from "@react-google-maps/api";
+import { useJsApiLoader, GoogleMap } from "@react-google-maps/api";
 
 interface Props {
   open: boolean;
@@ -18,12 +14,13 @@ const libraries: ("places")[] = ["places"];
 
 export default function AddressModal({ open, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const [step, setStep] = useState<Step>("search");
-  const [position, setPosition] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [loadingAddress, setLoadingAddress] = useState(false);
 
   const [address, setAddress] = useState({
     street: "",
@@ -41,7 +38,7 @@ export default function AddressModal({ open, onClose }: Props) {
   });
 
   // ===============================
-  // AUTOCOMPLETE
+  // AUTOCOMPLETE (BUSCA)
   // ===============================
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
@@ -62,21 +59,8 @@ export default function AddressModal({ open, onClose }: Props) {
       const lng = place.geometry.location.lng();
 
       setPosition({ lat, lng });
+      fillAddressFromComponents(place.address_components || []);
       setStep("map");
-
-      const comps = place.address_components || [];
-
-      const get = (type: string) =>
-        comps.find((c) => c.types.includes(type))
-          ?.long_name || "";
-
-      setAddress((prev) => ({
-        ...prev,
-        street: get("route"),
-        neighborhood: get("sublocality") || get("political"),
-        city: get("administrative_area_level_2"),
-        state: get("administrative_area_level_1"),
-      }));
     });
   }, [open, isLoaded]);
 
@@ -97,6 +81,39 @@ export default function AddressModal({ open, onClose }: Props) {
       () => alert("Não foi possível obter localização"),
       { enableHighAccuracy: true }
     );
+  }
+
+  // ===============================
+  // REVERSE GEOCODE (MAP MOVE)
+  // ===============================
+  async function reverseGeocode(lat: number, lng: number) {
+    setLoadingAddress(true);
+
+    const geocoder = new google.maps.Geocoder();
+    const res = await geocoder.geocode({
+      location: { lat, lng },
+    });
+
+    if (res.results[0]) {
+      fillAddressFromComponents(res.results[0].address_components);
+    }
+
+    setLoadingAddress(false);
+  }
+
+  function fillAddressFromComponents(
+    components: google.maps.GeocoderAddressComponent[]
+  ) {
+    const get = (t: string) =>
+      components.find((c) => c.types.includes(t))?.long_name || "";
+
+    setAddress((prev) => ({
+      ...prev,
+      street: get("route"),
+      neighborhood: get("sublocality") || get("political"),
+      city: get("administrative_area_level_2"),
+      state: get("administrative_area_level_1"),
+    }));
   }
 
   if (!open) return null;
@@ -146,21 +163,48 @@ export default function AddressModal({ open, onClose }: Props) {
         {/* ================= MAP ================= */}
         {step === "map" && position && (
           <>
+            <button
+              className="text-sm text-gray-500 mb-2"
+              onClick={() => setStep("search")}
+            >
+              ← Voltar
+            </button>
+
             <h3 className="font-semibold mb-2">
-              Confirme sua localização
+              {loadingAddress
+                ? "Carregando endereço..."
+                : address.street || "Ajuste o local no mapa"}
             </h3>
 
-            <GoogleMap
-              center={position}
-              zoom={17}
-              mapContainerStyle={{
-                width: "100%",
-                height: "300px",
-                borderRadius: "12px",
-              }}
-            >
-              <Marker position={position} />
-            </GoogleMap>
+            <div className="relative">
+              <GoogleMap
+                center={position}
+                zoom={17}
+                mapContainerStyle={{
+                  width: "100%",
+                  height: "300px",
+                  borderRadius: "12px",
+                }}
+                onLoad={(map) => (mapRef.current = map)}
+                onIdle={() => {
+                  if (!mapRef.current) return;
+
+                  const center = mapRef.current.getCenter();
+                  if (!center) return;
+
+                  const lat = center.lat();
+                  const lng = center.lng();
+
+                  setPosition({ lat, lng });
+                  reverseGeocode(lat, lng);
+                }}
+              />
+
+              {/* PINO FIXO NO CENTRO */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-2xl">
+                📍
+              </div>
+            </div>
 
             <button
               onClick={() => setStep("form")}
@@ -174,6 +218,13 @@ export default function AddressModal({ open, onClose }: Props) {
         {/* ================= FORM ================= */}
         {step === "form" && (
           <>
+            <button
+              className="text-sm text-gray-500 mb-2"
+              onClick={() => setStep("map")}
+            >
+              ← Voltar
+            </button>
+
             <input
               value={address.street}
               readOnly
@@ -192,10 +243,7 @@ export default function AddressModal({ open, onClose }: Props) {
                 className="w-1/2 border rounded px-3 py-2"
                 value={address.number}
                 onChange={(e) =>
-                  setAddress({
-                    ...address,
-                    number: e.target.value,
-                  })
+                  setAddress({ ...address, number: e.target.value })
                 }
               />
               <input
