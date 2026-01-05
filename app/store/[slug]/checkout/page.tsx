@@ -47,7 +47,6 @@ function normalizePhone(value: string) {
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const storeId = "SEU_STORE_ID_AQUI"; // 🔥 obrigatório (multi-loja)
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -79,7 +78,7 @@ export default function CheckoutPage() {
         setLoadingCustomer(true);
 
         const res = await fetch(
-          `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
+          `${API_URL}/customers/by-phone?phone=${phone}`
         );
 
         const customer = await res.json();
@@ -93,20 +92,15 @@ export default function CheckoutPage() {
         setCustomerId(customer.id);
         setCustomerName(customer.name || "");
 
-        // 🔥 BUSCAR ENDEREÇOS SEPARADO
-        const addrRes = await fetch(
-          `${API_URL}/addresses?storeId=${storeId}&customerId=${customer.id}`
-        );
-
-        const addrData = await addrRes.json();
-
-        setAddresses(
-          addrData.map((addr: any) => ({
-            ...addr,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          }))
-        );
+        if (Array.isArray(customer.addresses)) {
+          setAddresses(
+            customer.addresses.map((addr: any) => ({
+              ...addr,
+              fee: 4.99,
+              eta: "40 - 50 min",
+            }))
+          );
+        }
       } catch (err) {
         console.error("Erro ao buscar cliente", err);
       } finally {
@@ -115,7 +109,7 @@ export default function CheckoutPage() {
     }
 
     fetchCustomer();
-  }, [customerPhone, API_URL, storeId]);
+  }, [customerPhone, API_URL]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -125,7 +119,6 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        storeId,
         name: customerName,
         phone: normalizePhone(customerPhone),
       }),
@@ -144,7 +137,6 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        storeId,
         customerId: cid,
         ...address,
       }),
@@ -152,14 +144,16 @@ export default function CheckoutPage() {
 
     const data = await res.json();
 
-    const formatted: SavedAddress = {
-      ...data,
-      fee: 4.99,
-      eta: "40 - 50 min",
-    };
+    setAddresses((prev) => [
+      {
+        ...data,
+        fee: 4.99,
+        eta: "40 - 50 min",
+      },
+      ...prev,
+    ]);
 
-    setAddresses((prev) => [formatted, ...prev]);
-    setSelectedAddressId(formatted.id);
+    setSelectedAddressId(data.id);
   }
 
   /* ================= CONTINUAR ================= */
@@ -190,9 +184,7 @@ export default function CheckoutPage() {
           >
             ←
           </button>
-          <h1 className="text-lg font-semibold">
-            Endereço de entrega
-          </h1>
+          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
         </div>
 
         {/* CONTEÚDO */}
@@ -200,29 +192,24 @@ export default function CheckoutPage() {
           {/* CLIENTE */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">
-                Telefone *
-              </label>
+              <label className="text-sm font-medium">Telefone *</label>
               <input
                 type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
-                placeholder="(DDD) 99999-9999"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
               {loadingCustomer && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Buscando cliente...
+                  Buscando cliente…
                 </p>
               )}
             </div>
 
             <div>
-              <label className="text-sm font-medium">
-                Nome *
-              </label>
+              <label className="text-sm font-medium">Nome *</label>
               <input
                 type="text"
                 value={customerName}
@@ -252,7 +239,7 @@ export default function CheckoutPage() {
                 <input
                   type="radio"
                   checked={deliveryType === type}
-                  onChangeReceiving={() =>
+                  onChange={() =>
                     setDeliveryType(type as any)
                   }
                 />
@@ -280,7 +267,9 @@ export default function CheckoutPage() {
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  onClick={() => setSelectedAddressId(addr.id)}
+                  onClick={() =>
+                    setSelectedAddressId(addr.id)
+                  }
                   className={`border rounded-xl p-4 cursor-pointer ${
                     selectedAddressId === addr.id
                       ? "border-green-600 bg-green-50"

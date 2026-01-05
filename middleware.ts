@@ -1,13 +1,20 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+const RESERVED_SUBDOMAINS = [
+  "app",
+  "api",
+  "admin",
+  "www",
+];
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const host = req.headers.get("host") || "";
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // 1️⃣ IGNORAR ROTAS INTERNAS DO NEXT / API / ARQUIVOS
+  // 1️⃣ IGNORAR ROTAS INTERNAS / ARQUIVOS
   // ===============================
   if (
     pathname.startsWith("/_next") ||
@@ -31,12 +38,10 @@ export function middleware(req: NextRequest) {
     const isPublicRoute =
       pathname === "/login" || pathname === "/signup";
 
-    // rotas públicas do painel
     if (isPublicRoute) {
       return NextResponse.next();
     }
 
-    // proteger APENAS /panel
     if (isPanelRoute && !token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -45,7 +50,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 3️⃣ DOMÍNIO RAIZ — tifra.com.br
+  // 3️⃣ DOMÍNIO RAIZ
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -58,9 +63,14 @@ export function middleware(req: NextRequest) {
   // 4️⃣ SUBDOMÍNIO → LOJA PÚBLICA
   // ===============================
   const subdomain = cleanHost.replace(`.${mainDomain}`, "");
+
+  // 🔒 bloqueia subdomínios reservados
+  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+    return NextResponse.next();
+  }
+
   const url = req.nextUrl.clone();
 
-  // mantém o pathname para não quebrar rotas internas
   url.pathname =
     pathname === "/"
       ? `/store/${subdomain}`
