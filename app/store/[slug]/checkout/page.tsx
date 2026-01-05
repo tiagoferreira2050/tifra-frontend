@@ -4,6 +4,21 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AddressModal from "./components/AddressModal";
 
+type SavedAddress = {
+  id: number;
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  number: string;
+  complement: string;
+  reference: string;
+  lat: number;
+  lng: number;
+  fee: number;
+  eta: string;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
 
@@ -14,7 +29,14 @@ export default function CheckoutPage() {
   const [addressModalOpen, setAddressModalOpen] =
     useState(false);
 
-  // 🔥 ENDEREÇO DA LOJA (mock por enquanto – depois vem do banco)
+  const [addresses, setAddresses] = useState<
+    SavedAddress[]
+  >([]);
+
+  const [selectedAddressId, setSelectedAddressId] =
+    useState<number | null>(null);
+
+  // 🔥 ENDEREÇO DA LOJA (mock)
   const storeAddress = {
     street: "Avenida Olegário Maciel",
     number: "573",
@@ -115,16 +137,16 @@ export default function CheckoutPage() {
                 Endereço do restaurante:
               </p>
 
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold">
                 {storeAddress.street},{" "}
                 {storeAddress.number}
               </p>
 
-              <p className="text-sm text-gray-700">
+              <p className="text-sm">
                 {storeAddress.description}
               </p>
 
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500">
                 {storeAddress.city}
               </p>
 
@@ -139,16 +161,79 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* ================= ADICIONAR ENDEREÇO ================= */}
+          {/* ================= ENDEREÇOS DELIVERY ================= */}
           {deliveryType === "delivery" && (
-            <button
-              className="w-full mt-6 border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
-              onClick={() =>
-                setAddressModalOpen(true)
-              }
-            >
-              📍 Adicionar novo endereço
-            </button>
+            <>
+              <button
+                className="w-full mt-6 border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+                onClick={() =>
+                  setAddressModalOpen(true)
+                }
+              >
+                📍 Adicionar novo endereço
+              </button>
+
+              {addresses.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  {addresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() =>
+                        setSelectedAddressId(
+                          addr.id
+                        )
+                      }
+                      className={`border rounded-xl p-4 cursor-pointer transition ${
+                        selectedAddressId ===
+                        addr.id
+                          ? "border-green-600 bg-green-50"
+                          : "border-gray-200"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">
+                            {addr.street},{" "}
+                            {addr.number}
+                          </p>
+                          <p className="text-sm">
+                            {addr.neighborhood}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {addr.city} -{" "}
+                            {addr.state}
+                          </p>
+
+                          <div className="flex gap-4 mt-2 text-sm text-green-600">
+                            <span>
+                              ⏱ {addr.eta}
+                            </span>
+                            <span>
+                              🚴 R${" "}
+                              {addr.fee
+                                .toFixed(2)
+                                .replace(
+                                  ".",
+                                  ","
+                                )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 ${
+                            selectedAddressId ===
+                            addr.id
+                              ? "border-green-600 bg-green-600"
+                              : "border-gray-400"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -157,7 +242,10 @@ export default function CheckoutPage() {
           <button
             className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
             onClick={() => {
-              if (deliveryType === "delivery") {
+              if (
+                deliveryType === "delivery" &&
+                !selectedAddressId
+              ) {
                 setAddressModalOpen(true);
                 return;
               }
@@ -176,6 +264,20 @@ export default function CheckoutPage() {
         onClose={() =>
           setAddressModalOpen(false)
         }
+        onSave={(addr) => {
+          const newAddress: SavedAddress = {
+            id: Date.now(),
+            ...addr,
+            fee: 4.99,
+            eta: "40 - 50 min",
+          };
+
+          setAddresses((prev) => [
+            newAddress,
+            ...prev,
+          ]);
+          setSelectedAddressId(newAddress.id);
+        }}
       />
     </>
   );

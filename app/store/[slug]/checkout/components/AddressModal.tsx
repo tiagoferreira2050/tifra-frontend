@@ -3,23 +3,39 @@
 import { useEffect, useRef, useState } from "react";
 import { useJsApiLoader, GoogleMap } from "@react-google-maps/api";
 
+interface SavedAddress {
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  number: string;
+  complement: string;
+  reference: string;
+  lat: number;
+  lng: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
+  onSave: (address: SavedAddress) => void;
 }
 
 type Step = "search" | "map" | "form";
 
 const libraries: ("places")[] = ["places"];
 
-export default function AddressModal({ open, onClose }: Props) {
+export default function AddressModal({
+  open,
+  onClose,
+  onSave,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const [step, setStep] = useState<Step>("search");
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
+  const [position, setPosition] =
+    useState<{ lat: number; lng: number } | null>(null);
   const [loadingAddress, setLoadingAddress] = useState(false);
 
   const [address, setAddress] = useState({
@@ -38,7 +54,7 @@ export default function AddressModal({ open, onClose }: Props) {
   });
 
   // ===============================
-  // AUTOCOMPLETE (BUSCA)
+  // AUTOCOMPLETE
   // ===============================
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
@@ -59,7 +75,7 @@ export default function AddressModal({ open, onClose }: Props) {
       const lng = place.geometry.location.lng();
 
       setPosition({ lat, lng });
-      fillAddressFromComponents(place.address_components || []);
+      fillFromComponents(place.address_components || []);
       setStep("map");
     });
   }, [open, isLoaded]);
@@ -84,7 +100,7 @@ export default function AddressModal({ open, onClose }: Props) {
   }
 
   // ===============================
-  // REVERSE GEOCODE (MAP MOVE)
+  // REVERSE GEOCODE
   // ===============================
   async function reverseGeocode(lat: number, lng: number) {
     setLoadingAddress(true);
@@ -95,13 +111,13 @@ export default function AddressModal({ open, onClose }: Props) {
     });
 
     if (res.results[0]) {
-      fillAddressFromComponents(res.results[0].address_components);
+      fillFromComponents(res.results[0].address_components);
     }
 
     setLoadingAddress(false);
   }
 
-  function fillAddressFromComponents(
+  function fillFromComponents(
     components: google.maps.GeocoderAddressComponent[]
   ) {
     const get = (t: string) =>
@@ -126,7 +142,6 @@ export default function AddressModal({ open, onClose }: Props) {
       />
 
       <div className="relative w-full max-w-md bg-white rounded-xl p-6 z-10">
-        {/* FECHAR */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-xl"
@@ -134,7 +149,7 @@ export default function AddressModal({ open, onClose }: Props) {
           ✕
         </button>
 
-        {/* ================= SEARCH ================= */}
+        {/* SEARCH */}
         {step === "search" && (
           <>
             <button
@@ -144,23 +159,15 @@ export default function AddressModal({ open, onClose }: Props) {
               📍 Usar minha localização
             </button>
 
-            <p className="text-sm text-gray-600 mb-2">
-              Ou digite o novo endereço:
-            </p>
-
             <input
               ref={inputRef}
               placeholder="Para onde?"
               className="w-full border rounded-lg py-3 px-4"
             />
-
-            <p className="text-xs text-gray-400 mt-2 text-right">
-              Powered by Google
-            </p>
           </>
         )}
 
-        {/* ================= MAP ================= */}
+        {/* MAP */}
         {step === "map" && position && (
           <>
             <button
@@ -188,19 +195,17 @@ export default function AddressModal({ open, onClose }: Props) {
                 onLoad={(map) => (mapRef.current = map)}
                 onIdle={() => {
                   if (!mapRef.current) return;
+                  const c = mapRef.current.getCenter();
+                  if (!c) return;
 
-                  const center = mapRef.current.getCenter();
-                  if (!center) return;
-
-                  const lat = center.lat();
-                  const lng = center.lng();
+                  const lat = c.lat();
+                  const lng = c.lng();
 
                   setPosition({ lat, lng });
                   reverseGeocode(lat, lng);
                 }}
               />
 
-              {/* PINO FIXO NO CENTRO */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-2xl">
                 📍
               </div>
@@ -215,8 +220,8 @@ export default function AddressModal({ open, onClose }: Props) {
           </>
         )}
 
-        {/* ================= FORM ================= */}
-        {step === "form" && (
+        {/* FORM */}
+        {step === "form" && position && (
           <>
             <button
               className="text-sm text-gray-500 mb-2"
@@ -230,7 +235,6 @@ export default function AddressModal({ open, onClose }: Props) {
               readOnly
               className="w-full border rounded px-3 py-2 mb-2"
             />
-
             <input
               value={address.neighborhood}
               readOnly
@@ -274,9 +278,10 @@ export default function AddressModal({ open, onClose }: Props) {
             <button
               className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
               onClick={() => {
-                console.log("ENDEREÇO FINAL:", {
+                onSave({
                   ...address,
-                  position,
+                  lat: position.lat,
+                  lng: position.lng,
                 });
                 onClose();
               }}
