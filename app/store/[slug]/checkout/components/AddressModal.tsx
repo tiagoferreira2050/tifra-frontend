@@ -25,13 +25,10 @@ type Step = "search" | "map" | "form";
 
 const libraries: ("places")[] = ["places"];
 
-export default function AddressModal({
-  open,
-  onClose,
-  onSave,
-}: Props) {
+export default function AddressModal({ open, onClose, onSave }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const [step, setStep] = useState<Step>("search");
   const [position, setPosition] =
@@ -53,11 +50,28 @@ export default function AddressModal({
     libraries,
   });
 
-  // ===============================
-  // AUTOCOMPLETE
-  // ===============================
+  /* ================= RESET AO ABRIR ================= */
+  useEffect(() => {
+    if (!open) return;
+
+    setStep("search");
+    setPosition(null);
+    setAddress({
+      street: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      number: "",
+      complement: "",
+      reference: "",
+    });
+  }, [open]);
+
+  /* ================= AUTOCOMPLETE ================= */
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
+
+    if (autocompleteRef.current) return;
 
     const autocomplete = new google.maps.places.Autocomplete(
       inputRef.current,
@@ -78,13 +92,16 @@ export default function AddressModal({
       fillFromComponents(place.address_components || []);
       setStep("map");
     });
+
+    autocompleteRef.current = autocomplete;
   }, [open, isLoaded]);
 
-  // ===============================
-  // GEOLOCALIZAÇÃO
-  // ===============================
+  /* ================= GEOLOCALIZAÇÃO ================= */
   function handleUseMyLocation() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      alert("Geolocalização não suportada");
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -99,9 +116,7 @@ export default function AddressModal({
     );
   }
 
-  // ===============================
-  // REVERSE GEOCODE
-  // ===============================
+  /* ================= REVERSE GEOCODE ================= */
   async function reverseGeocode(lat: number, lng: number) {
     setLoadingAddress(true);
 
