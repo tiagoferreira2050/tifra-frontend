@@ -1,11 +1,44 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useJsApiLoader } from "@react-google-maps/api";
+
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
+const libraries: ("places")[] = ["places"];
+
 export default function AddressModal({ open, onClose }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (!isLoaded) return;
+    if (!inputRef.current) return;
+
+    const autocomplete = new google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        types: ["address"],
+        componentRestrictions: { country: "br" },
+      }
+    );
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+
+      // 🔥 aqui depois você pode tratar endereço, lat/lng, etc
+      console.log("ENDEREÇO SELECIONADO:", place);
+    });
+  }, [isLoaded, open]);
+
   if (!open) return null;
 
   return (
@@ -27,7 +60,10 @@ export default function AddressModal({ open, onClose }: Props) {
         </button>
 
         {/* USAR LOCALIZAÇÃO */}
-        <button className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mb-4">
+        <button
+          type="button"
+          className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mb-4"
+        >
           📍 Usar minha localização
         </button>
 
@@ -38,9 +74,11 @@ export default function AddressModal({ open, onClose }: Props) {
 
         <div className="relative">
           <input
+            ref={inputRef}
             type="text"
             placeholder="Para onde?"
             className="w-full border rounded-lg py-3 px-10"
+            disabled={!isLoaded}
           />
           <span className="absolute left-3 top-3 text-gray-400">
             🔍
