@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressModal from "./components/AddressModal";
 
+/* ================= TYPES ================= */
 type SavedAddress = {
   id: string;
   street: string;
@@ -46,9 +47,7 @@ function normalizePhone(value: string) {
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-
-  // 🔥 ID REAL DA STORE (obrigatório p/ multi-loja)
-  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b";
+  const storeId = "SEU_STORE_ID_AQUI"; // 🔥 obrigatório (multi-loja)
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -83,25 +82,31 @@ export default function CheckoutPage() {
           `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
 
-        const data = await res.json();
+        const customer = await res.json();
 
-        if (data) {
-          setCustomerId(data.id);
-          setCustomerName(data.name || "");
-
-          if (Array.isArray(data.addresses)) {
-            setAddresses(
-              data.addresses.map((addr: any) => ({
-                ...addr,
-                fee: 4.99,
-                eta: "40 - 50 min",
-              }))
-            );
-          }
-        } else {
+        if (!customer) {
           setCustomerId(null);
           setAddresses([]);
+          return;
         }
+
+        setCustomerId(customer.id);
+        setCustomerName(customer.name || "");
+
+        // 🔥 BUSCAR ENDEREÇOS SEPARADO
+        const addrRes = await fetch(
+          `${API_URL}/addresses?storeId=${storeId}&customerId=${customer.id}`
+        );
+
+        const addrData = await addrRes.json();
+
+        setAddresses(
+          addrData.map((addr: any) => ({
+            ...addr,
+            fee: 4.99,
+            eta: "40 - 50 min",
+          }))
+        );
       } catch (err) {
         console.error("Erro ao buscar cliente", err);
       } finally {
@@ -131,6 +136,32 @@ export default function CheckoutPage() {
     return data.id;
   }
 
+  /* ================= SALVAR ENDEREÇO ================= */
+  async function saveAddress(address: any) {
+    const cid = await ensureCustomer();
+
+    const res = await fetch(`${API_URL}/addresses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storeId,
+        customerId: cid,
+        ...address,
+      }),
+    });
+
+    const data = await res.json();
+
+    const formatted: SavedAddress = {
+      ...data,
+      fee: 4.99,
+      eta: "40 - 50 min",
+    };
+
+    setAddresses((prev) => [formatted, ...prev]);
+    setSelectedAddressId(formatted.id);
+  }
+
   /* ================= CONTINUAR ================= */
   async function handleNext() {
     if (!customerPhone || !customerName) {
@@ -147,6 +178,7 @@ export default function CheckoutPage() {
     router.push("/checkout/summary");
   }
 
+  /* ================= UI ================= */
   return (
     <>
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
@@ -158,7 +190,9 @@ export default function CheckoutPage() {
           >
             ←
           </button>
-          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
+          <h1 className="text-lg font-semibold">
+            Endereço de entrega
+          </h1>
         </div>
 
         {/* CONTEÚDO */}
@@ -166,7 +200,9 @@ export default function CheckoutPage() {
           {/* CLIENTE */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Telefone *</label>
+              <label className="text-sm font-medium">
+                Telefone *
+              </label>
               <input
                 type="tel"
                 value={customerPhone}
@@ -184,12 +220,15 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Nome *</label>
+              <label className="text-sm font-medium">
+                Nome *
+              </label>
               <input
                 type="text"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Seu nome"
+                onChange={(e) =>
+                  setCustomerName(e.target.value)
+                }
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
             </div>
@@ -204,7 +243,7 @@ export default function CheckoutPage() {
             {["delivery", "local", "pickup"].map((type) => (
               <label
                 key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
+                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
                   deliveryType === type
                     ? "border-green-600 bg-green-50"
                     : ""
@@ -213,7 +252,9 @@ export default function CheckoutPage() {
                 <input
                   type="radio"
                   checked={deliveryType === type}
-                  onChange={() => setDeliveryType(type as any)}
+                  onChangeReceiving={() =>
+                    setDeliveryType(type as any)
+                  }
                 />
                 <span>
                   {type === "delivery"
@@ -249,15 +290,12 @@ export default function CheckoutPage() {
                   <p className="font-semibold">
                     {addr.street}, {addr.number}
                   </p>
-                  <p className="text-sm">{addr.neighborhood}</p>
+                  <p className="text-sm">
+                    {addr.neighborhood}
+                  </p>
                   <p className="text-sm text-gray-500">
                     {addr.city} - {addr.state}
                   </p>
-
-                  <div className="flex gap-4 mt-2 text-sm text-green-600">
-                    <span>⏱ {addr.eta}</span>
-                    <span>🚴 R$ {addr.fee.toFixed(2)}</span>
-                  </div>
                 </div>
               ))}
             </>
@@ -275,21 +313,11 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* MODAL ENDEREÇO */}
+      {/* MODAL */}
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
-        onSave={(addr) => {
-          const newAddress: SavedAddress = {
-            id: crypto.randomUUID(),
-            ...addr,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          };
-
-          setAddresses((prev) => [newAddress, ...prev]);
-          setSelectedAddressId(newAddress.id);
-        }}
+        onSave={saveAddress}
       />
     </>
   );
