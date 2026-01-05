@@ -364,6 +364,7 @@ const { addItem } = useCart();
       qty,
       unitPrice: basePrice + complementsTotal,
       complements: complementsFormatted,
+      observation,
     });
 
     onClose();

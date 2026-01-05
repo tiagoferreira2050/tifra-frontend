@@ -28,8 +28,9 @@ export type CartItem = {
   name: string;
   imageUrl?: string;
   qty: number;
-  unitPrice: number; // 🔥 preço unitário (produto + complementos)
+  unitPrice: number; // preço unitário (produto + complementos)
   complements?: CartComplement[];
+  observation?: string; // ✅ OBSERVAÇÃO DO ITEM (NOVO, OPCIONAL)
 };
 
 type StoredCart = {

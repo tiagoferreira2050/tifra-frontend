@@ -95,7 +95,11 @@ export default function CartModal({ open, onClose }: Props) {
                           ))}
                         </div>
                       )}
-
+{item.observation && (
+  <p className="text-xs text-gray-500 italic mt-1">
+    Obs: {item.observation}
+  </p>
+)}
                     {/* PREÇO */}
                     <p className="mt-2 font-semibold">
                       R${" "}
