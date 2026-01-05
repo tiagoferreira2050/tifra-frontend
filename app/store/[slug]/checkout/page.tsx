@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
   /* ================= CONFIG ================= */
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b"; // 🔥 trocar depois pelo store real (subdomínio)
+  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b";
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -76,6 +76,8 @@ export default function CheckoutPage() {
 
     if (phone.length < 10) return;
 
+    console.log("🔎 Buscando cliente", { phone, storeId });
+
     async function fetchCustomer() {
       try {
         setLoadingCustomer(true);
@@ -85,6 +87,8 @@ export default function CheckoutPage() {
         );
 
         const data = await res.json();
+
+        console.log("📦 Resposta cliente:", data);
 
         if (data) {
           setCustomerId(data.id);
@@ -143,7 +147,6 @@ export default function CheckoutPage() {
     }
 
     await ensureCustomer();
-
     router.push("/checkout/summary");
   }
 
@@ -158,10 +161,7 @@ export default function CheckoutPage() {
           >
             ←
           </button>
-
-          <h1 className="text-lg font-semibold">
-            Endereço de entrega
-          </h1>
+          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
         </div>
 
         {/* CONTEÚDO */}
@@ -169,16 +169,13 @@ export default function CheckoutPage() {
           {/* CLIENTE */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">
-                Telefone *
-              </label>
+              <label className="text-sm font-medium">Telefone *</label>
               <input
                 type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
-                placeholder="(DDD) 99999-9999"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
               {loadingCustomer && (
@@ -189,16 +186,11 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">
-                Nome *
-              </label>
+              <label className="text-sm font-medium">Nome *</label>
               <input
                 type="text"
                 value={customerName}
-                onChange={(e) =>
-                  setCustomerName(e.target.value)
-                }
-                placeholder="Seu nome"
+                onChange={(e) => setCustomerName(e.target.value)}
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
             </div>
@@ -213,7 +205,7 @@ export default function CheckoutPage() {
             {["delivery", "local", "pickup"].map((type) => (
               <label
                 key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
+                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
                   deliveryType === type
                     ? "border-green-600 bg-green-50"
                     : ""
@@ -222,9 +214,7 @@ export default function CheckoutPage() {
                 <input
                   type="radio"
                   checked={deliveryType === type}
-                  onChange={() =>
-                    setDeliveryType(type as any)
-                  }
+                  onChange={() => setDeliveryType(type as any)}
                 />
                 <span>
                   {type === "delivery"
@@ -237,14 +227,12 @@ export default function CheckoutPage() {
             ))}
           </div>
 
-          {/* ENDEREÇOS DELIVERY */}
+          {/* ENDEREÇOS */}
           {deliveryType === "delivery" && (
             <>
               <button
                 className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold"
-                onClick={() =>
-                  setAddressModalOpen(true)
-                }
+                onClick={() => setAddressModalOpen(true)}
               >
                 📍 Adicionar novo endereço
               </button>
@@ -252,9 +240,7 @@ export default function CheckoutPage() {
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  onClick={() =>
-                    setSelectedAddressId(addr.id)
-                  }
+                  onClick={() => setSelectedAddressId(addr.id)}
                   className={`border rounded-xl p-4 cursor-pointer ${
                     selectedAddressId === addr.id
                       ? "border-green-600 bg-green-50"
@@ -264,9 +250,7 @@ export default function CheckoutPage() {
                   <p className="font-semibold">
                     {addr.street}, {addr.number}
                   </p>
-                  <p className="text-sm">
-                    {addr.neighborhood}
-                  </p>
+                  <p className="text-sm">{addr.neighborhood}</p>
                   <p className="text-sm text-gray-500">
                     {addr.city} - {addr.state}
                   </p>
@@ -292,12 +276,9 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* MODAL ENDEREÇO */}
       <AddressModal
         open={addressModalOpen}
-        onClose={() =>
-          setAddressModalOpen(false)
-        }
+        onClose={() => setAddressModalOpen(false)}
         onSave={(addr) => {
           const newAddress: SavedAddress = {
             id: Date.now(),
@@ -305,11 +286,7 @@ export default function CheckoutPage() {
             fee: 4.99,
             eta: "40 - 50 min",
           };
-
-          setAddresses((prev) => [
-            newAddress,
-            ...prev,
-          ]);
+          setAddresses((prev) => [newAddress, ...prev]);
           setSelectedAddressId(newAddress.id);
         }}
       />
