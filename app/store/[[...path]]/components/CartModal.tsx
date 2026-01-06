@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/src/contexts/CartContext";
 
 interface Props {
@@ -19,14 +19,20 @@ type CartComplement = {
 
 export default function CartModal({ open, onClose }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   const { items, updateQty, removeItem, total } = useCart();
 
   if (!open) return null;
 
-  // 🔥 pega o subdomínio/loja da URL atual
-  // ex: /acaibrasil → acaibrasil
-  const storeSlug = pathname.split("/").filter(Boolean)[0];
+  // 🔥 PEGA O SUBDOMÍNIO CORRETAMENTE
+  let storeSlug: string | null = null;
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname; // acaibrasil.tifra.com.br
+    const parts = host.split(".");
+    if (parts.length > 2) {
+      storeSlug = parts[0]; // acaibrasil
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -73,9 +79,7 @@ export default function CartModal({ open, onClose }: Props) {
 
                   {/* INFO */}
                   <div className="flex-1">
-                    <p className="font-medium">
-                      {item.name}
-                    </p>
+                    <p className="font-medium">{item.name}</p>
 
                     {/* COMPLEMENTOS */}
                     {Array.isArray(item.complements) &&
@@ -94,13 +98,6 @@ export default function CartModal({ open, onClose }: Props) {
                           )}
                         </div>
                       )}
-
-                    {/* OBSERVAÇÃO */}
-                    {item.observation && (
-                      <p className="text-xs text-gray-500 italic mt-1">
-                        Obs: {item.observation}
-                      </p>
-                    )}
 
                     {/* PREÇO */}
                     <p className="mt-2 font-semibold">
@@ -122,10 +119,7 @@ export default function CartModal({ open, onClose }: Props) {
                     <div className="flex items-center gap-2 border rounded">
                       <button
                         onClick={() =>
-                          updateQty(
-                            item.id,
-                            Math.max(1, item.qty - 1)
-                          )
+                          updateQty(item.id, Math.max(1, item.qty - 1))
                         }
                         className="px-2"
                       >
@@ -163,8 +157,10 @@ export default function CartModal({ open, onClose }: Props) {
             <button
               onClick={() => {
                 onClose();
+
                 if (storeSlug) {
-                  router.push(`/${storeSlug}/checkout`);
+                  router.push("/checkout"); 
+                  // 👉 continua no MESMO subdomínio
                 }
               }}
               className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
