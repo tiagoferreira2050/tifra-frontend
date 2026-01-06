@@ -9,7 +9,6 @@ export interface SavedAddress {
   city: string;
   state: string;
   number: string;
-  complement?: string;
   reference?: string;
   lat: number;
   lng: number;
@@ -71,7 +70,6 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   /* ================= AUTOCOMPLETE ================= */
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
-
     if (autocompleteRef.current) return;
 
     const autocomplete = new google.maps.places.Autocomplete(
@@ -136,8 +134,12 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   function fillFromComponents(
     components: google.maps.GeocoderAddressComponent[]
   ) {
-    const get = (t: string) =>
-      components.find((c) => c.types.includes(t))?.long_name || "";
+    const get = (t: string, short = false) =>
+      components.find((c) => c.types.includes(t))
+        ? short
+          ? components.find((c) => c.types.includes(t))?.short_name
+          : components.find((c) => c.types.includes(t))?.long_name
+        : "";
 
     setAddress((prev) => ({
       ...prev,
@@ -147,7 +149,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
         get("neighborhood") ||
         get("political"),
       city: get("administrative_area_level_2"),
-      state: get("administrative_area_level_1"),
+      state: get("administrative_area_level_1", true) || "",
     }));
   }
 
@@ -202,33 +204,22 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 : address.street || "Ajuste o local no mapa"}
             </h3>
 
-            <div className="relative">
-              <GoogleMap
-                center={position}
-                zoom={17}
-                mapContainerStyle={{
-                  width: "100%",
-                  height: "300px",
-                  borderRadius: "12px",
-                }}
-                onLoad={(map) => (mapRef.current = map)}
-                onIdle={() => {
-                  if (!mapRef.current) return;
-                  const c = mapRef.current.getCenter();
-                  if (!c) return;
-
-                  const lat = c.lat();
-                  const lng = c.lng();
-
-                  setPosition({ lat, lng });
-                  reverseGeocode(lat, lng);
-                }}
-              />
-
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-2xl">
-                📍
-              </div>
-            </div>
+            <GoogleMap
+              center={position}
+              zoom={17}
+              mapContainerStyle={{
+                width: "100%",
+                height: "300px",
+                borderRadius: "12px",
+              }}
+              onLoad={(map) => (mapRef.current = map)}
+              onIdle={() => {
+                if (!mapRef.current) return;
+                const c = mapRef.current.getCenter();
+                if (!c) return;
+                reverseGeocode(c.lat(), c.lng());
+              }}
+            />
 
             <button
               onClick={() => setStep("form")}
@@ -254,6 +245,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
               readOnly
               className="w-full border rounded px-3 py-2 mb-2"
             />
+
             <input
               value={address.neighborhood}
               readOnly
@@ -298,7 +290,13 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
               className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
               onClick={() => {
                 onSave({
-                  ...address,
+                  street: address.street,
+                  neighborhood: address.neighborhood,
+                  city: address.city,
+                  state: address.state,
+                  number: address.number,
+                  reference:
+                    address.reference || address.complement,
                   lat: position.lat,
                   lng: position.lng,
                 });
