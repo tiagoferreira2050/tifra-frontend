@@ -1,11 +1,14 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const RESERVED_SUBDOMAINS = [
-  "app",
-  "api",
-  "admin",
-  "www",
+const RESERVED_SUBDOMAINS = ["app", "api", "admin", "www"];
+
+// 🔥 ROTAS GLOBAIS QUE NÃO DEVEM VIRAR /store
+const GLOBAL_ROUTES = [
+  "/checkout",
+  "/login",
+  "/signup",
+  "/panel",
 ];
 
 export function middleware(req: NextRequest) {
@@ -24,6 +27,13 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/sitemap") ||
     pathname.includes(".")
   ) {
+    return NextResponse.next();
+  }
+
+  // ===============================
+  // 1.1️⃣ IGNORAR ROTAS GLOBAIS (checkout etc)
+  // ===============================
+  if (GLOBAL_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -71,6 +81,7 @@ export function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
 
+  // 🔥 rewrite APENAS para rotas da loja
   url.pathname =
     pathname === "/"
       ? `/store/${subdomain}`
