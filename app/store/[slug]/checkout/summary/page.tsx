@@ -1,19 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /* ================= TYPES ================= */
 type PaymentMethod = "pix" | "credit" | "debit" | "cash";
 
 export default function CheckoutSummaryPage() {
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
   /* ================= MOCK (POR ENQUANTO) ================= */
-  const subtotal = 49.9; // depois vem do carrinho
+  const subtotal = 49.9;
   const deliveryFee = 4.99;
   const discount = 0;
-
   const total = subtotal + deliveryFee - discount;
 
   /* ================= PAGAMENTO ================= */
@@ -29,12 +29,11 @@ export default function CheckoutSummaryPage() {
 
   function applyCoupon() {
     if (!coupon) return;
-    // 🔥 depois valida no backend
     setCouponApplied(true);
   }
 
   /* ================= FINALIZAR ================= */
-  function handleFinishOrder() {
+  async function handleFinishOrder() {
     if (!paymentMethod) {
       alert("Selecione a forma de pagamento");
       return;
@@ -45,10 +44,48 @@ export default function CheckoutSummaryPage() {
       return;
     }
 
-    // 🔥 depois cria pedido no backend
-    alert("Pedido finalizado com sucesso 🚀");
+    try {
+      const res = await fetch(`${API_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          // 🔥 AJUSTE DEPOIS PARA DADOS REAIS
+          customer: {
+            name: "Tiago",
+            phone: "33999196984",
+          },
+          items: [
+            {
+              name: "Produto teste",
+              quantity: 1,
+              unitPrice: subtotal,
+            },
+          ],
+          paymentMethod,
+          deliveryFee,
+          subtotal,
+          total,
+          needChange,
+          changeFor: needChange ? changeFor : null,
+          coupon: couponApplied ? coupon : null,
+          status: "finished",
+        }),
+      });
 
-    router.push("/checkout/success");
+      if (!res.ok) {
+        throw new Error("Erro ao criar pedido");
+      }
+
+      const order = await res.json();
+
+      // ✅ agora sim o pedido existe
+      router.push(`/checkout/success?order=${order.id}`);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao finalizar pedido. Tente novamente.");
+    }
   }
 
   return (
@@ -79,13 +116,6 @@ export default function CheckoutSummaryPage() {
             <span>R$ {deliveryFee.toFixed(2)}</span>
           </div>
 
-          {discount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Desconto</span>
-              <span>- R$ {discount.toFixed(2)}</span>
-            </div>
-          )}
-
           <div className="flex justify-between font-semibold border-t pt-2 mt-2">
             <span>Total</span>
             <span>R$ {total.toFixed(2)}</span>
@@ -112,12 +142,6 @@ export default function CheckoutSummaryPage() {
               Aplicar
             </button>
           </div>
-
-          {couponApplied && (
-            <p className="text-sm text-green-600">
-              Cupom aplicado com sucesso
-            </p>
-          )}
         </div>
 
         {/* PAGAMENTO */}
@@ -146,7 +170,6 @@ export default function CheckoutSummaryPage() {
             </label>
           ))}
 
-          {/* TROCO */}
           {paymentMethod === "cash" && (
             <div className="mt-3 space-y-2">
               <label className="flex items-center gap-2 text-sm">
