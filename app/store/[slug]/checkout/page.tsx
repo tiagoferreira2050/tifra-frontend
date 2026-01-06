@@ -121,18 +121,17 @@ export default function CheckoutPage() {
         setCustomerId(customer.id);
         setCustomerName(customer.name || "");
 
-        const loadedAddresses =
+        const loaded =
           (customer.addresses || []).map((addr: any) => ({
             ...addr,
             fee: 4.99,
             eta: "40 - 50 min",
           })) || [];
 
-        setAddresses(loadedAddresses);
+        setAddresses(loaded);
 
-        // se tiver endereço, já seleciona o primeiro
-        if (loadedAddresses.length > 0) {
-          setSelectedAddressId(loadedAddresses[0].id);
+        if (loaded.length > 0) {
+          setSelectedAddressId(loaded[0].id);
         }
       } finally {
         setLoadingCustomer(false);
@@ -298,9 +297,11 @@ export default function CheckoutPage() {
                 📍 Adicionar novo endereço
               </button>
 
-              <p className="text-sm text-gray-500">
-                Selecione o endereço de entrega
-              </p>
+              {addresses.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhum endereço cadastrado ainda
+                </p>
+              )}
 
               {addresses.map((addr) => {
                 const selected = addr.id === selectedAddressId;
