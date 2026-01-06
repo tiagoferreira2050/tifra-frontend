@@ -18,7 +18,7 @@ export default function CheckoutSummaryPage() {
     clearCart,
   } = useCart();
 
-  /* ================= VALIDACOES ================= */
+  /* ================= PROTEÇÕES ================= */
   if (!storeId || !checkoutData) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">

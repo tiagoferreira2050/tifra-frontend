@@ -33,22 +33,36 @@ export type CartItem = {
   observation?: string;
 };
 
+export type CheckoutData = {
+  customerName: string;
+  customerPhone: string;
+  deliveryType: "delivery" | "pickup" | "local";
+  address?: any;
+};
+
 type StoredCart = {
   storeId: string | null;
   items: CartItem[];
+  checkoutData: CheckoutData | null;
   expiresAt: number;
 };
 
 type CartContextType = {
+  /* STORE */
   storeId: string | null;
   setStoreId: (id: string) => void;
 
+  /* CART */
   items: CartItem[];
   addItem: (item: CartItem) => void;
   updateQty: (id: string, qty: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   total: number;
+
+  /* CHECKOUT */
+  checkoutData: CheckoutData | null;
+  setCheckoutData: (data: CheckoutData) => void;
 };
 
 /* =======================
@@ -66,6 +80,8 @@ export function CartProvider({
 }) {
   const [storeId, setStoreIdState] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [checkoutData, setCheckoutDataState] =
+    useState<CheckoutData | null>(null);
 
   /* =======================
      LOAD CART (INIT)
@@ -84,8 +100,9 @@ export function CartProvider({
         return;
       }
 
-      setItems(stored.items);
+      setItems(stored.items ?? []);
       setStoreIdState(stored.storeId ?? null);
+      setCheckoutDataState(stored.checkoutData ?? null);
     } catch {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
@@ -105,6 +122,7 @@ export function CartProvider({
     const payload: StoredCart = {
       storeId,
       items,
+      checkoutData,
       expiresAt: Date.now() + CART_TTL_MS,
     };
 
@@ -112,7 +130,7 @@ export function CartProvider({
       CART_STORAGE_KEY,
       JSON.stringify(payload)
     );
-  }, [items, storeId]);
+  }, [items, storeId, checkoutData]);
 
   /* =======================
      ACTIONS
@@ -122,9 +140,14 @@ export function CartProvider({
       // 🔒 evita trocar loja com carrinho ativo
       if (current && current !== id) {
         setItems([]);
+        setCheckoutDataState(null);
       }
       return id;
     });
+  }
+
+  function setCheckoutData(data: CheckoutData) {
+    setCheckoutDataState(data);
   }
 
   function addItem(item: CartItem) {
@@ -169,6 +192,7 @@ export function CartProvider({
   function clearCart() {
     setItems([]);
     setStoreIdState(null);
+    setCheckoutDataState(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
@@ -194,6 +218,9 @@ export function CartProvider({
         removeItem,
         clearCart,
         total,
+
+        checkoutData,
+        setCheckoutData,
       }}
     >
       {children}

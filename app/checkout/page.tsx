@@ -39,7 +39,7 @@ function formatPhone(value: string) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, storeId } = useCart();
+  const { items, storeId, setCheckoutData } = useCart();
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -53,6 +53,9 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
+
+  const selectedAddress =
+    addresses.find((a) => a.id === selectedAddressId) ?? null;
 
   /* ================= PROTEÇÕES ================= */
   if (!storeId) {
@@ -99,10 +102,19 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (deliveryType === "delivery" && !selectedAddressId) {
+    if (deliveryType === "delivery" && !selectedAddress) {
       setAddressModalOpen(true);
       return;
     }
+
+    // 🔥 SALVA DADOS DO CHECKOUT NO CONTEXT
+    setCheckoutData({
+      customerName,
+      customerPhone,
+      deliveryType,
+      address:
+        deliveryType === "delivery" ? selectedAddress : undefined,
+    });
 
     router.push("/checkout/summary");
   }
@@ -211,7 +223,9 @@ export default function CheckoutPage() {
                     {selected && (
                       <div className="flex gap-4 mt-2 text-sm text-green-600">
                         <span>⏱ {addr.eta}</span>
-                        <span>🚚 R$ {addr.fee.toFixed(2)}</span>
+                        <span>
+                          🚚 R$ {addr.fee.toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>
