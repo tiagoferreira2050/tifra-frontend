@@ -46,7 +46,10 @@ function normalizePhone(value: string) {
 
 function getSubdomain() {
   if (typeof window === "undefined") return "";
-  return window.location.hostname.replace(".tifra.com.br", "");
+  const host = window.location.hostname;
+
+  if (host.includes("localhost")) return "localhost";
+  return host.replace(".tifra.com.br", "");
 }
 
 export default function CheckoutPage() {
@@ -76,13 +79,20 @@ export default function CheckoutPage() {
     async function loadStore() {
       try {
         const subdomain = getSubdomain();
+
         const res = await fetch(
-          `${API_URL}/store/by-subdomain/${subdomain}`
+          `${API_URL}/api/store/by-subdomain/${subdomain}`,
+          { cache: "no-store" }
         );
+
+        if (!res.ok) throw new Error("Store não encontrada");
+
         const data = await res.json();
+
+        // 🔥 backend retorna { store: {...} }
         setStoreId(data.store.id);
       } catch (err) {
-        console.error(err);
+        console.error("[CHECKOUT][LOAD STORE]", err);
       } finally {
         setLoadingStore(false);
       }
@@ -91,7 +101,7 @@ export default function CheckoutPage() {
     loadStore();
   }, [API_URL]);
 
-  /* ================= SALVAR ENDEREÇO (INSTANTÂNEO) ================= */
+  /* ================= SALVAR ENDEREÇO ================= */
   function saveAddress(address: any) {
     const newAddress: SavedAddress = {
       id: crypto.randomUUID(),
@@ -104,7 +114,7 @@ export default function CheckoutPage() {
       lat: address.lat,
       lng: address.lng,
       fee: 4.99,
-      eta: "40 - 50 min",
+      eta: "40–50 min",
     };
 
     setAddresses((prev) => [newAddress, ...prev]);
@@ -113,7 +123,7 @@ export default function CheckoutPage() {
   }
 
   /* ================= CONTINUAR ================= */
-  async function handleNext() {
+  function handleNext() {
     if (!customerPhone || !customerName) {
       alert("Informe telefone e nome");
       return;
@@ -124,11 +134,24 @@ export default function CheckoutPage() {
       return;
     }
 
+    // 🔥 mantém o subdomínio automaticamente
     router.push("/checkout/summary");
   }
 
   if (loadingStore) {
-    return <div className="p-6">Carregando...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Carregando loja…
+      </div>
+    );
+  }
+
+  if (!storeId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Loja inválida
+      </div>
+    );
   }
 
   return (
@@ -149,11 +172,6 @@ export default function CheckoutPage() {
                 placeholder="(00) 00000-0000"
                 className="w-full border rounded-lg px-4 py-3"
               />
-              {loadingCustomer && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Buscando cliente…
-                </p>
-              )}
             </div>
 
             <div>
