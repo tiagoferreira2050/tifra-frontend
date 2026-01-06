@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useCart } from "@/src/contexts/CartContext";
 
 /* ================= TYPES ================= */
 type PaymentMethod = "pix" | "credit" | "debit" | "cash";
@@ -10,11 +11,44 @@ export default function CheckoutSummaryPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  /* ================= MOCK (POR ENQUANTO) ================= */
-  const subtotal = 49.9;
-  const deliveryFee = 4.99;
+  const {
+    items,
+    total,
+    checkoutData,
+    storeId,
+    clearCart,
+  } = useCart();
+
+  /* ================= VALIDACOES ================= */
+  if (!storeId || !checkoutData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Erro interno: loja ou cliente não identificados
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Seu carrinho está vazio
+      </div>
+    );
+  }
+
+  /* ================= VALORES ================= */
+  const subtotal = items.reduce(
+    (acc, item) => acc + item.unitPrice * item.qty,
+    0
+  );
+
+  const deliveryFee =
+    checkoutData.deliveryType === "delivery"
+      ? checkoutData.address?.fee ?? 0
+      : 0;
+
   const discount = 0;
-  const total = subtotal + deliveryFee - discount;
+  const finalTotal = subtotal + deliveryFee - discount;
 
   /* ================= PAGAMENTO ================= */
   const [paymentMethod, setPaymentMethod] =
@@ -32,7 +66,7 @@ export default function CheckoutSummaryPage() {
     setCouponApplied(true);
   }
 
-  /* ================= FINALIZAR ================= */
+  /* ================= FINALIZAR PEDIDO ================= */
   async function handleFinishOrder() {
     if (!paymentMethod) {
       alert("Selecione a forma de pagamento");
@@ -44,50 +78,48 @@ export default function CheckoutSummaryPage() {
       return;
     }
 
-    const storeId = localStorage.getItem("storeId");
-    const customerId = localStorage.getItem("customerId");
-
-    if (!storeId || !customerId) {
-      alert("Erro interno: loja ou cliente não identificados");
-      return;
-    }
+    const payload = {
+      storeId,
+      customer: {
+        name: checkoutData.customerName,
+        phone: checkoutData.customerPhone,
+      },
+      deliveryType: checkoutData.deliveryType,
+      address:
+        checkoutData.deliveryType === "delivery"
+          ? checkoutData.address
+          : null,
+      paymentMethod,
+      deliveryFee,
+      total: finalTotal,
+      needChange,
+      changeFor: needChange ? changeFor : null,
+      coupon: couponApplied ? coupon : null,
+      items: items.map((item) => ({
+        productId: item.productId,
+        quantity: item.qty,
+        unitPrice: item.unitPrice,
+        complements: item.complements ?? [],
+        observation: item.observation ?? "",
+      })),
+    };
 
     try {
       const res = await fetch(`${API_URL}/orders`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          storeId,
-          customerId,
-          deliveryType: "delivery",
-          paymentMethod,
-          deliveryFee,
-          total,
-          needChange,
-          changeFor: needChange ? changeFor : null,
-          coupon: couponApplied ? coupon : null,
-          items: [
-            {
-              // ⚠️ depois trocar pelo produto real do carrinho
-              productId: "UUID_DE_UM_PRODUTO_REAL",
-              quantity: 1,
-              unitPrice: subtotal,
-            },
-          ],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Erro backend:", errorText);
+        const text = await res.text();
+        console.error("BACKEND ERROR:", text);
         throw new Error("Erro ao criar pedido");
       }
 
       const order = await res.json();
 
-      // ✅ pedido criado com sucesso
+      clearCart();
       router.push(`/checkout/success?order=${order.id}`);
     } catch (err) {
       console.error(err);
@@ -95,6 +127,7 @@ export default function CheckoutSummaryPage() {
     }
   }
 
+  /* ================= RENDER ================= */
   return (
     <div className="max-w-xl mx-auto min-h-screen bg-white flex flex-col">
       {/* HEADER */}
@@ -118,14 +151,16 @@ export default function CheckoutSummaryPage() {
             <span>R$ {subtotal.toFixed(2)}</span>
           </div>
 
-          <div className="flex justify-between text-sm">
-            <span>Taxa de entrega</span>
-            <span>R$ {deliveryFee.toFixed(2)}</span>
-          </div>
+          {deliveryFee > 0 && (
+            <div className="flex justify-between text-sm">
+              <span>Taxa de entrega</span>
+              <span>R$ {deliveryFee.toFixed(2)}</span>
+            </div>
+          )}
 
           <div className="flex justify-between font-semibold border-t pt-2 mt-2">
             <span>Total</span>
-            <span>R$ {total.toFixed(2)}</span>
+            <span>R$ {finalTotal.toFixed(2)}</span>
           </div>
         </div>
 
