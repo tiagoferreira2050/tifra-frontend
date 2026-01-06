@@ -1,18 +1,15 @@
+import { headers } from "next/headers";
 import { CategoryList } from "./components/CategoryList";
 import { CartProvider } from "../../../../src/contexts/CartContext";
 import MiniCartBar from "./components/MiniCartBar";
 
-interface StorePageProps {
-  params: {
-    slug: string;
-    path?: string[];
-  };
-}
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export default async function StorePage({ params }: StorePageProps) {
-  const { slug } = params;
+export default async function StorePage() {
+  /* ================= SUBDOMAIN ================= */
+  const headersList = headers();
+  const host = headersList.get("host") || "";
+  const slug = host.replace(".tifra.com.br", "");
 
   if (!slug) {
     return (
@@ -64,7 +61,6 @@ export default async function StorePage({ params }: StorePageProps) {
   return (
     <CartProvider>
       <div className="bg-gray-50 min-h-screen relative">
-
         {/* ================= HEADER ================= */}
         <div className="relative">
           <div className="h-56 w-full overflow-hidden">
@@ -124,7 +120,6 @@ export default async function StorePage({ params }: StorePageProps) {
 
         {/* ================= MINI CARRINHO ================= */}
         <MiniCartBar />
-
       </div>
     </CartProvider>
   );
