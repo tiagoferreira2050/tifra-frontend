@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressModal from "./components/AddressModal";
 
+/* ================= TYPES ================= */
 type SavedAddress = {
   id: string;
   street: string;
@@ -90,6 +91,7 @@ export default function CheckoutPage() {
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
+      setSelectedAddressId(null);
       return;
     }
 
@@ -102,11 +104,7 @@ export default function CheckoutPage() {
         );
         const data = await res.json();
 
-        if (!data) {
-          setCustomerId(null);
-          setAddresses([]);
-          return;
-        }
+        if (!data) return;
 
         setCustomerId(data.id);
         setCustomerName(data.name || "");
@@ -117,6 +115,7 @@ export default function CheckoutPage() {
             fee: 4.99,
             eta: "40 - 50 min",
           }));
+
           setAddresses(loaded);
 
           if (loaded.length > 0) {
@@ -314,6 +313,7 @@ export default function CheckoutPage() {
             eta: "40 - 50 min",
           };
 
+          // 🔥 PONTO CRÍTICO (IGUAL AO CÓDIGO ANTIGO)
           setAddresses((prev) => [newAddress, ...prev]);
           setSelectedAddressId(newAddress.id);
         }}
