@@ -84,9 +84,7 @@ export default function CheckoutPage() {
           `${API_URL}/store/by-subdomain/${subdomain}`
         );
         const data = await res.json();
-
-        // ✅ CORREÇÃO REAL
-        setStoreId(data.store?.id || null);
+        setStoreId(data.id);
       } catch (err) {
         console.error(err);
       } finally {
@@ -99,7 +97,7 @@ export default function CheckoutPage() {
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
     if (!storeId) return;
-    if (addressJustSaved) return;
+    if (addressJustSaved) return; // 🔥 NÃO SOBRESCREVE ENDEREÇO NOVO
 
     const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
@@ -193,9 +191,14 @@ export default function CheckoutPage() {
       eta: "40 - 50 min",
     };
 
-    setAddresses((prev) => [formatted, ...prev]);
+    setAddresses((prev) => {
+      const exists = prev.some((a) => a.id === formatted.id);
+      if (exists) return prev;
+      return [formatted, ...prev];
+    });
+
     setSelectedAddressId(formatted.id);
-    setAddressJustSaved(true);
+    setAddressJustSaved(true); // 🔥 ESSENCIAL
     setAddressModalOpen(false);
   }
 
@@ -259,6 +262,41 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* ENTREGA */}
+          <h1 className="text-lg font-semibold text-center">
+            Endereço de entrega
+          </h1>
+
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Como deseja receber seu pedido?
+            </p>
+
+            {[
+              { id: "delivery", label: "Receber no meu endereço" },
+              { id: "local", label: "Consumir no restaurante" },
+              { id: "pickup", label: "Retirar no restaurante" },
+            ].map((opt) => (
+              <label
+                key={opt.id}
+                className="flex items-center gap-3 text-sm"
+              >
+                <input
+                  type="radio"
+                  checked={deliveryType === opt.id}
+                  onChange={() => {
+                    setDeliveryType(opt.id as any);
+                    if (opt.id !== "delivery") {
+                      setSelectedAddressId(null);
+                    }
+                  }}
+                  className="accent-green-600"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+
           {/* ENDEREÇOS */}
           {deliveryType === "delivery" && (
             <>
@@ -289,15 +327,33 @@ export default function CheckoutPage() {
                         : "border-gray-200"
                     }`}
                   >
-                    <p className="font-semibold">
-                      {addr.street}, {addr.number}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {addr.neighborhood}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {addr.city} - {addr.state}
-                    </p>
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-semibold">
+                          {addr.street}, {addr.number}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {addr.neighborhood}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {addr.city} - {addr.state}
+                        </p>
+
+                        <div className="flex gap-4 mt-2 text-sm text-green-600">
+                          <span>⏱ {addr.eta}</span>
+                          <span>
+                            🚚 R$ {addr.fee.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <input
+                        type="radio"
+                        checked={selected}
+                        readOnly
+                        className="accent-green-600 mt-1"
+                      />
+                    </div>
                   </div>
                 );
               })}
