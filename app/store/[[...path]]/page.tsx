@@ -1,35 +1,23 @@
-import { headers } from "next/headers";
 import { CategoryList } from "./components/CategoryList";
 import { CartProvider } from "@/src/contexts/CartContext";
 import MiniCartBar from "./components/MiniCartBar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/* ===============================
-   SUBDOMAIN HELPER
-=============================== */
-function getSubdomainFromHost(host: string) {
-  const cleanHost = host.split(":")[0];
-
-  // ignora localhost
-  if (cleanHost.includes("localhost")) return null;
-
-  // ignora domínio raiz
-  if (cleanHost === "tifra.com.br") return null;
-
-  // subdomínio válido
-  if (cleanHost.endsWith(".tifra.com.br")) {
-    return cleanHost.replace(".tifra.com.br", "");
-  }
-
-  return null;
+interface StorePageProps {
+  params: {
+    path?: string[];
+  };
 }
 
-export default async function StorePage() {
-  /* ================= SUBDOMAIN ================= */
-  const headersList = headers();
-  const host = headersList.get("host") ?? "";
-  const subdomain = getSubdomainFromHost(host);
+export default async function StorePage({ params }: StorePageProps) {
+  /**
+   * Middleware gera:
+   * /store/{subdomain}
+   * /store/{subdomain}/checkout
+   * /store/{subdomain}/checkout/summary
+   */
+  const subdomain = params.path?.[0];
 
   if (!subdomain) {
     return (
@@ -44,7 +32,7 @@ export default async function StorePage() {
 
   if (!API_URL) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center text-red-500">
+      <div className="min-h-screen flex items-center justify-center text-red-500">
         API não configurada
       </div>
     );
@@ -55,12 +43,12 @@ export default async function StorePage() {
 
   try {
     /**
-     * ✅ ROTA CORRETA DO BACKEND
+     * ✅ ROTA REAL DO BACKEND
      * storeSettings.public.routes.js
-     * GET /api/public/store/:subdomain
+     * GET /public/store/:subdomain
      */
     const res = await fetch(
-      `${API_URL}/api/public/store/${subdomain}`,
+      `${API_URL}/public/store/${subdomain}`,
       { cache: "no-store" }
     );
 
@@ -126,9 +114,7 @@ export default async function StorePage() {
                   )}
 
                   <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-                    <span className="font-medium text-green-600">
-                      ● Aberto
-                    </span>
+                    <span className="font-medium text-green-600">● Aberto</span>
                     <span>⏱ 40–50 min</span>
                     <span>Sem pedido mínimo</span>
                   </div>
