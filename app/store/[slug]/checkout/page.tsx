@@ -92,88 +92,10 @@ export default function CheckoutPage() {
     loadStore();
   }, [API_URL]);
 
-  /* ================= BUSCAR CLIENTE ================= */
-  useEffect(() => {
-    if (!storeId) return;
-
-    const phone = normalizePhone(customerPhone);
-    if (phone.length < 10) {
-      setCustomerId(null);
-      setAddresses([]);
-      setSelectedAddressId(null);
-      return;
-    }
-
-    async function fetchCustomer() {
-      try {
-        setLoadingCustomer(true);
-        const res = await fetch(
-          `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
-        );
-        const customer = await res.json();
-
-        if (!customer) {
-          setCustomerId(null);
-          setAddresses([]);
-          setSelectedAddressId(null);
-          return;
-        }
-
-        setCustomerId(customer.id);
-        setCustomerName(customer.name || "");
-
-        const loaded =
-          (customer.addresses || []).map((addr: any) => ({
-            id: addr.id,
-            street: addr.street,
-            neighborhood: addr.neighborhood,
-            city: addr.city,
-            state: addr.state,
-            number: addr.number,
-            reference: addr.reference,
-            lat: addr.lat,
-            lng: addr.lng,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          })) || [];
-
-        setAddresses(loaded);
-        if (loaded.length > 0) {
-          setSelectedAddressId(loaded[0].id);
-        }
-      } finally {
-        setLoadingCustomer(false);
-      }
-    }
-
-    fetchCustomer();
-  }, [customerPhone, storeId, API_URL]);
-
-  /* ================= GARANTIR CLIENTE ================= */
-  async function ensureCustomer() {
-    if (customerId) return customerId;
-
-    const res = await fetch(`${API_URL}/customers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        storeId,
-        name: customerName,
-        phone: normalizePhone(customerPhone),
-      }),
-    });
-
-    const data = await res.json();
-    setCustomerId(data.id);
-    return data.id;
-  }
-
-  /* ================= SALVAR ENDEREÇO (OTIMISTA) ================= */
-  async function saveAddress(address: any) {
-    const tempId = crypto.randomUUID();
-
-    const optimistic: SavedAddress = {
-      id: tempId,
+  /* ================= SALVAR ENDEREÇO (INSTANTÂNEO) ================= */
+  function saveAddress(address: any) {
+    const newAddress: SavedAddress = {
+      id: crypto.randomUUID(),
       street: address.street,
       neighborhood: address.neighborhood,
       city: address.city,
@@ -186,37 +108,9 @@ export default function CheckoutPage() {
       eta: "40 - 50 min",
     };
 
-    // 🔥 aparece instantaneamente
-    setAddresses((prev) => [optimistic, ...prev]);
-    setSelectedAddressId(tempId);
+    setAddresses((prev) => [newAddress, ...prev]);
+    setSelectedAddressId(newAddress.id);
     setAddressModalOpen(false);
-
-    // tenta salvar no backend sem travar fluxo
-    try {
-      const cid = await ensureCustomer();
-      const res = await fetch(`${API_URL}/addresses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storeId,
-          customerId: cid,
-          ...address,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data?.id) {
-        setAddresses((prev) =>
-          prev.map((a) =>
-            a.id === tempId ? { ...a, id: data.id } : a
-          )
-        );
-        setSelectedAddressId(data.id);
-      }
-    } catch (err) {
-      console.error("Erro ao salvar endereço:", err);
-    }
   }
 
   /* ================= CONTINUAR ================= */
@@ -231,7 +125,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    await ensureCustomer();
     router.push("/checkout/summary");
   }
 
@@ -241,8 +134,135 @@ export default function CheckoutPage() {
 
   return (
     <>
-      {/* JSX INALTERADO */}
-      {/* ... exatamente como você já tinha */}
+      <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
+        <div className="flex-1 px-6 py-6 space-y-6">
+          {/* CLIENTE */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Celular
+              </label>
+              <input
+                value={customerPhone}
+                onChange={(e) =>
+                  setCustomerPhone(formatPhone(e.target.value))
+                }
+                placeholder="(00) 00000-0000"
+                className="w-full border rounded-lg px-4 py-3"
+              />
+              {loadingCustomer && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Buscando cliente…
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Nome
+              </label>
+              <input
+                value={customerName}
+                onChange={(e) =>
+                  setCustomerName(e.target.value)
+                }
+                placeholder="Nome do cliente"
+                className="w-full border rounded-lg px-4 py-3"
+              />
+            </div>
+          </div>
+
+          {/* ENTREGA */}
+          <h1 className="text-lg font-semibold text-center">
+            Endereço de entrega
+          </h1>
+
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Como deseja receber seu pedido?
+            </p>
+
+            {[
+              { id: "delivery", label: "Receber no meu endereço" },
+              { id: "local", label: "Consumir no restaurante" },
+              { id: "pickup", label: "Retirar no restaurante" },
+            ].map((opt) => (
+              <label
+                key={opt.id}
+                className="flex items-center gap-3 text-sm"
+              >
+                <input
+                  type="radio"
+                  checked={deliveryType === opt.id}
+                  onChange={() => {
+                    setDeliveryType(opt.id as any);
+                    if (opt.id !== "delivery") {
+                      setSelectedAddressId(null);
+                    }
+                  }}
+                  className="accent-green-600"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+
+          {/* ENDEREÇOS */}
+          {deliveryType === "delivery" && (
+            <>
+              <button
+                onClick={() => setAddressModalOpen(true)}
+                className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-medium"
+              >
+                📍 Adicionar novo endereço
+              </button>
+
+              {addresses.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhum endereço cadastrado ainda
+                </p>
+              )}
+
+              {addresses.map((addr) => {
+                const selected = addr.id === selectedAddressId;
+                return (
+                  <div
+                    key={addr.id}
+                    onClick={() =>
+                      setSelectedAddressId(addr.id)
+                    }
+                    className={`border rounded-lg p-4 cursor-pointer ${
+                      selected
+                        ? "border-green-600"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <p className="font-semibold">
+                      {addr.street}, {addr.number}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {addr.neighborhood}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {addr.city} - {addr.state}
+                    </p>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+
+        <div className="p-4">
+          <button
+            onClick={handleNext}
+            className="w-full bg-green-600 text-white py-4 rounded-lg font-semibold"
+          >
+            Próximo
+          </button>
+        </div>
+      </div>
+
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
