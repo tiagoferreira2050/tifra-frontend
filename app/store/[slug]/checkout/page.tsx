@@ -60,7 +60,6 @@ export default function CheckoutPage() {
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [customerId, setCustomerId] = useState<string | null>(null);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   /* ================= ENTREGA ================= */
@@ -225,6 +224,7 @@ export default function CheckoutPage() {
 
               {addresses.map((addr) => {
                 const selected = addr.id === selectedAddressId;
+
                 return (
                   <div
                     key={addr.id}
@@ -246,6 +246,13 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-500">
                       {addr.city} - {addr.state}
                     </p>
+
+                    {selected && (
+                      <div className="flex gap-4 mt-2 text-sm text-green-600">
+                        <span>⏱ {addr.eta}</span>
+                        <span>🚚 R$ {addr.fee.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
