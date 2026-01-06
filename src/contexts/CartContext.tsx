@@ -34,11 +34,15 @@ export type CartItem = {
 };
 
 type StoredCart = {
+  storeId: string | null;
   items: CartItem[];
   expiresAt: number;
 };
 
 type CartContextType = {
+  storeId: string | null;
+  setStoreId: (id: string) => void;
+
   items: CartItem[];
   addItem: (item: CartItem) => void;
   updateQty: (id: string, qty: number) => void;
@@ -60,6 +64,7 @@ export function CartProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [storeId, setStoreIdState] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
 
   /* =======================
@@ -80,13 +85,14 @@ export function CartProvider({
       }
 
       setItems(stored.items);
+      setStoreIdState(stored.storeId ?? null);
     } catch {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
   }, []);
 
   /* =======================
-     SAVE CART (ON CHANGE)
+     SAVE CART
   ======================= */
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -97,6 +103,7 @@ export function CartProvider({
     }
 
     const payload: StoredCart = {
+      storeId,
       items,
       expiresAt: Date.now() + CART_TTL_MS,
     };
@@ -105,11 +112,21 @@ export function CartProvider({
       CART_STORAGE_KEY,
       JSON.stringify(payload)
     );
-  }, [items]);
+  }, [items, storeId]);
 
   /* =======================
      ACTIONS
   ======================= */
+  function setStoreId(id: string) {
+    setStoreIdState((current) => {
+      // 🔒 evita trocar loja com carrinho ativo
+      if (current && current !== id) {
+        setItems([]);
+      }
+      return id;
+    });
+  }
+
   function addItem(item: CartItem) {
     setItems((prev) => {
       const existing = prev.find(
@@ -151,6 +168,7 @@ export function CartProvider({
 
   function clearCart() {
     setItems([]);
+    setStoreIdState(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
@@ -167,6 +185,9 @@ export function CartProvider({
   return (
     <CartContext.Provider
       value={{
+        storeId,
+        setStoreId,
+
         items,
         addItem,
         updateQty,

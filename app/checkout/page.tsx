@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AddressModal from "./components/AddressModal";
+import { useCart } from "@/src/contexts/CartContext";
 
 /* ================= TYPES ================= */
 type SavedAddress = {
@@ -36,34 +37,13 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
-function normalizePhone(value: string) {
-  let phone = value.replace(/\D/g, "");
-  if (phone.startsWith("55") && phone.length > 11) {
-    phone = phone.slice(2);
-  }
-  return phone;
-}
-
-function getSubdomain() {
-  if (typeof window === "undefined") return "";
-  const host = window.location.hostname;
-
-  if (host.includes("localhost")) return "localhost";
-  return host.replace(".tifra.com.br", "");
-}
-
 export default function CheckoutPage() {
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-
-  /* ================= STORE ================= */
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [loadingStore, setLoadingStore] = useState(true);
+  const { items, storeId } = useCart();
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   /* ================= ENTREGA ================= */
   const [deliveryType, setDeliveryType] =
@@ -74,32 +54,22 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
-  /* ================= LOAD STORE ================= */
-  useEffect(() => {
-    async function loadStore() {
-      try {
-        const subdomain = getSubdomain();
+  /* ================= PROTEÇÕES ================= */
+  if (!storeId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Loja inválida
+      </div>
+    );
+  }
 
-        const res = await fetch(
-          `${API_URL}/api/store/by-subdomain/${subdomain}`,
-          { cache: "no-store" }
-        );
-
-        if (!res.ok) throw new Error("Store não encontrada");
-
-        const data = await res.json();
-
-        // 🔥 backend retorna { store: {...} }
-        setStoreId(data.store.id);
-      } catch (err) {
-        console.error("[CHECKOUT][LOAD STORE]", err);
-      } finally {
-        setLoadingStore(false);
-      }
-    }
-
-    loadStore();
-  }, [API_URL]);
+  if (!items || items.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Seu carrinho está vazio
+      </div>
+    );
+  }
 
   /* ================= SALVAR ENDEREÇO ================= */
   function saveAddress(address: any) {
@@ -134,24 +104,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 🔥 mantém o subdomínio automaticamente
     router.push("/checkout/summary");
-  }
-
-  if (loadingStore) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Carregando loja…
-      </div>
-    );
-  }
-
-  if (!storeId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        Loja inválida
-      </div>
-    );
   }
 
   return (
@@ -195,10 +148,6 @@ export default function CheckoutPage() {
           </h1>
 
           <div className="space-y-3">
-            <p className="text-sm text-gray-500">
-              Como deseja receber seu pedido?
-            </p>
-
             {[
               { id: "delivery", label: "Receber no meu endereço" },
               { id: "local", label: "Consumir no restaurante" },
@@ -233,12 +182,6 @@ export default function CheckoutPage() {
               >
                 📍 Adicionar novo endereço
               </button>
-
-              {addresses.length === 0 && (
-                <p className="text-sm text-gray-500">
-                  Nenhum endereço cadastrado ainda
-                </p>
-              )}
 
               {addresses.map((addr) => {
                 const selected = addr.id === selectedAddressId;

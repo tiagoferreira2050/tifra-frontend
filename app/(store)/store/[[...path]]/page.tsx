@@ -1,6 +1,7 @@
 import { CategoryList } from "./components/CategoryList";
-import { CartProvider } from "@/src/contexts/CartContext";
 import MiniCartBar from "./components/MiniCartBar";
+import { CartProvider } from "@/src/contexts/CartContext";
+import StoreClientBootstrap from "./components/StoreClientBootstrap";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,7 +27,6 @@ export default async function StorePage({ params }: StorePageProps) {
   let categories: any[] = [];
 
   try {
-    // 🔥 ROTA PÚBLICA CORRETA (STORE + SETTINGS + CATEGORIAS)
     const res = await fetch(
       `${API_URL}/api/public/store/${subdomain}`,
       { cache: "no-store" }
@@ -53,6 +53,9 @@ export default async function StorePage({ params }: StorePageProps) {
 
   return (
     <CartProvider>
+      {/* 🔥 REGISTRA A LOJA NO CARRINHO */}
+      <StoreClientBootstrap storeId={store.id} />
+
       <div className="bg-[#FFF3EE] min-h-screen relative">
         {/* ================= BANNER ================= */}
         <div className="relative h-64 w-full overflow-hidden">
