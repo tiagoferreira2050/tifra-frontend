@@ -22,30 +22,25 @@ export default async function StorePage({ params }: StorePageProps) {
   }
 
   let store: any = null;
+  let settings: any = null;
   let categories: any[] = [];
 
   try {
-    // 🔥 BUSCA STORE PELO SUBDOMÍNIO (UMA LOJA APENAS)
-    const storeRes = await fetch(
-      `${API_URL}/api/store/by-subdomain/${subdomain}`,
+    // 🔥 ROTA PÚBLICA CORRETA (STORE + SETTINGS + CATEGORIAS)
+    const res = await fetch(
+      `${API_URL}/api/public/store/${subdomain}`,
       { cache: "no-store" }
     );
 
-    if (!storeRes.ok) throw new Error("Store não encontrada");
-    store = await storeRes.json();
+    if (!res.ok) throw new Error("Store não encontrada");
 
-    // 🔥 BUSCA CARDÁPIO PELO ID DA STORE
-    const menuRes = await fetch(
-      `${API_URL}/api/public/menu/${store.id}`,
-      { cache: "no-store" }
-    );
+    const data = await res.json();
 
-    if (menuRes.ok) {
-      const menuData = await menuRes.json();
-      categories = menuData.categories ?? [];
-    }
+    store = data.store;
+    settings = data.settings;
+    categories = data.categories ?? [];
   } catch (err) {
-    console.error("[STORE PAGE]", err);
+    console.error("[PUBLIC STORE PAGE]", err);
   }
 
   if (!store) {
@@ -71,7 +66,6 @@ export default async function StorePage({ params }: StorePageProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-500" />
           )}
 
-          {/* overlay */}
           <div className="absolute inset-0 bg-black/30" />
         </div>
 
@@ -98,14 +92,39 @@ export default async function StorePage({ params }: StorePageProps) {
                   {store.name}
                 </h1>
 
-                <div className="flex flex-wrap gap-3 text-sm text-gray-600 mt-1">
-                  <span className="text-green-600 font-medium">● Aberto</span>
-                  <span>⏱ 40–50 min</span>
-                  <span>Sem pedido mínimo</span>
+                {store.description && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {store.description}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-3 text-sm text-gray-600 mt-2">
+                  <span
+                    className={
+                      settings?.isOpen
+                        ? "text-green-600 font-medium"
+                        : "text-red-500 font-medium"
+                    }
+                  >
+                    ● {settings?.isOpen ? "Aberto" : "Fechado"}
+                  </span>
+
+                  {settings?.estimatedTime && (
+                    <span>⏱ {settings.estimatedTime} min</span>
+                  )}
+
+                  {settings?.minOrderValue !== null && (
+                    <span>
+                      Pedido mínimo:{" "}
+                      {settings.minOrderValue === 0
+                        ? "Sem pedido mínimo"
+                        : `R$ ${settings.minOrderValue}`}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* BOTÃO SACOLA (visual) */}
+              {/* SACOLA */}
               <div className="hidden sm:block">
                 <button className="bg-purple-600 text-white px-5 py-2 rounded-xl font-medium">
                   Ver sacola
@@ -115,7 +134,6 @@ export default async function StorePage({ params }: StorePageProps) {
           </div>
         </div>
 
-        {/* ESPAÇO */}
         <div className="h-16" />
 
         {/* ================= PRODUTOS ================= */}
@@ -123,7 +141,6 @@ export default async function StorePage({ params }: StorePageProps) {
           <CategoryList categories={categories} />
         </div>
 
-        {/* ================= MINI CARRINHO ================= */}
         <MiniCartBar />
       </div>
     </CartProvider>
