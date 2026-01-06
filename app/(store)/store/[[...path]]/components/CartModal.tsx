@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCart } from "@/src/contexts/CartContext";
 
 interface Props {
@@ -18,21 +17,9 @@ type CartComplement = {
 };
 
 export default function CartModal({ open, onClose }: Props) {
-  const router = useRouter();
   const { items, updateQty, removeItem, total } = useCart();
 
   if (!open) return null;
-
-  // 🔥 PEGA O SUBDOMÍNIO CORRETAMENTE
-  let storeSlug: string | null = null;
-
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname; // acaibrasil.tifra.com.br
-    const parts = host.split(".");
-    if (parts.length > 2) {
-      storeSlug = parts[0]; // acaibrasil
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -157,11 +144,8 @@ export default function CartModal({ open, onClose }: Props) {
             <button
               onClick={() => {
                 onClose();
-
-                if (storeSlug) {
-                  router.push("/checkout"); 
-                  // 👉 continua no MESMO subdomínio
-                }
+                // 🔥 FORÇA SAÍDA DO LAYOUT (store)
+                window.location.href = "/checkout";
               }}
               className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
             >
