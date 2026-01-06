@@ -72,6 +72,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
+  // 🔥 FLAG CRÍTICO PARA NÃO PERDER ENDEREÇO RECÉM SALVO
   const [addressJustSaved, setAddressJustSaved] = useState(false);
 
   /* ================= LOAD STORE ================= */
@@ -84,15 +85,14 @@ export default function CheckoutPage() {
         );
         const data = await res.json();
 
-        // 🔥 AQUI ESTAVA O BUG
+        // ✅ CORREÇÃO REAL
         setStoreId(data.store?.id || null);
       } catch (err) {
-        console.error("Erro ao carregar store", err);
+        console.error(err);
       } finally {
         setLoadingStore(false);
       }
     }
-
     loadStore();
   }, [API_URL]);
 
@@ -112,11 +112,9 @@ export default function CheckoutPage() {
     async function fetchCustomer() {
       try {
         setLoadingCustomer(true);
-
         const res = await fetch(
           `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
-
         const customer = await res.json();
 
         if (!customer) {
@@ -149,6 +147,7 @@ export default function CheckoutPage() {
     fetchCustomer();
   }, [customerPhone, storeId, API_URL, addressJustSaved]);
 
+  /* ================= RESET FLAG AO TROCAR TELEFONE ================= */
   useEffect(() => {
     setAddressJustSaved(false);
   }, [customerPhone]);
@@ -222,7 +221,6 @@ export default function CheckoutPage() {
 
   return (
     <>
-      {/* --- UI MANTIDA IGUAL --- */}
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
         <div className="flex-1 px-6 py-6 space-y-6">
           {/* CLIENTE */}
@@ -239,6 +237,11 @@ export default function CheckoutPage() {
                 placeholder="(00) 00000-0000"
                 className="w-full border rounded-lg px-4 py-3"
               />
+              {loadingCustomer && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Buscando cliente…
+                </p>
+              )}
             </div>
 
             <div>
@@ -257,34 +260,49 @@ export default function CheckoutPage() {
           </div>
 
           {/* ENDEREÇOS */}
-          <button
-            onClick={() => setAddressModalOpen(true)}
-            className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-medium"
-          >
-            📍 Adicionar novo endereço
-          </button>
+          {deliveryType === "delivery" && (
+            <>
+              <button
+                onClick={() => setAddressModalOpen(true)}
+                className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-medium"
+              >
+                📍 Adicionar novo endereço
+              </button>
 
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              onClick={() => setSelectedAddressId(addr.id)}
-              className={`border rounded-lg p-4 cursor-pointer ${
-                addr.id === selectedAddressId
-                  ? "border-green-600"
-                  : "border-gray-200"
-              }`}
-            >
-              <p className="font-semibold">
-                {addr.street}, {addr.number}
-              </p>
-              <p className="text-sm text-gray-500">
-                {addr.neighborhood}
-              </p>
-              <p className="text-sm text-gray-500">
-                {addr.city} - {addr.state}
-              </p>
-            </div>
-          ))}
+              {addresses.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhum endereço cadastrado ainda
+                </p>
+              )}
+
+              {addresses.map((addr) => {
+                const selected = addr.id === selectedAddressId;
+                return (
+                  <div
+                    key={addr.id}
+                    onClick={() =>
+                      setSelectedAddressId(addr.id)
+                    }
+                    className={`border rounded-lg p-4 cursor-pointer ${
+                      selected
+                        ? "border-green-600"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <p className="font-semibold">
+                      {addr.street}, {addr.number}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {addr.neighborhood}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {addr.city} - {addr.state}
+                    </p>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
         <div className="p-4">
