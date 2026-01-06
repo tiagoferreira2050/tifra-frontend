@@ -152,31 +152,45 @@ export default function CheckoutPage() {
     return data.id;
   }
 
-  /* ================= SALVAR ENDEREÇO ================= */
-  async function saveAddress(address: any) {
-    const cid = await ensureCustomer();
 
-    const res = await fetch(`${API_URL}/addresses`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        storeId,
-        customerId: cid,
-        ...address,
-      }),
-    });
+ /* ================= SALVAR ENDEREÇO ================= */
+async function saveAddress(address: any) {
+  const cid = await ensureCustomer();
 
-    const data = await res.json();
+  const res = await fetch(`${API_URL}/addresses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      storeId,
+      customerId: cid,
+      ...address,
+    }),
+  });
 
-    const formatted: SavedAddress = {
-      ...data,
-      fee: 4.99,
-      eta: "40 - 50 min",
-    };
+  const data = await res.json();
 
-    setAddresses((prev) => [formatted, ...prev]);
-    setSelectedAddressId(formatted.id);
-  }
+  const formatted: SavedAddress = {
+    ...data,
+    fee: 4.99,
+    eta: "40 - 50 min",
+  };
+
+  // 🔥 GARANTE QUE APAREÇA IMEDIATAMENTE NA LISTA
+  setAddresses((prev) => {
+    // evita duplicar caso backend retorne em fetch futuro
+    const exists = prev.some((a) => a.id === formatted.id);
+    if (exists) return prev;
+
+    return [formatted, ...prev];
+  });
+
+  // 🔥 JÁ DEIXA SELECIONADO (UX IGUAL AO PRINT)
+  setSelectedAddressId(formatted.id);
+
+  // 🔥 FECHA MODAL COM SEGURANÇA
+  setAddressModalOpen(false);
+}
+
 
   /* ================= CONTINUAR ================= */
   async function handleNext() {
