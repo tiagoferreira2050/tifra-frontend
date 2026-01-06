@@ -52,8 +52,9 @@ export default async function StorePage() {
   let categories: any[] = [];
 
   try {
+    // ✅ ENDPOINT CORRETO (SEM /api)
     const res = await fetch(
-      `${API_URL}/api/store/by-subdomain/${slug}`,
+      `${API_URL}/store/${slug}`,
       { cache: "no-store" }
     );
 
@@ -117,7 +118,9 @@ export default async function StorePage() {
                   )}
 
                   <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-                    <span className="font-medium text-green-600">● Aberto</span>
+                    <span className="font-medium text-green-600">
+                      ● Aberto
+                    </span>
                     <span>⏱ 40–50 min</span>
                     <span>Sem pedido mínimo</span>
                   </div>
