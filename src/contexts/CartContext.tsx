@@ -28,9 +28,9 @@ export type CartItem = {
   name: string;
   imageUrl?: string;
   qty: number;
-  unitPrice: number; // preço unitário (produto + complementos)
+  unitPrice: number;
   complements?: CartComplement[];
-  observation?: string; // ✅ OBSERVAÇÃO DO ITEM (NOVO, OPCIONAL)
+  observation?: string;
 };
 
 type StoredCart = {
@@ -66,13 +66,14 @@ export function CartProvider({
      LOAD CART (INIT)
   ======================= */
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     try {
       const raw = localStorage.getItem(CART_STORAGE_KEY);
       if (!raw) return;
 
       const stored: StoredCart = JSON.parse(raw);
 
-      // ⏱️ expirado
       if (Date.now() > stored.expiresAt) {
         localStorage.removeItem(CART_STORAGE_KEY);
         return;
@@ -88,6 +89,8 @@ export function CartProvider({
      SAVE CART (ON CHANGE)
   ======================= */
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (items.length === 0) {
       localStorage.removeItem(CART_STORAGE_KEY);
       return;
@@ -95,7 +98,7 @@ export function CartProvider({
 
     const payload: StoredCart = {
       items,
-      expiresAt: Date.now() + CART_TTL_MS, // renova TTL
+      expiresAt: Date.now() + CART_TTL_MS,
     };
 
     localStorage.setItem(
@@ -108,10 +111,29 @@ export function CartProvider({
      ACTIONS
   ======================= */
   function addItem(item: CartItem) {
-    setItems((prev) => [...prev, item]);
+    setItems((prev) => {
+      const existing = prev.find(
+        (i) => i.id === item.id
+      );
+
+      if (existing) {
+        return prev.map((i) =>
+          i.id === item.id
+            ? { ...i, qty: i.qty + item.qty }
+            : i
+        );
+      }
+
+      return [...prev, item];
+    });
   }
 
   function updateQty(id: string, qty: number) {
+    if (qty <= 0) {
+      removeItem(id);
+      return;
+    }
+
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -129,7 +151,9 @@ export function CartProvider({
 
   function clearCart() {
     setItems([]);
-    localStorage.removeItem(CART_STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
   }
 
   /* =======================

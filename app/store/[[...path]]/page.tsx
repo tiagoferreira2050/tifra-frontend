@@ -5,23 +5,44 @@ import MiniCartBar from "./components/MiniCartBar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+function getSubdomainFromHost(host: string) {
+  // remove porta
+  const cleanHost = host.split(":")[0];
+
+  // ignora localhost
+  if (cleanHost.includes("localhost")) return null;
+
+  // ignora domínio raiz
+  if (cleanHost === "tifra.com.br") return null;
+
+  // remove domínio principal
+  if (cleanHost.endsWith(".tifra.com.br")) {
+    return cleanHost.replace(".tifra.com.br", "");
+  }
+
+  return null;
+}
+
 export default async function StorePage() {
   /* ================= SUBDOMAIN ================= */
   const headersList = headers();
-  const host = headersList.get("host") || "";
-  const slug = host.replace(".tifra.com.br", "");
+  const host = headersList.get("host") ?? "";
+  const slug = getSubdomainFromHost(host);
 
   if (!slug) {
     return (
-      <div className="text-center mt-10 text-gray-500">
-        Loja inválida
+      <div className="min-h-screen flex items-center justify-center text-center text-gray-500 px-4">
+        <div>
+          <h1 className="text-xl font-bold mb-2">Loja inválida</h1>
+          <p>Esse cardápio pode estar indisponível.</p>
+        </div>
       </div>
     );
   }
 
   if (!API_URL) {
     return (
-      <div className="text-center mt-10 text-red-500">
+      <div className="min-h-screen flex items-center justify-center text-center text-red-500">
         API não configurada
       </div>
     );
@@ -49,9 +70,7 @@ export default async function StorePage() {
     return (
       <div className="min-h-screen flex items-center justify-center text-center text-gray-500 px-4">
         <div>
-          <h1 className="text-xl font-bold mb-2">
-            Loja não encontrada
-          </h1>
+          <h1 className="text-xl font-bold mb-2">Loja não encontrada</h1>
           <p>Esse cardápio pode estar indisponível.</p>
         </div>
       </div>
@@ -98,9 +117,7 @@ export default async function StorePage() {
                   )}
 
                   <div className="flex flex-wrap gap-3 text-xs text-gray-600 mt-2">
-                    <span className="font-medium text-green-600">
-                      ● Aberto
-                    </span>
+                    <span className="font-medium text-green-600">● Aberto</span>
                     <span>⏱ 40–50 min</span>
                     <span>Sem pedido mínimo</span>
                   </div>
