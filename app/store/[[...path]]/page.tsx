@@ -5,8 +5,10 @@ import MiniCartBar from "./components/MiniCartBar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+/* ===============================
+   SUBDOMAIN HELPER
+=============================== */
 function getSubdomainFromHost(host: string) {
-  // remove porta
   const cleanHost = host.split(":")[0];
 
   // ignora localhost
@@ -15,7 +17,7 @@ function getSubdomainFromHost(host: string) {
   // ignora domínio raiz
   if (cleanHost === "tifra.com.br") return null;
 
-  // remove domínio principal
+  // subdomínio válido
   if (cleanHost.endsWith(".tifra.com.br")) {
     return cleanHost.replace(".tifra.com.br", "");
   }
@@ -52,9 +54,13 @@ export default async function StorePage() {
   let categories: any[] = [];
 
   try {
-    // ✅ ENDPOINT CORRETO (SEM /api)
+    /**
+     * ✅ ROTA CORRETA DO CARDÁPIO PÚBLICO
+     * BACKEND: storeSettings.public.routes.js
+     * GET /api/public/store/:subdomain
+     */
     const res = await fetch(
-      `${API_URL}/store/${slug}`,
+      `${API_URL}/api/public/store/${slug}`,
       { cache: "no-store" }
     );
 
@@ -64,7 +70,7 @@ export default async function StorePage() {
       categories = data.categories ?? [];
     }
   } catch (err) {
-    console.error("[STORE BY SUBDOMAIN] erro:", err);
+    console.error("[PUBLIC STORE] erro:", err);
   }
 
   if (!store) {
