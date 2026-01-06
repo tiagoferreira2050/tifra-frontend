@@ -44,18 +44,9 @@ function normalizePhone(value: string) {
   return phone;
 }
 
-function getSubdomain() {
-  if (typeof window === "undefined") return "";
-  return window.location.hostname.replace(".tifra.com.br", "");
-}
-
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-
-  /* ================= STORE ================= */
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [loadingStore, setLoadingStore] = useState(true);
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -72,83 +63,53 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
-  // 🔥 FLAG CRÍTICO PARA NÃO PERDER ENDEREÇO RECÉM SALVO
-  const [addressJustSaved, setAddressJustSaved] = useState(false);
-
-  /* ================= LOAD STORE ================= */
-  useEffect(() => {
-    async function loadStore() {
-      try {
-        const subdomain = getSubdomain();
-        const res = await fetch(
-          `${API_URL}/store/by-subdomain/${subdomain}`
-        );
-        const data = await res.json();
-        setStoreId(data.id);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingStore(false);
-      }
-    }
-    loadStore();
-  }, [API_URL]);
-
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    if (!storeId) return;
-    if (addressJustSaved) return; // 🔥 NÃO SOBRESCREVE ENDEREÇO NOVO
-
     const phone = normalizePhone(customerPhone);
+
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
-      setSelectedAddressId(null);
       return;
     }
 
     async function fetchCustomer() {
       try {
         setLoadingCustomer(true);
+
         const res = await fetch(
-          `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
+          `${API_URL}/customers/by-phone?phone=${phone}`
         );
+
         const customer = await res.json();
 
         if (!customer) {
           setCustomerId(null);
           setAddresses([]);
-          setSelectedAddressId(null);
           return;
         }
 
         setCustomerId(customer.id);
         setCustomerName(customer.name || "");
 
-        const loaded =
-          (customer.addresses || []).map((addr: any) => ({
-            ...addr,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          })) || [];
-
-        setAddresses(loaded);
-
-        if (loaded.length > 0) {
-          setSelectedAddressId(loaded[0].id);
+        if (Array.isArray(customer.addresses)) {
+          setAddresses(
+            customer.addresses.map((addr: any) => ({
+              ...addr,
+              fee: 4.99,
+              eta: "40 - 50 min",
+            }))
+          );
         }
+      } catch (err) {
+        console.error("Erro ao buscar cliente", err);
       } finally {
         setLoadingCustomer(false);
       }
     }
 
     fetchCustomer();
-  }, [customerPhone, storeId, API_URL, addressJustSaved]);
-
-  /* ================= RESET FLAG AO TROCAR TELEFONE ================= */
-  useEffect(() => {
-    setAddressJustSaved(false);
-  }, [customerPhone]);
+  }, [customerPhone, API_URL]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -158,7 +119,6 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        storeId,
         name: customerName,
         phone: normalizePhone(customerPhone),
       }),
@@ -177,7 +137,6 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        storeId,
         customerId: cid,
         ...address,
       }),
@@ -185,27 +144,22 @@ export default function CheckoutPage() {
 
     const data = await res.json();
 
-    const formatted: SavedAddress = {
-      ...data,
-      fee: 4.99,
-      eta: "40 - 50 min",
-    };
+    setAddresses((prev) => [
+      {
+        ...data,
+        fee: 4.99,
+        eta: "40 - 50 min",
+      },
+      ...prev,
+    ]);
 
-    setAddresses((prev) => {
-      const exists = prev.some((a) => a.id === formatted.id);
-      if (exists) return prev;
-      return [formatted, ...prev];
-    });
-
-    setSelectedAddressId(formatted.id);
-    setAddressJustSaved(true); // 🔥 ESSENCIAL
-    setAddressModalOpen(false);
+    setSelectedAddressId(data.id);
   }
 
   /* ================= CONTINUAR ================= */
   async function handleNext() {
     if (!customerPhone || !customerName) {
-      alert("Informe telefone e nome");
+      alert("Informe telefone e nome para continuar");
       return;
     }
 
@@ -218,27 +172,34 @@ export default function CheckoutPage() {
     router.push("/checkout/summary");
   }
 
-  if (loadingStore) {
-    return <div className="p-6">Carregando...</div>;
-  }
-
+  /* ================= UI ================= */
   return (
     <>
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
+        {/* HEADER */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b">
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-full border flex items-center justify-center"
+          >
+            ←
+          </button>
+          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
+        </div>
+
+        {/* CONTEÚDO */}
         <div className="flex-1 px-6 py-6 space-y-6">
           {/* CLIENTE */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Celular
-              </label>
+              <label className="text-sm font-medium">Telefone *</label>
               <input
+                type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
-                placeholder="(00) 00000-0000"
-                className="w-full border rounded-lg px-4 py-3"
+                className="w-full mt-1 border rounded-lg px-3 py-2"
               />
               {loadingCustomer && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -248,51 +209,47 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Nome
-              </label>
+              <label className="text-sm font-medium">Nome *</label>
               <input
+                type="text"
                 value={customerName}
                 onChange={(e) =>
                   setCustomerName(e.target.value)
                 }
-                placeholder="Nome do cliente"
-                className="w-full border rounded-lg px-4 py-3"
+                className="w-full mt-1 border rounded-lg px-3 py-2"
               />
             </div>
           </div>
 
           {/* ENTREGA */}
-          <h1 className="text-lg font-semibold text-center">
-            Endereço de entrega
-          </h1>
+          <p className="text-sm text-gray-600">
+            Como deseja receber seu pedido?
+          </p>
 
           <div className="space-y-3">
-            <p className="text-sm text-gray-500">
-              Como deseja receber seu pedido?
-            </p>
-
-            {[
-              { id: "delivery", label: "Receber no meu endereço" },
-              { id: "local", label: "Consumir no restaurante" },
-              { id: "pickup", label: "Retirar no restaurante" },
-            ].map((opt) => (
+            {["delivery", "local", "pickup"].map((type) => (
               <label
-                key={opt.id}
-                className="flex items-center gap-3 text-sm"
+                key={type}
+                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+                  deliveryType === type
+                    ? "border-green-600 bg-green-50"
+                    : ""
+                }`}
               >
                 <input
                   type="radio"
-                  checked={deliveryType === opt.id}
-                  onChange={() => {
-                    setDeliveryType(opt.id as any);
-                    if (opt.id !== "delivery") {
-                      setSelectedAddressId(null);
-                    }
-                  }}
-                  className="accent-green-600"
+                  checked={deliveryType === type}
+                  onChange={() =>
+                    setDeliveryType(type as any)
+                  }
                 />
-                {opt.label}
+                <span>
+                  {type === "delivery"
+                    ? "Receber no meu endereço"
+                    : type === "local"
+                    ? "Consumir no restaurante"
+                    : "Retirar no restaurante"}
+                </span>
               </label>
             ))}
           </div>
@@ -301,76 +258,51 @@ export default function CheckoutPage() {
           {deliveryType === "delivery" && (
             <>
               <button
+                className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold"
                 onClick={() => setAddressModalOpen(true)}
-                className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-medium"
               >
                 📍 Adicionar novo endereço
               </button>
 
-              {addresses.length === 0 && (
-                <p className="text-sm text-gray-500">
-                  Nenhum endereço cadastrado ainda
-                </p>
-              )}
-
-              {addresses.map((addr) => {
-                const selected = addr.id === selectedAddressId;
-                return (
-                  <div
-                    key={addr.id}
-                    onClick={() =>
-                      setSelectedAddressId(addr.id)
-                    }
-                    className={`border rounded-lg p-4 cursor-pointer ${
-                      selected
-                        ? "border-green-600"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="font-semibold">
-                          {addr.street}, {addr.number}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {addr.neighborhood}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {addr.city} - {addr.state}
-                        </p>
-
-                        <div className="flex gap-4 mt-2 text-sm text-green-600">
-                          <span>⏱ {addr.eta}</span>
-                          <span>
-                            🚚 R$ {addr.fee.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <input
-                        type="radio"
-                        checked={selected}
-                        readOnly
-                        className="accent-green-600 mt-1"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  onClick={() =>
+                    setSelectedAddressId(addr.id)
+                  }
+                  className={`border rounded-xl p-4 cursor-pointer ${
+                    selectedAddressId === addr.id
+                      ? "border-green-600 bg-green-50"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {addr.street}, {addr.number}
+                  </p>
+                  <p className="text-sm">
+                    {addr.neighborhood}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {addr.city} - {addr.state}
+                  </p>
+                </div>
+              ))}
             </>
           )}
         </div>
 
-        <div className="p-4">
+        {/* BOTÃO */}
+        <div className="p-6 border-t">
           <button
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
             onClick={handleNext}
-            className="w-full bg-green-600 text-white py-4 rounded-lg font-semibold"
           >
             Próximo
           </button>
         </div>
       </div>
 
+      {/* MODAL */}
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
