@@ -43,12 +43,29 @@ function normalizePhone(value: string) {
   return phone;
 }
 
+function getSubdomain() {
+  if (typeof window === "undefined") return "";
+  return window.location.hostname.replace(".tifra.com.br", "");
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  // 🔥 ID REAL DA STORE (obrigatório p/ multi-loja)
-  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b";
+  /* ================= STORE ================= */
+  const [storeId, setStoreId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadStore() {
+      const subdomain = getSubdomain();
+      const res = await fetch(
+        `${API_URL}/store/by-subdomain/${subdomain}`
+      );
+      const data = await res.json();
+      setStoreId(data.id);
+    }
+    loadStore();
+  }, [API_URL]);
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -67,8 +84,9 @@ export default function CheckoutPage() {
 
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    const phone = normalizePhone(customerPhone);
+    if (!storeId) return;
 
+    const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
@@ -82,35 +100,36 @@ export default function CheckoutPage() {
         const res = await fetch(
           `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
-
         const data = await res.json();
 
-        if (data) {
-          setCustomerId(data.id);
-          setCustomerName(data.name || "");
-
-          if (Array.isArray(data.addresses)) {
-            setAddresses(
-              data.addresses.map((addr: any) => ({
-                ...addr,
-                fee: 4.99,
-                eta: "40 - 50 min",
-              }))
-            );
-          }
-        } else {
+        if (!data) {
           setCustomerId(null);
           setAddresses([]);
+          return;
         }
-      } catch (err) {
-        console.error("Erro ao buscar cliente", err);
+
+        setCustomerId(data.id);
+        setCustomerName(data.name || "");
+
+        if (Array.isArray(data.addresses)) {
+          const loaded = data.addresses.map((addr: any) => ({
+            ...addr,
+            fee: 4.99,
+            eta: "40 - 50 min",
+          }));
+          setAddresses(loaded);
+
+          if (loaded.length > 0) {
+            setSelectedAddressId(loaded[0].id);
+          }
+        }
       } finally {
         setLoadingCustomer(false);
       }
     }
 
     fetchCustomer();
-  }, [customerPhone, API_URL, storeId]);
+  }, [customerPhone, storeId, API_URL]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -134,7 +153,7 @@ export default function CheckoutPage() {
   /* ================= CONTINUAR ================= */
   async function handleNext() {
     if (!customerPhone || !customerName) {
-      alert("Informe telefone e nome para continuar");
+      alert("Informe telefone e nome");
       return;
     }
 
@@ -168,12 +187,10 @@ export default function CheckoutPage() {
             <div>
               <label className="text-sm font-medium">Telefone *</label>
               <input
-                type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
-                placeholder="(DDD) 99999-9999"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
               {loadingCustomer && (
@@ -186,10 +203,8 @@ export default function CheckoutPage() {
             <div>
               <label className="text-sm font-medium">Nome *</label>
               <input
-                type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Seu nome"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
             </div>
@@ -204,7 +219,7 @@ export default function CheckoutPage() {
             {["delivery", "local", "pickup"].map((type) => (
               <label
                 key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
+                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
                   deliveryType === type
                     ? "border-green-600 bg-green-50"
                     : ""
@@ -264,7 +279,6 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        {/* BOTÃO */}
         <div className="p-6 border-t">
           <button
             className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
@@ -279,10 +293,23 @@ export default function CheckoutPage() {
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
-        onSave={(addr) => {
+        onSave={async (addr) => {
+          const cid = await ensureCustomer();
+
+          const res = await fetch(`${API_URL}/addresses`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storeId,
+              customerId: cid,
+              ...addr,
+            }),
+          });
+
+          const data = await res.json();
+
           const newAddress: SavedAddress = {
-            id: crypto.randomUUID(),
-            ...addr,
+            ...data,
             fee: 4.99,
             eta: "40 - 50 min",
           };
