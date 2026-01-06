@@ -72,9 +72,6 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
-  // 🔥 FLAG CRÍTICO PARA NÃO PERDER ENDEREÇO RECÉM SALVO
-  const [addressJustSaved, setAddressJustSaved] = useState(false);
-
   /* ================= LOAD STORE ================= */
   useEffect(() => {
     async function loadStore() {
@@ -84,20 +81,22 @@ export default function CheckoutPage() {
           `${API_URL}/store/by-subdomain/${subdomain}`
         );
         const data = await res.json();
-        setStoreId(data.id);
+
+        // ✅ CORREÇÃO CRÍTICA
+        setStoreId(data.store.id);
       } catch (err) {
         console.error(err);
       } finally {
         setLoadingStore(false);
       }
     }
+
     loadStore();
   }, [API_URL]);
 
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
     if (!storeId) return;
-    if (addressJustSaved) return; // 🔥 NÃO SOBRESCREVE ENDEREÇO NOVO
 
     const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
@@ -127,7 +126,15 @@ export default function CheckoutPage() {
 
         const loaded =
           (customer.addresses || []).map((addr: any) => ({
-            ...addr,
+            id: addr.id,
+            street: addr.street,
+            neighborhood: addr.neighborhood,
+            city: addr.city,
+            state: addr.state,
+            number: addr.number,
+            reference: addr.reference,
+            lat: addr.lat,
+            lng: addr.lng,
             fee: 4.99,
             eta: "40 - 50 min",
           })) || [];
@@ -143,12 +150,7 @@ export default function CheckoutPage() {
     }
 
     fetchCustomer();
-  }, [customerPhone, storeId, API_URL, addressJustSaved]);
-
-  /* ================= RESET FLAG AO TROCAR TELEFONE ================= */
-  useEffect(() => {
-    setAddressJustSaved(false);
-  }, [customerPhone]);
+  }, [customerPhone, storeId, API_URL]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -185,20 +187,23 @@ export default function CheckoutPage() {
 
     const data = await res.json();
 
+    // ✅ NORMALIZA EXATAMENTE COMO O JSX ESPERA
     const formatted: SavedAddress = {
-      ...data,
+      id: data.id,
+      street: data.street,
+      neighborhood: data.neighborhood,
+      city: data.city,
+      state: data.state,
+      number: data.number,
+      reference: data.reference,
+      lat: data.lat,
+      lng: data.lng,
       fee: 4.99,
       eta: "40 - 50 min",
     };
 
-    setAddresses((prev) => {
-      const exists = prev.some((a) => a.id === formatted.id);
-      if (exists) return prev;
-      return [formatted, ...prev];
-    });
-
+    setAddresses((prev) => [formatted, ...prev]);
     setSelectedAddressId(formatted.id);
-    setAddressJustSaved(true); // 🔥 ESSENCIAL
     setAddressModalOpen(false);
   }
 
