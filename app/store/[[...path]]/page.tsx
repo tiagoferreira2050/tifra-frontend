@@ -29,9 +29,9 @@ export default async function StorePage() {
   /* ================= SUBDOMAIN ================= */
   const headersList = headers();
   const host = headersList.get("host") ?? "";
-  const slug = getSubdomainFromHost(host);
+  const subdomain = getSubdomainFromHost(host);
 
-  if (!slug) {
+  if (!subdomain) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center text-gray-500 px-4">
         <div>
@@ -55,20 +55,22 @@ export default async function StorePage() {
 
   try {
     /**
-     * ✅ ROTA CORRETA DO CARDÁPIO PÚBLICO
-     * BACKEND: storeSettings.public.routes.js
+     * ✅ ROTA CORRETA DO BACKEND
+     * storeSettings.public.routes.js
      * GET /api/public/store/:subdomain
      */
     const res = await fetch(
-      `${API_URL}/api/public/store/${slug}`,
+      `${API_URL}/api/public/store/${subdomain}`,
       { cache: "no-store" }
     );
 
-    if (res.ok) {
-      const data = await res.json();
-      store = data.store ?? null;
-      categories = data.categories ?? [];
+    if (!res.ok) {
+      throw new Error("Store não encontrada");
     }
+
+    const data = await res.json();
+    store = data.store ?? null;
+    categories = data.categories ?? [];
   } catch (err) {
     console.error("[PUBLIC STORE] erro:", err);
   }
