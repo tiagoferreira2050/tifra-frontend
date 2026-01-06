@@ -44,6 +44,14 @@ export default function CheckoutSummaryPage() {
       return;
     }
 
+    const storeId = localStorage.getItem("storeId");
+    const customerId = localStorage.getItem("customerId");
+
+    if (!storeId || !customerId) {
+      alert("Erro interno: loja ou cliente não identificados");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/orders`, {
         method: "POST",
@@ -51,36 +59,35 @@ export default function CheckoutSummaryPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // 🔥 AJUSTE DEPOIS PARA DADOS REAIS
-          customer: {
-            name: "Tiago",
-            phone: "33999196984",
-          },
-          items: [
-            {
-              name: "Produto teste",
-              quantity: 1,
-              unitPrice: subtotal,
-            },
-          ],
+          storeId,
+          customerId,
+          deliveryType: "delivery",
           paymentMethod,
           deliveryFee,
-          subtotal,
           total,
           needChange,
           changeFor: needChange ? changeFor : null,
           coupon: couponApplied ? coupon : null,
-          status: "finished",
+          items: [
+            {
+              // ⚠️ depois trocar pelo produto real do carrinho
+              productId: "UUID_DE_UM_PRODUTO_REAL",
+              quantity: 1,
+              unitPrice: subtotal,
+            },
+          ],
         }),
       });
 
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Erro backend:", errorText);
         throw new Error("Erro ao criar pedido");
       }
 
       const order = await res.json();
 
-      // ✅ agora sim o pedido existe
+      // ✅ pedido criado com sucesso
       router.push(`/checkout/success?order=${order.id}`);
     } catch (err) {
       console.error(err);
