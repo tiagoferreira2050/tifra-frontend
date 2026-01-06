@@ -2,19 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import AddressModal from "./components/AddressModal";
+import AddressModal, {
+  SavedAddress as ModalAddress,
+} from "./components/AddressModal";
 
-/* ================= TYPES ================= */
-type SavedAddress = {
+type SavedAddress = ModalAddress & {
   id: string;
-  street: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  number: string;
-  reference?: string;
-  lat: number;
-  lng: number;
   fee: number;
   eta: string;
 };
@@ -44,29 +37,12 @@ function normalizePhone(value: string) {
   return phone;
 }
 
-function getSubdomain() {
-  if (typeof window === "undefined") return "";
-  return window.location.hostname.replace(".tifra.com.br", "");
-}
-
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  /* ================= STORE ================= */
-  const [storeId, setStoreId] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadStore() {
-      const subdomain = getSubdomain();
-      const res = await fetch(
-        `${API_URL}/store/by-subdomain/${subdomain}`
-      );
-      const data = await res.json();
-      setStoreId(data.id);
-    }
-    loadStore();
-  }, [API_URL]);
+  // 🔥 depois pode vir do slug
+  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b";
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -85,13 +61,11 @@ export default function CheckoutPage() {
 
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    if (!storeId) return;
-
     const phone = normalizePhone(customerPhone);
+
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
-      setSelectedAddressId(null);
       return;
     }
 
@@ -102,33 +76,35 @@ export default function CheckoutPage() {
         const res = await fetch(
           `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
+
         const data = await res.json();
 
-        if (!data) return;
+        if (data) {
+          setCustomerId(data.id);
+          setCustomerName(data.name || "");
 
-        setCustomerId(data.id);
-        setCustomerName(data.name || "");
-
-        if (Array.isArray(data.addresses)) {
-          const loaded = data.addresses.map((addr: any) => ({
-            ...addr,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          }));
-
-          setAddresses(loaded);
-
-          if (loaded.length > 0) {
-            setSelectedAddressId(loaded[0].id);
+          if (Array.isArray(data.addresses)) {
+            setAddresses(
+              data.addresses.map((addr: any) => ({
+                ...addr,
+                fee: 4.99,
+                eta: "40 - 50 min",
+              }))
+            );
           }
+        } else {
+          setCustomerId(null);
+          setAddresses([]);
         }
+      } catch (err) {
+        console.error("Erro ao buscar cliente", err);
       } finally {
         setLoadingCustomer(false);
       }
     }
 
     fetchCustomer();
-  }, [customerPhone, storeId, API_URL]);
+  }, [customerPhone, API_URL, storeId]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -149,10 +125,35 @@ export default function CheckoutPage() {
     return data.id;
   }
 
+  /* ================= SALVAR ENDEREÇO ================= */
+  async function saveAddressToBackend(
+    addr: ModalAddress
+  ): Promise<SavedAddress> {
+    const cid = await ensureCustomer();
+
+    const res = await fetch(`${API_URL}/addresses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storeId,
+        customerId: cid,
+        ...addr,
+      }),
+    });
+
+    const data = await res.json();
+
+    return {
+      ...data,
+      fee: 4.99,
+      eta: "40 - 50 min",
+    };
+  }
+
   /* ================= CONTINUAR ================= */
   async function handleNext() {
     if (!customerPhone || !customerName) {
-      alert("Informe telefone e nome");
+      alert("Informe telefone e nome para continuar");
       return;
     }
 
@@ -186,10 +187,12 @@ export default function CheckoutPage() {
             <div>
               <label className="text-sm font-medium">Telefone *</label>
               <input
+                type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
+                placeholder="(DDD) 99999-9999"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
               {loadingCustomer && (
@@ -202,8 +205,10 @@ export default function CheckoutPage() {
             <div>
               <label className="text-sm font-medium">Nome *</label>
               <input
+                type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Seu nome"
                 className="w-full mt-1 border rounded-lg px-3 py-2"
               />
             </div>
@@ -218,7 +223,7 @@ export default function CheckoutPage() {
             {["delivery", "local", "pickup"].map((type) => (
               <label
                 key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
+                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
                   deliveryType === type
                     ? "border-green-600 bg-green-50"
                     : ""
@@ -278,6 +283,7 @@ export default function CheckoutPage() {
           )}
         </div>
 
+        {/* BOTÃO */}
         <div className="p-6 border-t">
           <button
             className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
@@ -293,29 +299,9 @@ export default function CheckoutPage() {
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
         onSave={async (addr) => {
-          const cid = await ensureCustomer();
-
-          const res = await fetch(`${API_URL}/addresses`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              storeId,
-              customerId: cid,
-              ...addr,
-            }),
-          });
-
-          const data = await res.json();
-
-          const newAddress: SavedAddress = {
-            ...data,
-            fee: 4.99,
-            eta: "40 - 50 min",
-          };
-
-          // 🔥 PONTO CRÍTICO (IGUAL AO CÓDIGO ANTIGO)
-          setAddresses((prev) => [newAddress, ...prev]);
-          setSelectedAddressId(newAddress.id);
+          const saved = await saveAddressToBackend(addr);
+          setAddresses((prev) => [saved, ...prev]);
+          setSelectedAddressId(saved.id);
         }}
       />
     </>
