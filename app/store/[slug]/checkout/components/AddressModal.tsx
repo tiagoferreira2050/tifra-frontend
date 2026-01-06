@@ -29,6 +29,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteRef =
     useRef<google.maps.places.Autocomplete | null>(null);
+  const lastCenterRef = useRef<string | null>(null);
 
   const [step, setStep] = useState<Step>("search");
   const [position, setPosition] =
@@ -46,7 +47,8 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   });
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    googleMapsApiKey:
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 
@@ -56,6 +58,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
 
     setStep("search");
     setPosition(null);
+    lastCenterRef.current = null;
     setAddress({
       street: "",
       neighborhood: "",
@@ -70,7 +73,9 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   /* ================= AUTOCOMPLETE ================= */
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
-    if (autocompleteRef.current) return;
+
+    // sempre recria ao abrir
+    autocompleteRef.current = null;
 
     const autocomplete = new google.maps.places.Autocomplete(
       inputRef.current,
@@ -117,6 +122,10 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
 
   /* ================= REVERSE GEOCODE ================= */
   async function reverseGeocode(lat: number, lng: number) {
+    const key = `${lat.toFixed(5)}-${lng.toFixed(5)}`;
+    if (lastCenterRef.current === key) return;
+
+    lastCenterRef.current = key;
     setLoadingAddress(true);
 
     const geocoder = new google.maps.Geocoder();
