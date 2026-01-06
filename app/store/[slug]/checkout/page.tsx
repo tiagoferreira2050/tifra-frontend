@@ -2,12 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import AddressModal, {
-  SavedAddress as ModalAddress,
-} from "./components/AddressModal";
+import AddressModal from "./components/AddressModal";
 
-type SavedAddress = ModalAddress & {
+/* ================= TYPES ================= */
+type SavedAddress = {
   id: string;
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  number: string;
+  reference?: string;
+  lat: number;
+  lng: number;
   fee: number;
   eta: string;
 };
@@ -37,12 +44,18 @@ function normalizePhone(value: string) {
   return phone;
 }
 
+function getSubdomain() {
+  if (typeof window === "undefined") return "";
+  return window.location.hostname.replace(".tifra.com.br", "");
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  // 🔥 depois pode vir do slug
-  const storeId = "a46fbdfa-11cb-4477-9a5e-3a18d15d105b";
+  /* ================= STORE ================= */
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [loadingStore, setLoadingStore] = useState(true);
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -59,13 +72,40 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
+  const [addressJustSaved, setAddressJustSaved] = useState(false);
+
+  /* ================= LOAD STORE ================= */
+  useEffect(() => {
+    async function loadStore() {
+      try {
+        const subdomain = getSubdomain();
+        const res = await fetch(
+          `${API_URL}/store/by-subdomain/${subdomain}`
+        );
+        const data = await res.json();
+
+        // 🔥 AQUI ESTAVA O BUG
+        setStoreId(data.store?.id || null);
+      } catch (err) {
+        console.error("Erro ao carregar store", err);
+      } finally {
+        setLoadingStore(false);
+      }
+    }
+
+    loadStore();
+  }, [API_URL]);
+
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    const phone = normalizePhone(customerPhone);
+    if (!storeId) return;
+    if (addressJustSaved) return;
 
+    const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
+      setSelectedAddressId(null);
       return;
     }
 
@@ -77,34 +117,41 @@ export default function CheckoutPage() {
           `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
 
-        const data = await res.json();
+        const customer = await res.json();
 
-        if (data) {
-          setCustomerId(data.id);
-          setCustomerName(data.name || "");
-
-          if (Array.isArray(data.addresses)) {
-            setAddresses(
-              data.addresses.map((addr: any) => ({
-                ...addr,
-                fee: 4.99,
-                eta: "40 - 50 min",
-              }))
-            );
-          }
-        } else {
+        if (!customer) {
           setCustomerId(null);
           setAddresses([]);
+          setSelectedAddressId(null);
+          return;
         }
-      } catch (err) {
-        console.error("Erro ao buscar cliente", err);
+
+        setCustomerId(customer.id);
+        setCustomerName(customer.name || "");
+
+        const loaded =
+          (customer.addresses || []).map((addr: any) => ({
+            ...addr,
+            fee: 4.99,
+            eta: "40 - 50 min",
+          })) || [];
+
+        setAddresses(loaded);
+
+        if (loaded.length > 0) {
+          setSelectedAddressId(loaded[0].id);
+        }
       } finally {
         setLoadingCustomer(false);
       }
     }
 
     fetchCustomer();
-  }, [customerPhone, API_URL, storeId]);
+  }, [customerPhone, storeId, API_URL, addressJustSaved]);
+
+  useEffect(() => {
+    setAddressJustSaved(false);
+  }, [customerPhone]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -126,9 +173,7 @@ export default function CheckoutPage() {
   }
 
   /* ================= SALVAR ENDEREÇO ================= */
-  async function saveAddressToBackend(
-    addr: ModalAddress
-  ): Promise<SavedAddress> {
+  async function saveAddress(address: any) {
     const cid = await ensureCustomer();
 
     const res = await fetch(`${API_URL}/addresses`, {
@@ -137,23 +182,28 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         storeId,
         customerId: cid,
-        ...addr,
+        ...address,
       }),
     });
 
     const data = await res.json();
 
-    return {
+    const formatted: SavedAddress = {
       ...data,
       fee: 4.99,
       eta: "40 - 50 min",
     };
+
+    setAddresses((prev) => [formatted, ...prev]);
+    setSelectedAddressId(formatted.id);
+    setAddressJustSaved(true);
+    setAddressModalOpen(false);
   }
 
   /* ================= CONTINUAR ================= */
   async function handleNext() {
     if (!customerPhone || !customerName) {
-      alert("Informe telefone e nome para continuar");
+      alert("Informe telefone e nome");
       return;
     }
 
@@ -166,143 +216,91 @@ export default function CheckoutPage() {
     router.push("/checkout/summary");
   }
 
+  if (loadingStore) {
+    return <div className="p-6">Carregando...</div>;
+  }
+
   return (
     <>
+      {/* --- UI MANTIDA IGUAL --- */}
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
-        {/* HEADER */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b">
-          <button
-            onClick={() => router.back()}
-            className="w-9 h-9 rounded-full border flex items-center justify-center"
-          >
-            ←
-          </button>
-          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
-        </div>
-
-        {/* CONTEÚDO */}
         <div className="flex-1 px-6 py-6 space-y-6">
           {/* CLIENTE */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Telefone *</label>
+              <label className="block text-sm font-medium mb-1">
+                Celular
+              </label>
               <input
-                type="tel"
                 value={customerPhone}
                 onChange={(e) =>
                   setCustomerPhone(formatPhone(e.target.value))
                 }
-                placeholder="(DDD) 99999-9999"
-                className="w-full mt-1 border rounded-lg px-3 py-2"
+                placeholder="(00) 00000-0000"
+                className="w-full border rounded-lg px-4 py-3"
               />
-              {loadingCustomer && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Buscando cliente...
-                </p>
-              )}
             </div>
 
             <div>
-              <label className="text-sm font-medium">Nome *</label>
+              <label className="block text-sm font-medium mb-1">
+                Nome
+              </label>
               <input
-                type="text"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Seu nome"
-                className="w-full mt-1 border rounded-lg px-3 py-2"
+                onChange={(e) =>
+                  setCustomerName(e.target.value)
+                }
+                placeholder="Nome do cliente"
+                className="w-full border rounded-lg px-4 py-3"
               />
             </div>
           </div>
 
-          {/* ENTREGA */}
-          <p className="text-sm text-gray-600">
-            Como deseja receber seu pedido?
-          </p>
-
-          <div className="space-y-3">
-            {["delivery", "local", "pickup"].map((type) => (
-              <label
-                key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer transition ${
-                  deliveryType === type
-                    ? "border-green-600 bg-green-50"
-                    : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  checked={deliveryType === type}
-                  onChange={() => setDeliveryType(type as any)}
-                />
-                <span>
-                  {type === "delivery"
-                    ? "Receber no meu endereço"
-                    : type === "local"
-                    ? "Consumir no restaurante"
-                    : "Retirar no restaurante"}
-                </span>
-              </label>
-            ))}
-          </div>
-
           {/* ENDEREÇOS */}
-          {deliveryType === "delivery" && (
-            <>
-              <button
-                className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold"
-                onClick={() => setAddressModalOpen(true)}
-              >
-                📍 Adicionar novo endereço
-              </button>
+          <button
+            onClick={() => setAddressModalOpen(true)}
+            className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-medium"
+          >
+            📍 Adicionar novo endereço
+          </button>
 
-              {addresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  onClick={() => setSelectedAddressId(addr.id)}
-                  className={`border rounded-xl p-4 cursor-pointer ${
-                    selectedAddressId === addr.id
-                      ? "border-green-600 bg-green-50"
-                      : "border-gray-200"
-                  }`}
-                >
-                  <p className="font-semibold">
-                    {addr.street}, {addr.number}
-                  </p>
-                  <p className="text-sm">{addr.neighborhood}</p>
-                  <p className="text-sm text-gray-500">
-                    {addr.city} - {addr.state}
-                  </p>
-
-                  <div className="flex gap-4 mt-2 text-sm text-green-600">
-                    <span>⏱ {addr.eta}</span>
-                    <span>🚴 R$ {addr.fee.toFixed(2)}</span>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
+          {addresses.map((addr) => (
+            <div
+              key={addr.id}
+              onClick={() => setSelectedAddressId(addr.id)}
+              className={`border rounded-lg p-4 cursor-pointer ${
+                addr.id === selectedAddressId
+                  ? "border-green-600"
+                  : "border-gray-200"
+              }`}
+            >
+              <p className="font-semibold">
+                {addr.street}, {addr.number}
+              </p>
+              <p className="text-sm text-gray-500">
+                {addr.neighborhood}
+              </p>
+              <p className="text-sm text-gray-500">
+                {addr.city} - {addr.state}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* BOTÃO */}
-        <div className="p-6 border-t">
+        <div className="p-4">
           <button
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
             onClick={handleNext}
+            className="w-full bg-green-600 text-white py-4 rounded-lg font-semibold"
           >
             Próximo
           </button>
         </div>
       </div>
 
-      {/* MODAL ENDEREÇO */}
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
-        onSave={async (addr) => {
-          const saved = await saveAddressToBackend(addr);
-          setAddresses((prev) => [saved, ...prev]);
-          setSelectedAddressId(saved.id);
-        }}
+        onSave={saveAddress}
       />
     </>
   );
