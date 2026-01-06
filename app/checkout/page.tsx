@@ -36,6 +36,14 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
+function normalizePhone(value: string) {
+  let phone = value.replace(/\D/g, "");
+  if (phone.startsWith("55") && phone.length > 11) {
+    phone = phone.slice(2);
+  }
+  return phone;
+}
+
 function getSubdomain() {
   if (typeof window === "undefined") return "";
   const host = window.location.hostname;
@@ -55,6 +63,7 @@ export default function CheckoutPage() {
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   /* ================= ENTREGA ================= */
   const [deliveryType, setDeliveryType] =
@@ -72,7 +81,7 @@ export default function CheckoutPage() {
         const subdomain = getSubdomain();
 
         const res = await fetch(
-          `${API_URL}/api/store/${subdomain}`,
+          `${API_URL}/api/store/by-subdomain/${subdomain}`,
           { cache: "no-store" }
         );
 
@@ -80,7 +89,7 @@ export default function CheckoutPage() {
 
         const data = await res.json();
 
-        // backend retorna { store: {...} }
+        // 🔥 backend retorna { store: {...} }
         setStoreId(data.store.id);
       } catch (err) {
         console.error("[CHECKOUT][LOAD STORE]", err);
@@ -125,6 +134,7 @@ export default function CheckoutPage() {
       return;
     }
 
+    // 🔥 mantém o subdomínio automaticamente
     router.push("/checkout/summary");
   }
 
@@ -185,12 +195,19 @@ export default function CheckoutPage() {
           </h1>
 
           <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Como deseja receber seu pedido?
+            </p>
+
             {[
               { id: "delivery", label: "Receber no meu endereço" },
               { id: "local", label: "Consumir no restaurante" },
               { id: "pickup", label: "Retirar no restaurante" },
             ].map((opt) => (
-              <label key={opt.id} className="flex items-center gap-3 text-sm">
+              <label
+                key={opt.id}
+                className="flex items-center gap-3 text-sm"
+              >
                 <input
                   type="radio"
                   checked={deliveryType === opt.id}
@@ -217,13 +234,21 @@ export default function CheckoutPage() {
                 📍 Adicionar novo endereço
               </button>
 
+              {addresses.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhum endereço cadastrado ainda
+                </p>
+              )}
+
               {addresses.map((addr) => {
                 const selected = addr.id === selectedAddressId;
 
                 return (
                   <div
                     key={addr.id}
-                    onClick={() => setSelectedAddressId(addr.id)}
+                    onClick={() =>
+                      setSelectedAddressId(addr.id)
+                    }
                     className={`border rounded-lg p-4 cursor-pointer ${
                       selected
                         ? "border-green-600"
@@ -239,6 +264,13 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-500">
                       {addr.city} - {addr.state}
                     </p>
+
+                    {selected && (
+                      <div className="flex gap-4 mt-2 text-sm text-green-600">
+                        <span>⏱ {addr.eta}</span>
+                        <span>🚚 R$ {addr.fee.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
