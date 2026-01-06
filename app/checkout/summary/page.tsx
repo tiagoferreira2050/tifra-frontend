@@ -13,9 +13,8 @@ export default function CheckoutSummaryPage() {
 
   const {
     items,
-    total,
-    checkoutData,
     storeId,
+    checkoutData,
     clearCart,
   } = useCart();
 
@@ -28,7 +27,7 @@ export default function CheckoutSummaryPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Seu carrinho está vazio

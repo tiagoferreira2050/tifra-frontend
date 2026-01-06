@@ -27,6 +27,7 @@ export default async function StorePage({ params }: StorePageProps) {
   let categories: any[] = [];
 
   try {
+    // 🔥 rota pública unificada da loja
     const res = await fetch(
       `${API_URL}/api/public/store/${subdomain}`,
       { cache: "no-store" }
@@ -53,7 +54,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   return (
     <CartProvider>
-      {/* 🔥 REGISTRA A LOJA NO CARRINHO */}
+      {/* 🔥 registra storeId no client (localStorage / contexto) */}
       <StoreClientBootstrap storeId={store.id} />
 
       <div className="bg-[#FFF3EE] min-h-screen relative">
@@ -127,7 +128,7 @@ export default async function StorePage({ params }: StorePageProps) {
                 </div>
               </div>
 
-              {/* SACOLA */}
+              {/* SACOLA (desktop) */}
               <div className="hidden sm:block">
                 <button className="bg-purple-600 text-white px-5 py-2 rounded-xl font-medium">
                   Ver sacola
@@ -144,6 +145,7 @@ export default async function StorePage({ params }: StorePageProps) {
           <CategoryList categories={categories} />
         </div>
 
+        {/* ================= MINI CART ================= */}
         <MiniCartBar />
       </div>
     </CartProvider>
