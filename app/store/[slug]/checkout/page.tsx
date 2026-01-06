@@ -44,9 +44,18 @@ function normalizePhone(value: string) {
   return phone;
 }
 
+function getSubdomain() {
+  if (typeof window === "undefined") return "";
+  const host = window.location.hostname;
+  return host.replace(".tifra.com.br", "");
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
+  /* ================= STORE ================= */
+  const [storeId, setStoreId] = useState<string | null>(null);
 
   /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
@@ -63,10 +72,25 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
+  /* ================= LOAD STORE ================= */
+  useEffect(() => {
+    async function loadStore() {
+      const subdomain = getSubdomain();
+      const res = await fetch(
+        `${API_URL}/store/by-subdomain/${subdomain}`
+      );
+      const data = await res.json();
+      setStoreId(data.id);
+    }
+
+    loadStore();
+  }, [API_URL]);
+
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
-    const phone = normalizePhone(customerPhone);
+    if (!storeId) return;
 
+    const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
@@ -78,11 +102,10 @@ export default function CheckoutPage() {
         setLoadingCustomer(true);
 
         const res = await fetch(
-          `${API_URL}/customers/by-phone?phone=${phone}`
+          `${API_URL}/customers/by-phone?storeId=${storeId}&phone=${phone}`
         );
 
         const customer = await res.json();
-
         if (!customer) {
           setCustomerId(null);
           setAddresses([]);
@@ -92,24 +115,20 @@ export default function CheckoutPage() {
         setCustomerId(customer.id);
         setCustomerName(customer.name || "");
 
-        if (Array.isArray(customer.addresses)) {
-          setAddresses(
-            customer.addresses.map((addr: any) => ({
-              ...addr,
-              fee: 4.99,
-              eta: "40 - 50 min",
-            }))
-          );
-        }
-      } catch (err) {
-        console.error("Erro ao buscar cliente", err);
+        setAddresses(
+          (customer.addresses || []).map((addr: any) => ({
+            ...addr,
+            fee: 4.99,
+            eta: "40 - 50 min",
+          }))
+        );
       } finally {
         setLoadingCustomer(false);
       }
     }
 
     fetchCustomer();
-  }, [customerPhone, API_URL]);
+  }, [customerPhone, storeId, API_URL]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -119,6 +138,7 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        storeId,
         name: customerName,
         phone: normalizePhone(customerPhone),
       }),
@@ -137,6 +157,7 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        storeId,
         customerId: cid,
         ...address,
       }),
@@ -176,91 +197,30 @@ export default function CheckoutPage() {
   return (
     <>
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
-        {/* HEADER */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b">
-          <button
-            onClick={() => router.back()}
-            className="w-9 h-9 rounded-full border flex items-center justify-center"
-          >
-            ←
-          </button>
-          <h1 className="text-lg font-semibold">Endereço de entrega</h1>
-        </div>
-
-        {/* CONTEÚDO */}
         <div className="flex-1 px-6 py-6 space-y-6">
-          {/* CLIENTE */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Telefone *</label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) =>
-                  setCustomerPhone(formatPhone(e.target.value))
-                }
-                className="w-full mt-1 border rounded-lg px-3 py-2"
-              />
-              {loadingCustomer && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Buscando cliente…
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Nome *</label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) =>
-                  setCustomerName(e.target.value)
-                }
-                className="w-full mt-1 border rounded-lg px-3 py-2"
-              />
-            </div>
+          <div>
+            <label>Telefone *</label>
+            <input
+              value={customerPhone}
+              onChange={(e) =>
+                setCustomerPhone(formatPhone(e.target.value))
+              }
+            />
           </div>
 
-          {/* ENTREGA */}
-          <p className="text-sm text-gray-600">
-            Como deseja receber seu pedido?
-          </p>
-
-          <div className="space-y-3">
-            {["delivery", "local", "pickup"].map((type) => (
-              <label
-                key={type}
-                className={`flex items-center gap-3 border rounded-lg p-4 cursor-pointer ${
-                  deliveryType === type
-                    ? "border-green-600 bg-green-50"
-                    : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  checked={deliveryType === type}
-                  onChange={() =>
-                    setDeliveryType(type as any)
-                  }
-                />
-                <span>
-                  {type === "delivery"
-                    ? "Receber no meu endereço"
-                    : type === "local"
-                    ? "Consumir no restaurante"
-                    : "Retirar no restaurante"}
-                </span>
-              </label>
-            ))}
+          <div>
+            <label>Nome *</label>
+            <input
+              value={customerName}
+              onChange={(e) =>
+                setCustomerName(e.target.value)
+              }
+            />
           </div>
 
-          {/* ENDEREÇOS */}
           {deliveryType === "delivery" && (
             <>
-              <button
-                className="w-full border border-green-600 text-green-600 py-3 rounded-xl font-semibold"
-                onClick={() => setAddressModalOpen(true)}
-              >
+              <button onClick={() => setAddressModalOpen(true)}>
                 📍 Adicionar novo endereço
               </button>
 
@@ -270,39 +230,22 @@ export default function CheckoutPage() {
                   onClick={() =>
                     setSelectedAddressId(addr.id)
                   }
-                  className={`border rounded-xl p-4 cursor-pointer ${
-                    selectedAddressId === addr.id
-                      ? "border-green-600 bg-green-50"
-                      : "border-gray-200"
-                  }`}
                 >
-                  <p className="font-semibold">
+                  <strong>
                     {addr.street}, {addr.number}
-                  </p>
-                  <p className="text-sm">
-                    {addr.neighborhood}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {addr.city} - {addr.state}
-                  </p>
+                  </strong>
+                  <div>
+                    {addr.neighborhood} – {addr.city}/{addr.state}
+                  </div>
                 </div>
               ))}
             </>
           )}
         </div>
 
-        {/* BOTÃO */}
-        <div className="p-6 border-t">
-          <button
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
-            onClick={handleNext}
-          >
-            Próximo
-          </button>
-        </div>
+        <button onClick={handleNext}>Próximo</button>
       </div>
 
-      {/* MODAL */}
       <AddressModal
         open={addressModalOpen}
         onClose={() => setAddressModalOpen(false)}
