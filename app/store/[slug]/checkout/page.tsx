@@ -72,6 +72,9 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] =
     useState<string | null>(null);
 
+  // 🔥 FLAG CRÍTICO PARA NÃO PERDER ENDEREÇO RECÉM SALVO
+  const [addressJustSaved, setAddressJustSaved] = useState(false);
+
   /* ================= LOAD STORE ================= */
   useEffect(() => {
     async function loadStore() {
@@ -94,6 +97,7 @@ export default function CheckoutPage() {
   /* ================= BUSCAR CLIENTE ================= */
   useEffect(() => {
     if (!storeId) return;
+    if (addressJustSaved) return; // 🔥 NÃO SOBRESCREVE ENDEREÇO NOVO
 
     const phone = normalizePhone(customerPhone);
     if (phone.length < 10) {
@@ -139,7 +143,12 @@ export default function CheckoutPage() {
     }
 
     fetchCustomer();
-  }, [customerPhone, storeId, API_URL]);
+  }, [customerPhone, storeId, API_URL, addressJustSaved]);
+
+  /* ================= RESET FLAG AO TROCAR TELEFONE ================= */
+  useEffect(() => {
+    setAddressJustSaved(false);
+  }, [customerPhone]);
 
   /* ================= GARANTIR CLIENTE ================= */
   async function ensureCustomer() {
@@ -189,6 +198,7 @@ export default function CheckoutPage() {
     });
 
     setSelectedAddressId(formatted.id);
+    setAddressJustSaved(true); // 🔥 ESSENCIAL
     setAddressModalOpen(false);
   }
 
