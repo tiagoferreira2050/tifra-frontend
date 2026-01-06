@@ -43,22 +43,33 @@ export default async function StorePage({ params }: StorePageProps) {
 
   try {
     /**
-     * ✅ ROTA REAL DO BACKEND
-     * storeSettings.public.routes.js
-     * GET /public/store/:subdomain
+     * ✅ ROTA CORRETA (CONFIRMADA)
+     * GET /api/store/by-subdomain/:subdomain
      */
-    const res = await fetch(
-      `${API_URL}/public/store/${subdomain}`,
+    const storeRes = await fetch(
+      `${API_URL}/api/store/by-subdomain/${subdomain}`,
       { cache: "no-store" }
     );
 
-    if (!res.ok) {
+    if (!storeRes.ok) {
       throw new Error("Store não encontrada");
     }
 
-    const data = await res.json();
-    store = data.store ?? null;
-    categories = data.categories ?? [];
+    store = await storeRes.json();
+
+    /**
+     * 🔁 MENU PÚBLICO CONTINUA IGUAL
+     * (usa store.id)
+     */
+    const menuRes = await fetch(
+      `${API_URL}/api/public/menu/${store.id}`,
+      { cache: "no-store" }
+    );
+
+    if (menuRes.ok) {
+      const menuData = await menuRes.json();
+      categories = menuData.categories ?? [];
+    }
   } catch (err) {
     console.error("[PUBLIC STORE] erro:", err);
   }
