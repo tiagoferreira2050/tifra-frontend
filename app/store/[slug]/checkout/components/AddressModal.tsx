@@ -47,8 +47,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   });
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey:
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 
@@ -68,19 +67,23 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
       complement: "",
       reference: "",
     });
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   }, [open]);
 
-  /* ================= AUTOCOMPLETE ================= */
+  /* ================= AUTOCOMPLETE (ESTÁVEL) ================= */
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
-
-    autocompleteRef.current = null;
+    if (autocompleteRef.current) return;
 
     const autocomplete = new google.maps.places.Autocomplete(
       inputRef.current,
       {
         types: ["address"],
         componentRestrictions: { country: "br" },
+        fields: ["geometry", "address_components"],
       }
     );
 
@@ -212,7 +215,6 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 : address.street || "Ajuste o local no mapa"}
             </h3>
 
-            {/* MAP WRAPPER */}
             <div className="relative">
               <GoogleMap
                 center={position}
@@ -231,7 +233,6 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 }}
               />
 
-              {/* PIN CENTRAL FIXO */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="text-red-600 text-3xl drop-shadow">
                   📍

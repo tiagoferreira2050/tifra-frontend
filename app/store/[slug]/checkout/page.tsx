@@ -99,6 +99,7 @@ export default function CheckoutPage() {
     if (phone.length < 10) {
       setCustomerId(null);
       setAddresses([]);
+      setSelectedAddressId(null);
       return;
     }
 
@@ -113,18 +114,26 @@ export default function CheckoutPage() {
         if (!customer) {
           setCustomerId(null);
           setAddresses([]);
+          setSelectedAddressId(null);
           return;
         }
 
         setCustomerId(customer.id);
         setCustomerName(customer.name || "");
-        setAddresses(
+
+        const loadedAddresses =
           (customer.addresses || []).map((addr: any) => ({
             ...addr,
             fee: 4.99,
             eta: "40 - 50 min",
-          }))
-        );
+          })) || [];
+
+        setAddresses(loadedAddresses);
+
+        // se tiver endereço, já seleciona o primeiro
+        if (loadedAddresses.length > 0) {
+          setSelectedAddressId(loadedAddresses[0].id);
+        }
       } finally {
         setLoadingCustomer(false);
       }
@@ -152,45 +161,37 @@ export default function CheckoutPage() {
     return data.id;
   }
 
+  /* ================= SALVAR ENDEREÇO ================= */
+  async function saveAddress(address: any) {
+    const cid = await ensureCustomer();
 
- /* ================= SALVAR ENDEREÇO ================= */
-async function saveAddress(address: any) {
-  const cid = await ensureCustomer();
+    const res = await fetch(`${API_URL}/addresses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storeId,
+        customerId: cid,
+        ...address,
+      }),
+    });
 
-  const res = await fetch(`${API_URL}/addresses`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      storeId,
-      customerId: cid,
-      ...address,
-    }),
-  });
+    const data = await res.json();
 
-  const data = await res.json();
+    const formatted: SavedAddress = {
+      ...data,
+      fee: 4.99,
+      eta: "40 - 50 min",
+    };
 
-  const formatted: SavedAddress = {
-    ...data,
-    fee: 4.99,
-    eta: "40 - 50 min",
-  };
+    setAddresses((prev) => {
+      const exists = prev.some((a) => a.id === formatted.id);
+      if (exists) return prev;
+      return [formatted, ...prev];
+    });
 
-  // 🔥 GARANTE QUE APAREÇA IMEDIATAMENTE NA LISTA
-  setAddresses((prev) => {
-    // evita duplicar caso backend retorne em fetch futuro
-    const exists = prev.some((a) => a.id === formatted.id);
-    if (exists) return prev;
-
-    return [formatted, ...prev];
-  });
-
-  // 🔥 JÁ DEIXA SELECIONADO (UX IGUAL AO PRINT)
-  setSelectedAddressId(formatted.id);
-
-  // 🔥 FECHA MODAL COM SEGURANÇA
-  setAddressModalOpen(false);
-}
-
+    setSelectedAddressId(formatted.id);
+    setAddressModalOpen(false);
+  }
 
   /* ================= CONTINUAR ================= */
   async function handleNext() {
@@ -215,9 +216,8 @@ async function saveAddress(address: any) {
   return (
     <>
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
-        {/* CONTEÚDO */}
         <div className="flex-1 px-6 py-6 space-y-6">
-          {/* ================= CLIENTE ================= */}
+          {/* CLIENTE */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -253,12 +253,11 @@ async function saveAddress(address: any) {
             </div>
           </div>
 
-          {/* ================= ENTREGA ================= */}
+          {/* ENTREGA */}
           <h1 className="text-lg font-semibold text-center">
             Endereço de entrega
           </h1>
 
-          {/* TIPO ENTREGA */}
           <div className="space-y-3">
             <p className="text-sm text-gray-500">
               Como deseja receber seu pedido?
@@ -276,9 +275,12 @@ async function saveAddress(address: any) {
                 <input
                   type="radio"
                   checked={deliveryType === opt.id}
-                  onChange={() =>
-                    setDeliveryType(opt.id as any)
-                  }
+                  onChange={() => {
+                    setDeliveryType(opt.id as any);
+                    if (opt.id !== "delivery") {
+                      setSelectedAddressId(null);
+                    }
+                  }}
                   className="accent-green-600"
                 />
                 {opt.label}
@@ -348,7 +350,6 @@ async function saveAddress(address: any) {
           )}
         </div>
 
-        {/* BOTÃO FIXO */}
         <div className="p-4">
           <button
             onClick={handleNext}
