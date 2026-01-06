@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/src/contexts/CartContext";
-
 
 interface Props {
   open: boolean;
@@ -20,9 +19,14 @@ type CartComplement = {
 
 export default function CartModal({ open, onClose }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { items, updateQty, removeItem, total } = useCart();
 
   if (!open) return null;
+
+  // 🔥 pega o subdomínio/loja da URL atual
+  // ex: /acaibrasil → acaibrasil
+  const storeSlug = pathname.split("/").filter(Boolean)[0];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -159,7 +163,9 @@ export default function CartModal({ open, onClose }: Props) {
             <button
               onClick={() => {
                 onClose();
-                router.push("/checkout");
+                if (storeSlug) {
+                  router.push(`/${storeSlug}/checkout`);
+                }
               }}
               className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
             >
