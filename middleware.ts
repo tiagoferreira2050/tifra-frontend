@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 
 const RESERVED_SUBDOMAINS = ["app", "api", "admin", "www"];
 
-// 🔥 ROTAS GLOBAIS QUE NÃO DEVEM VIRAR /store
+// 🔥 ROTAS GLOBAIS (NUNCA VIRAM /store)
 const GLOBAL_ROUTES = [
   "/checkout",
+  "/checkout/summary",
   "/login",
   "/signup",
   "/panel",
@@ -17,7 +18,7 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("tifra_token")?.value;
 
   // ===============================
-  // 1️⃣ IGNORAR ROTAS INTERNAS / ARQUIVOS
+  // 1️⃣ IGNORAR NEXT / API / ARQUIVOS
   // ===============================
   if (
     pathname.startsWith("/_next") ||
@@ -31,7 +32,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 1.1️⃣ IGNORAR ROTAS GLOBAIS (checkout etc)
+  // 2️⃣ ROTAS GLOBAIS (checkout etc)
   // ===============================
   if (GLOBAL_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
@@ -41,10 +42,9 @@ export function middleware(req: NextRequest) {
   const mainDomain = "tifra.com.br";
 
   // ===============================
-  // 2️⃣ PAINEL — app.tifra.com.br
+  // 3️⃣ PAINEL — app.tifra.com.br
   // ===============================
   if (cleanHost === `app.${mainDomain}`) {
-    const isPanelRoute = pathname.startsWith("/panel");
     const isPublicRoute =
       pathname === "/login" || pathname === "/signup";
 
@@ -52,7 +52,7 @@ export function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
-    if (isPanelRoute && !token) {
+    if (pathname.startsWith("/panel") && !token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
@@ -60,7 +60,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 3️⃣ DOMÍNIO RAIZ
+  // 4️⃣ DOMÍNIO RAIZ
   // ===============================
   if (
     cleanHost === mainDomain ||
@@ -70,7 +70,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ===============================
-  // 4️⃣ SUBDOMÍNIO → LOJA PÚBLICA
+  // 5️⃣ SUBDOMÍNIO → STORE
   // ===============================
   const subdomain = cleanHost.replace(`.${mainDomain}`, "");
 
@@ -81,7 +81,7 @@ export function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
 
-  // 🔥 rewrite APENAS para rotas da loja
+  // 🔥 SOMENTE ROTAS DA LOJA VIRAM /store
   url.pathname =
     pathname === "/"
       ? `/store/${subdomain}`
