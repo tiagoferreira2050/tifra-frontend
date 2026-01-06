@@ -1,4 +1,4 @@
-// app/store/[slug]/[[...path]]/layout.tsx
+// app/(store)/store/[[...path]]/layout.tsx
 
 import type { Metadata } from "next";
 
@@ -13,18 +13,21 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 
-        Layout público da loja
-        Header visual fica no page.tsx
-        Aqui é só estrutura global
-      */}
-      <main>{children}</main>
+    <>
+      {/*
+        ⚠️ MUITO IMPORTANTE
+        Este layout NÃO deve conter:
+        - CartProvider
+        - CartModal
+        - MiniCartBar
+        - Header fixo
+        - Footer fixo
+        - Nenhum estado ou UI persistente
 
-      {/* 
-        Footer futuro (opcional)
-        Ex: direitos, powered by, etc
+        Ele precisa ser NEUTRO para permitir
+        navegação para /checkout, /login, etc
       */}
-    </div>
+      {children}
+    </>
   );
 }
