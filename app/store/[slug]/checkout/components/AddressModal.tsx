@@ -74,7 +74,6 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
 
-    // sempre recria ao abrir
     autocompleteRef.current = null;
 
     const autocomplete = new google.maps.places.Autocomplete(
@@ -213,22 +212,32 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 : address.street || "Ajuste o local no mapa"}
             </h3>
 
-            <GoogleMap
-              center={position}
-              zoom={17}
-              mapContainerStyle={{
-                width: "100%",
-                height: "300px",
-                borderRadius: "12px",
-              }}
-              onLoad={(map) => (mapRef.current = map)}
-              onIdle={() => {
-                if (!mapRef.current) return;
-                const c = mapRef.current.getCenter();
-                if (!c) return;
-                reverseGeocode(c.lat(), c.lng());
-              }}
-            />
+            {/* MAP WRAPPER */}
+            <div className="relative">
+              <GoogleMap
+                center={position}
+                zoom={17}
+                mapContainerStyle={{
+                  width: "100%",
+                  height: "300px",
+                  borderRadius: "12px",
+                }}
+                onLoad={(map) => (mapRef.current = map)}
+                onIdle={() => {
+                  if (!mapRef.current) return;
+                  const c = mapRef.current.getCenter();
+                  if (!c) return;
+                  reverseGeocode(c.lat(), c.lng());
+                }}
+              />
+
+              {/* PIN CENTRAL FIXO */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="text-red-600 text-3xl drop-shadow">
+                  📍
+                </div>
+              </div>
+            </div>
 
             <button
               onClick={() => setStep("form")}

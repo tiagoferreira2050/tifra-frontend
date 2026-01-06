@@ -203,6 +203,43 @@ export default function CheckoutPage() {
       <div className="max-w-xl mx-auto min-h-screen flex flex-col bg-white">
         {/* CONTEÚDO */}
         <div className="flex-1 px-6 py-6 space-y-6">
+          {/* ================= CLIENTE ================= */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Celular
+              </label>
+              <input
+                value={customerPhone}
+                onChange={(e) =>
+                  setCustomerPhone(formatPhone(e.target.value))
+                }
+                placeholder="(00) 00000-0000"
+                className="w-full border rounded-lg px-4 py-3"
+              />
+              {loadingCustomer && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Buscando cliente…
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Nome
+              </label>
+              <input
+                value={customerName}
+                onChange={(e) =>
+                  setCustomerName(e.target.value)
+                }
+                placeholder="Nome do cliente"
+                className="w-full border rounded-lg px-4 py-3"
+              />
+            </div>
+          </div>
+
+          {/* ================= ENTREGA ================= */}
           <h1 className="text-lg font-semibold text-center">
             Endereço de entrega
           </h1>
@@ -277,7 +314,9 @@ export default function CheckoutPage() {
 
                         <div className="flex gap-4 mt-2 text-sm text-green-600">
                           <span>⏱ {addr.eta}</span>
-                          <span>🚚 R$ {addr.fee.toFixed(2)}</span>
+                          <span>
+                            🚚 R$ {addr.fee.toFixed(2)}
+                          </span>
                         </div>
                       </div>
 
