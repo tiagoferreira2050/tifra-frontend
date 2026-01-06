@@ -25,17 +25,21 @@ export default async function StorePage({ params }: StorePageProps) {
   let categories: any[] = [];
 
   try {
+    // 🔥 BUSCA STORE PELO SUBDOMÍNIO (UMA LOJA APENAS)
     const storeRes = await fetch(
       `${API_URL}/api/store/by-subdomain/${subdomain}`,
       { cache: "no-store" }
     );
-    if (!storeRes.ok) throw new Error();
+
+    if (!storeRes.ok) throw new Error("Store não encontrada");
     store = await storeRes.json();
 
+    // 🔥 BUSCA CARDÁPIO PELO ID DA STORE
     const menuRes = await fetch(
       `${API_URL}/api/public/menu/${store.id}`,
       { cache: "no-store" }
     );
+
     if (menuRes.ok) {
       const menuData = await menuRes.json();
       categories = menuData.categories ?? [];
@@ -101,7 +105,7 @@ export default async function StorePage({ params }: StorePageProps) {
                 </div>
               </div>
 
-              {/* BOTÃO SACOLA (visual apenas, MiniCartBar continua abaixo) */}
+              {/* BOTÃO SACOLA (visual) */}
               <div className="hidden sm:block">
                 <button className="bg-purple-600 text-white px-5 py-2 rounded-xl font-medium">
                   Ver sacola
