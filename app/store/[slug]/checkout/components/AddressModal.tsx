@@ -29,6 +29,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteRef =
     useRef<google.maps.places.Autocomplete | null>(null);
+  const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const lastCenterRef = useRef<string | null>(null);
 
   const [step, setStep] = useState<Step>("search");
@@ -47,7 +48,8 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   });
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey:
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 
@@ -58,6 +60,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
     setStep("search");
     setPosition(null);
     lastCenterRef.current = null;
+
     setAddress({
       street: "",
       neighborhood: "",
@@ -68,14 +71,19 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
       reference: "",
     });
 
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
+    // limpa autocomplete antigo
+    if (listenerRef.current) {
+      listenerRef.current.remove();
+      listenerRef.current = null;
+    }
+
+    autocompleteRef.current = null;
   }, [open]);
 
-  /* ================= AUTOCOMPLETE (ESTÁVEL) ================= */
+  /* ================= AUTOCOMPLETE (ROBUSTO) ================= */
   useEffect(() => {
     if (!open || !isLoaded || !inputRef.current) return;
+
     if (autocompleteRef.current) return;
 
     const autocomplete = new google.maps.places.Autocomplete(
@@ -87,19 +95,23 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
       }
     );
 
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (!place.geometry?.location) return;
+    const listener = autocomplete.addListener(
+      "place_changed",
+      () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry?.location) return;
 
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
 
-      setPosition({ lat, lng });
-      fillFromComponents(place.address_components || []);
-      setStep("map");
-    });
+        setPosition({ lat, lng });
+        fillFromComponents(place.address_components || []);
+        setStep("map");
+      }
+    );
 
     autocompleteRef.current = autocomplete;
+    listenerRef.current = listener;
   }, [open, isLoaded]);
 
   /* ================= GEOLOCALIZAÇÃO ================= */
@@ -145,12 +157,16 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
   function fillFromComponents(
     components: google.maps.GeocoderAddressComponent[]
   ) {
-    const get = (t: string, short = false) =>
-      components.find((c) => c.types.includes(t))
+    const get = (t: string, short = false) => {
+      const comp = components.find((c) =>
+        c.types.includes(t)
+      );
+      return comp
         ? short
-          ? components.find((c) => c.types.includes(t))?.short_name
-          : components.find((c) => c.types.includes(t))?.long_name
+          ? comp.short_name
+          : comp.long_name
         : "";
+    };
 
     setAddress((prev) => ({
       ...prev,
@@ -160,7 +176,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
         get("neighborhood") ||
         get("political"),
       city: get("administrative_area_level_2"),
-      state: get("administrative_area_level_1", true) || "",
+      state: get("administrative_area_level_1", true),
     }));
   }
 
@@ -194,6 +210,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
             <input
               ref={inputRef}
               placeholder="Para onde?"
+              disabled={!isLoaded}
               className="w-full border rounded-lg py-3 px-4"
             />
           </>
@@ -233,6 +250,7 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 }}
               />
 
+              {/* PIN FIXO */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="text-red-600 text-3xl drop-shadow">
                   📍
@@ -277,7 +295,10 @@ export default function AddressModal({ open, onClose, onSave }: Props) {
                 className="w-1/2 border rounded px-3 py-2"
                 value={address.number}
                 onChange={(e) =>
-                  setAddress({ ...address, number: e.target.value })
+                  setAddress({
+                    ...address,
+                    number: e.target.value,
+                  })
                 }
               />
               <input
