@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { CategoryList } from "./components/CategoryList";
-import { CartProvider } from "../../../../src/contexts/CartContext";
+import { CartProvider } from "@/src/contexts/CartContext";
 import MiniCartBar from "./components/MiniCartBar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;

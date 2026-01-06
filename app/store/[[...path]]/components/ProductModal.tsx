@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { useCart } from "../../../../../src/contexts/CartContext";
+import { useCart } from "@/src/contexts/CartContext";
+
 
 
 /* =======================

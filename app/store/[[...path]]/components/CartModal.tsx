@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCart } from "../../../../../src/contexts/CartContext";
+import { useCart } from "@/src/contexts/CartContext";
+
 
 interface Props {
   open: boolean;
