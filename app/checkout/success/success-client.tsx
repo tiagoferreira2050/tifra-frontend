@@ -1,40 +1,61 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function CheckoutSuccessClient() {
+export default function SuccessClient() {
   const params = useSearchParams();
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
   const orderId = params.get("order");
 
-  if (!orderId) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    fetch(`${API_URL}/api/public/order-success/${orderId}`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, [orderId, API_URL]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Pedido não encontrado
+      <div className="min-h-screen flex items-center justify-center">
+        Carregando pedido…
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Erro ao carregar pedido
       </div>
     );
   }
 
   function openWhatsapp() {
-    // ⚠️ aqui você pode usar o telefone fixo da loja
-    // ou depois puxar isso de settings públicos
-    const phone = "5533999999999";
-
     const message = `
-🧾 *PEDIDO REALIZADO COM SUCESSO*
+🧾 *NOVO PEDIDO RECEBIDO*
 
-📦 Número do pedido:
-${orderId}
+👤 Cliente: ${data.customerName}
+📦 Pedido: ${data.orderId}
 
-✅ O pedido já chegou para a loja.
-Em breve ele será confirmado.
+${data.items.map((i: any) => `• ${i.qty}x ${i.name}`).join("\n")}
 
-Obrigado! 🙌
+${data.address ? `📍 Endereço: ${data.address}` : "🏪 Retirada no local"}
+
+💰 Total: R$ ${data.total.toFixed(2)}
+💳 Pagamento: ${data.paymentMethod}
     `;
 
     window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+      `https://wa.me/${data.storeWhatsapp}?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   }
@@ -49,31 +70,23 @@ Obrigado! 🙌
         Pedido realizado com sucesso!
       </h1>
 
-      <p className="text-gray-600 mb-4">
-        Seu pedido foi enviado para a loja.
-      </p>
-
-      <p className="text-sm text-gray-500 mb-6">
-        Número do pedido:
-        <br />
-        <span className="font-semibold break-all">
-          {orderId}
-        </span>
+      <p className="text-gray-600 mb-6">
+        Seu pedido já chegou na loja.
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
-          onClick={() => router.push("/")}
+          onClick={openWhatsapp}
           className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold"
         >
-          Voltar ao cardápio
+          📲 Confirmar no WhatsApp da loja
         </button>
 
         <button
-          onClick={openWhatsapp}
-          className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-semibold"
+          onClick={() => router.push("/")}
+          className="w-full border py-3 rounded-lg"
         >
-          📲 Confirmar no WhatsApp
+          Voltar ao cardápio
         </button>
       </div>
     </div>
