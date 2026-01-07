@@ -21,31 +21,35 @@ export default function SuccessClient() {
     router.push("/");
   }
 
-  function handleWhatsapp() {
+  async function handleWhatsapp() {
     if (!API_URL) {
       alert("API não configurada");
       return;
     }
 
-    /**
-     * 🔥 backend já devolve a URL pronta:
-     * { whatsappUrl: "https://wa.me/55....?text=..." }
-     */
-    fetch(`${API_URL}/api/public/orders/${orderId}/whatsapp`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Erro ao gerar WhatsApp");
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.whatsappUrl) {
-          window.open(data.whatsappUrl, "_blank");
-        } else {
-          alert("WhatsApp não configurado para esta loja");
-        }
-      })
-      .catch(() => {
-        alert("Erro ao abrir WhatsApp");
-      });
+    try {
+      const res = await fetch(
+        `${API_URL}/api/public/orders/${orderId}/whatsapp`
+      );
+
+      if (!res.ok) {
+        throw new Error("Erro ao gerar WhatsApp");
+      }
+
+      const data = await res.json();
+
+      if (!data?.whatsapp || !data?.messageEncoded) {
+        alert("WhatsApp não configurado para esta loja");
+        return;
+      }
+
+      const whatsappUrl = `https://wa.me/${data.whatsapp}?text=${data.messageEncoded}`;
+
+      window.open(whatsappUrl, "_blank");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao abrir WhatsApp");
+    }
   }
 
   return (
@@ -66,9 +70,7 @@ export default function SuccessClient() {
       <p className="text-sm text-gray-500 mb-6">
         Número do pedido:
         <br />
-        <span className="font-semibold break-all">
-          {orderId}
-        </span>
+        <span className="font-semibold break-all">{orderId}</span>
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
