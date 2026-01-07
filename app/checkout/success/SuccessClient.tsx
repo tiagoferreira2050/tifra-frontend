@@ -45,7 +45,8 @@ export default function SuccessClient() {
 
       const whatsappUrl = `https://wa.me/${data.whatsapp}?text=${data.messageEncoded}`;
 
-      window.open(whatsappUrl, "_blank");
+      // ✅ FUNCIONA EM CELULAR E PC
+      window.location.href = whatsappUrl;
     } catch (err) {
       console.error(err);
       alert("Erro ao abrir WhatsApp");
