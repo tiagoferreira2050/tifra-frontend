@@ -7,6 +7,7 @@ export default function SuccessClient() {
   const router = useRouter();
 
   const orderId = params.get("order");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   if (!orderId) {
     return (
@@ -18,6 +19,33 @@ export default function SuccessClient() {
 
   function handleBackToStore() {
     router.push("/");
+  }
+
+  function handleWhatsapp() {
+    if (!API_URL) {
+      alert("API não configurada");
+      return;
+    }
+
+    /**
+     * 🔥 backend já devolve a URL pronta:
+     * { whatsappUrl: "https://wa.me/55....?text=..." }
+     */
+    fetch(`${API_URL}/api/public/orders/${orderId}/whatsapp`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Erro ao gerar WhatsApp");
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.whatsappUrl) {
+          window.open(data.whatsappUrl, "_blank");
+        } else {
+          alert("WhatsApp não configurado para esta loja");
+        }
+      })
+      .catch(() => {
+        alert("Erro ao abrir WhatsApp");
+      });
   }
 
   return (
@@ -43,12 +71,23 @@ export default function SuccessClient() {
         </span>
       </p>
 
-      <button
-        onClick={handleBackToStore}
-        className="w-full max-w-xs bg-green-600 text-white py-3 rounded-lg font-semibold"
-      >
-        Voltar ao cardápio
-      </button>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        {/* 🔥 WHATSAPP */}
+        <button
+          onClick={handleWhatsapp}
+          className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-semibold"
+        >
+          Confirmar pedido no WhatsApp
+        </button>
+
+        {/* VOLTAR */}
+        <button
+          onClick={handleBackToStore}
+          className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold"
+        >
+          Voltar ao cardápio
+        </button>
+      </div>
     </div>
   );
 }
