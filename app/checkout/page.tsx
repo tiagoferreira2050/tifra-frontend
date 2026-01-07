@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddressModal from "./components/AddressModal";
 import { useCart } from "@/src/contexts/CartContext";
 
-/* ================= TYPES ================= */
 type SavedAddress = {
   id: string;
   street: string;
@@ -20,7 +19,6 @@ type SavedAddress = {
   eta: string;
 };
 
-/* ================= HELPERS ================= */
 function formatPhone(value: string) {
   const numbers = value.replace(/\D/g, "");
 
@@ -37,15 +35,17 @@ function formatPhone(value: string) {
     .slice(0, 15);
 }
 
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, storeId, setCheckoutData } = useCart();
 
-  /* ================= CLIENTE ================= */
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
 
-  /* ================= ENTREGA ================= */
   const [deliveryType, setDeliveryType] =
     useState<"delivery" | "pickup" | "local">("delivery");
 
@@ -57,7 +57,56 @@ export default function CheckoutPage() {
   const selectedAddress =
     addresses.find((a) => a.id === selectedAddressId) ?? null;
 
-  /* ================= PROTEÇÕES ================= */
+  /* ===============================
+     🔥 BUSCAR CLIENTE PELO TELEFONE
+  =============================== */
+  useEffect(() => {
+    async function loadCustomer() {
+      const phone = normalizePhone(customerPhone);
+      if (phone.length < 10) return;
+
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/public/customers/by-phone?storeId=${storeId}&phone=${phone}`
+        );
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (data?.name) {
+          setCustomerName(data.name);
+        }
+
+        if (Array.isArray(data?.addresses)) {
+          const loaded = data.addresses.map((addr: any) => ({
+            id: addr.id,
+            street: addr.street,
+            number: addr.number,
+            neighborhood: addr.neighborhood,
+            city: addr.city,
+            state: addr.state,
+            reference: addr.reference,
+            lat: addr.lat,
+            lng: addr.lng,
+            fee: 4.99,
+            eta: "40–50 min",
+          }));
+
+          setAddresses(loaded);
+          setSelectedAddressId(loaded[0]?.id ?? null);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar cliente", err);
+      }
+    }
+
+    loadCustomer();
+  }, [customerPhone, storeId]);
+
+  /* ===============================
+     PROTEÇÕES
+  =============================== */
   if (!storeId) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
@@ -74,7 +123,6 @@ export default function CheckoutPage() {
     );
   }
 
-  /* ================= SALVAR ENDEREÇO ================= */
   function saveAddress(address: any) {
     const newAddress: SavedAddress = {
       id: crypto.randomUUID(),
@@ -95,7 +143,6 @@ export default function CheckoutPage() {
     setAddressModalOpen(false);
   }
 
-  /* ================= CONTINUAR ================= */
   function handleNext() {
     if (!customerPhone || !customerName) {
       alert("Informe telefone e nome");
@@ -107,7 +154,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 🔥 SALVA DADOS DO CHECKOUT NO CONTEXT
     setCheckoutData({
       customerName,
       customerPhone,
@@ -154,38 +200,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* ENTREGA */}
-          <h1 className="text-lg font-semibold text-center">
-            Endereço de entrega
-          </h1>
-
-          <div className="space-y-3">
-            {[
-              { id: "delivery", label: "Receber no meu endereço" },
-              { id: "local", label: "Consumir no restaurante" },
-              { id: "pickup", label: "Retirar no restaurante" },
-            ].map((opt) => (
-              <label
-                key={opt.id}
-                className="flex items-center gap-3 text-sm"
-              >
-                <input
-                  type="radio"
-                  checked={deliveryType === opt.id}
-                  onChange={() => {
-                    setDeliveryType(opt.id as any);
-                    if (opt.id !== "delivery") {
-                      setSelectedAddressId(null);
-                    }
-                  }}
-                  className="accent-green-600"
-                />
-                {opt.label}
-              </label>
-            ))}
-          </div>
-
-          {/* ENDEREÇOS */}
+          {/* ENDEREÇO */}
           {deliveryType === "delivery" && (
             <>
               <button
@@ -219,15 +234,6 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-500">
                       {addr.city} - {addr.state}
                     </p>
-
-                    {selected && (
-                      <div className="flex gap-4 mt-2 text-sm text-green-600">
-                        <span>⏱ {addr.eta}</span>
-                        <span>
-                          🚚 R$ {addr.fee.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 );
               })}
