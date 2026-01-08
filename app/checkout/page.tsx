@@ -12,6 +12,7 @@ type SavedAddress = {
   city: string;
   state: string;
   number: string;
+  complement?: string;
   reference?: string;
   lat: number;
   lng: number;
@@ -63,7 +64,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function loadCustomer() {
       const phone = normalizePhone(customerPhone);
-      if (phone.length < 10) return;
+      if (phone.length < 10 || !storeId) return;
 
       try {
         const res = await fetch(
@@ -79,14 +80,15 @@ export default function CheckoutPage() {
         }
 
         if (Array.isArray(data?.addresses)) {
-          const loaded = data.addresses.map((addr: any) => ({
+          const loaded: SavedAddress[] = data.addresses.map((addr: any) => ({
             id: addr.id,
             street: addr.street,
             number: addr.number,
             neighborhood: addr.neighborhood,
             city: addr.city,
             state: addr.state,
-            reference: addr.reference,
+            complement: addr.complement ?? undefined,
+            reference: addr.reference ?? undefined,
             lat: addr.lat,
             lng: addr.lng,
             fee: 4.99,
@@ -123,24 +125,18 @@ export default function CheckoutPage() {
     );
   }
 
-  function saveAddress(address: any) {
-    const newAddress: SavedAddress = {
-      id: crypto.randomUUID(),
-      street: address.street,
-      neighborhood: address.neighborhood,
-      city: address.city,
-      state: address.state,
-      number: address.number,
-      reference: address.reference,
-      lat: address.lat,
-      lng: address.lng,
-      fee: 4.99,
-      eta: "40–50 min",
-    };
-
-    setAddresses((prev) => [newAddress, ...prev]);
-    setSelectedAddressId(newAddress.id);
+  /* ===============================
+     NOVO ENDEREÇO (SEM DUPLICAR)
+  =============================== */
+  function saveAddress() {
+    // 👉 NÃO cria endereço local
+    // backend já salva e evita duplicação
     setAddressModalOpen(false);
+
+    // força reload dos endereços pelo telefone
+    setTimeout(() => {
+      setCustomerPhone((prev) => prev);
+    }, 300);
   }
 
   function handleNext() {
@@ -150,7 +146,7 @@ export default function CheckoutPage() {
     }
 
     if (deliveryType === "delivery" && !selectedAddress) {
-      setAddressModalOpen(true);
+      alert("Selecione um endereço");
       return;
     }
 
@@ -159,7 +155,11 @@ export default function CheckoutPage() {
       customerPhone,
       deliveryType,
       address:
-        deliveryType === "delivery" ? selectedAddress : undefined,
+        deliveryType === "delivery"
+          ? {
+              ...selectedAddress!,
+            }
+          : undefined,
     });
 
     router.push("/checkout/summary");
@@ -234,6 +234,12 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-500">
                       {addr.city} - {addr.state}
                     </p>
+
+                    {addr.reference && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Ref: {addr.reference}
+                      </p>
+                    )}
                   </div>
                 );
               })}
