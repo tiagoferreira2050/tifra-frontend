@@ -11,12 +11,7 @@ export default function CheckoutSummaryPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  const {
-    items,
-    storeId,
-    checkoutData,
-    clearCart,
-  } = useCart();
+  const { items, storeId, checkoutData, clearCart } = useCart();
 
   /* ================= PROTEÇÕES ================= */
   if (!storeId || !checkoutData) {
@@ -77,6 +72,19 @@ export default function CheckoutSummaryPage() {
       return;
     }
 
+    /* ===============================
+       🔥 GARANTE ADDRESS CORRETO
+    =============================== */
+    const address =
+      checkoutData.deliveryType === "delivery"
+        ? checkoutData.address
+        : null;
+
+    if (checkoutData.deliveryType === "delivery" && !address) {
+      alert("Endereço inválido");
+      return;
+    }
+
     const payload = {
       storeId,
       customer: {
@@ -84,10 +92,18 @@ export default function CheckoutSummaryPage() {
         phone: checkoutData.customerPhone,
       },
       deliveryType: checkoutData.deliveryType,
-      address:
-        checkoutData.deliveryType === "delivery"
-          ? checkoutData.address
-          : null,
+      address: address
+        ? {
+            street: address.street,
+            number: address.number,
+            neighborhood: address.neighborhood,
+            city: address.city,
+            state: address.state,
+            reference: address.reference ?? null,
+            lat: address.lat ?? 0,
+            lng: address.lng ?? 0,
+          }
+        : null,
       paymentMethod,
       deliveryFee,
       total: finalTotal,
