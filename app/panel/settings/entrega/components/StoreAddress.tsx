@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import AddressSearch from "@/components/AddressSearch";
-import { Card, CardContent } from "@/components/ui/card";
+
+// ✅ IMPORTS CORRETOS PRA SUA ESTRUTURA
+import AddressSearch from "../../../../components/AddressSearch";
+import { Card, CardContent } from "../../../../components/ui/card";
 
 type LatLng = {
   lat: number;
@@ -27,8 +29,7 @@ export default function StoreAddress({
       setLatLng(coords);
     }
 
-    // 🔥 FUTURO (não agora):
-    // salvar no backend:
+    // 🔥 FUTURO:
     // POST /api/store/address
   }
 
