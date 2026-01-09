@@ -1,13 +1,18 @@
+import { headers } from "next/headers";
 import DeliveryModeToggle from "./components/DeliveryModeToggle";
 import RadiusConfig from "./components/RadiusConfig";
 import NeighborhoodConfig from "./components/NeighborhoodConfig";
 
 export default async function EntregaPage() {
+  const headersList = headers();
+
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/store/settings`,
     {
       cache: "no-store",
-      credentials: "include",
+      headers: {
+        cookie: headersList.get("cookie") || "",
+      },
     }
   );
 
