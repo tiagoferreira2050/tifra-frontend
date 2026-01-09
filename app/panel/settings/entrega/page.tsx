@@ -6,30 +6,32 @@ import NeighborhoodConfig from "./components/NeighborhoodConfig";
 export default async function EntregaPage() {
   const headersList = headers();
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/store/settings`,
-    {
-      cache: "no-store",
-      headers: {
-        cookie: headersList.get("cookie") || "",
-      },
+  let settings = { deliveryMode: "RADIUS" };
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/store/settings`,
+      {
+        cache: "no-store",
+        headers: {
+          cookie: headersList.get("cookie") || "",
+        },
+      }
+    );
+
+    if (res.ok) {
+      settings = await res.json();
     }
-  );
-
-  if (!res.ok) {
-    throw new Error("Erro ao carregar configurações da loja");
+  } catch (err) {
+    console.error("Erro ao carregar delivery settings", err);
   }
-
-  const settings = await res.json();
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Entrega</h1>
 
-      {/* 🔘 Modo de entrega */}
       <DeliveryModeToggle currentMode={settings.deliveryMode} />
 
-      {/* ⚙️ Configuração */}
       {settings.deliveryMode === "RADIUS" && <RadiusConfig />}
       {settings.deliveryMode === "NEIGHBORHOOD" && <NeighborhoodConfig />}
     </div>
