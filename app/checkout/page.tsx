@@ -92,7 +92,7 @@ export default function CheckoutPage() {
   }, [customerPhone, storeId, API_URL]);
 
   /* ===============================
-     SALVAR ENDEREÇO (LOCAL)
+     SALVAR ENDEREÇO (STATE)
   =============================== */
   function saveAddress(address: SavedAddress) {
     setAddresses((prev) => {
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
   }
 
   /* ===============================
-     EXCLUIR ENDEREÇO
+     EXCLUIR ENDEREÇO (BANCO)
   =============================== */
   async function handleDeleteAddress(id: string) {
     if (!confirm("Deseja excluir este endereço?")) return;
@@ -138,7 +138,7 @@ export default function CheckoutPage() {
     }
 
     if (deliveryType === "delivery" && !selectedAddress) {
-      alert("Selecione um endereço");
+      alert("Selecione um endereço de entrega");
       return;
     }
 
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
           {/* ================= DADOS DO CLIENTE ================= */}
           <div>
             <h2 className="text-lg font-semibold mb-4">
-              Dados do cliente
+              DADOS DO CLIENTE
             </h2>
 
             <div className="space-y-4">
@@ -193,8 +193,12 @@ export default function CheckoutPage() {
           {/* ================= DADOS DE ENTREGA ================= */}
           <div>
             <h2 className="text-lg font-semibold mb-4">
-              Dados de entrega
+              DADOS DE ENTREGA
             </h2>
+
+            <p className="text-sm text-gray-600 mb-3">
+              Como deseja receber seu pedido?
+            </p>
 
             <div className="space-y-3">
               {[
@@ -240,7 +244,9 @@ export default function CheckoutPage() {
                           ? "border-green-600"
                           : "border-gray-200"
                       }`}
-                      onClick={() => setSelectedAddressId(addr.id)}
+                      onClick={() =>
+                        setSelectedAddressId(addr.id)
+                      }
                     >
                       <div>
                         <p className="font-semibold">
