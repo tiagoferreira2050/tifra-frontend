@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-// ✅ IMPORTS CORRETOS PRA SUA ESTRUTURA
-import AddressSearch from "../../../../components/AddressSearch";
-import { Card, CardContent } from "../../../../components/ui/card";
+import AddressSearch from "./AddressSearch";
 
 type LatLng = {
   lat: number;
@@ -28,34 +25,29 @@ export default function StoreAddress({
     if (coords) {
       setLatLng(coords);
     }
-
-    // 🔥 FUTURO:
-    // POST /api/store/address
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-6">
-        <div>
-          <h3 className="text-sm font-semibold">Endereço da loja</h3>
-          <p className="text-xs text-muted-foreground">
-            Esse endereço será usado como ponto central para calcular a entrega
-          </p>
+    <div className="rounded-lg border bg-white p-6 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold">Endereço da loja</h3>
+        <p className="text-xs text-gray-500">
+          Esse endereço será usado como ponto central para calcular a entrega
+        </p>
+      </div>
+
+      <AddressSearch
+        value={address}
+        onChange={handleChange}
+        apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}
+      />
+
+      {latLng && (
+        <div className="text-xs text-gray-500">
+          📍 Latitude: {latLng.lat.toFixed(5)} | Longitude:{" "}
+          {latLng.lng.toFixed(5)}
         </div>
-
-        <AddressSearch
-          value={address}
-          onChange={handleChange}
-          apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}
-        />
-
-        {latLng && (
-          <div className="text-xs text-muted-foreground">
-            📍 Latitude: {latLng.lat.toFixed(5)} | Longitude:{" "}
-            {latLng.lng.toFixed(5)}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
