@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { MapPin, Navigation, Save, Map, ArrowLeft } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EnderecoPage() {
@@ -24,19 +23,17 @@ export default function EnderecoPage() {
   });
 
   /* ===============================
-     LOAD — GET /api/store-address/:storeId
+     LOAD — GET /api/store-address
+     (loja vem do usuário logado)
   =============================== */
   useEffect(() => {
     async function load() {
       try {
-        if (!BACKEND_URL || !STORE_ID) return;
+        if (!BACKEND_URL) return;
 
-        const res = await fetch(
-          `${BACKEND_URL}/api/store-address/${STORE_ID}`,
-          {
-            credentials: "include",
-          }
-        );
+        const res = await fetch(`${BACKEND_URL}/api/store-address`, {
+          credentials: "include",
+        });
 
         if (!res.ok) return;
 
@@ -83,9 +80,7 @@ export default function EnderecoPage() {
     try {
       setLoadingCep(true);
 
-      const res = await fetch(
-        `https://viacep.com.br/ws/${cleanCep}/json/`
-      );
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       const data = await res.json();
 
       if (data.erro) return;
@@ -151,10 +146,11 @@ export default function EnderecoPage() {
 
   /* ===============================
      SAVE — POST /api/store-address
+     (SEM storeId)
   =============================== */
   async function handleSave() {
     try {
-      if (!BACKEND_URL || !STORE_ID) return;
+      if (!BACKEND_URL) return;
 
       setSaving(true);
 
@@ -167,7 +163,6 @@ export default function EnderecoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          storeId: STORE_ID,
           ...address,
           lat,
           lng,
