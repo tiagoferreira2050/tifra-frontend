@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MapPin,
-  Navigation,
-  Save,
-  Map,
-} from "lucide-react";
+import { MapPin, Navigation, Save, Map } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
@@ -81,7 +76,11 @@ export default function EnderecoPage() {
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-gray-500">Carregando endereço...</p>;
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Carregando endereço...
+      </div>
+    );
   }
 
   return (
@@ -101,7 +100,7 @@ export default function EnderecoPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
             {saving ? "Salvando..." : "Salvar"}
@@ -112,13 +111,15 @@ export default function EnderecoPage() {
       {/* CONTENT */}
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         {/* BUSCAR CEP */}
-        <div className="rounded-xl border bg-white p-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 transition hover:shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <Navigation className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Buscar por CEP</p>
+              <p className="font-semibold text-gray-900">
+                Buscar por CEP
+              </p>
               <p className="text-sm text-gray-500">
                 Digite o CEP para preencher automaticamente
               </p>
@@ -131,18 +132,20 @@ export default function EnderecoPage() {
             onChange={(e) =>
               setAddress({ ...address, cep: e.target.value })
             }
-            className="h-11 w-full rounded-md border px-4 text-sm"
+            className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
           />
         </div>
 
         {/* DADOS DO ENDEREÇO */}
-        <div className="rounded-xl border bg-white p-6 space-y-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 transition hover:shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
               <MapPin className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Dados do Endereço</p>
+              <p className="font-semibold text-gray-900">
+                Dados do Endereço
+              </p>
               <p className="text-sm text-gray-500">
                 Preencha as informações de localização
               </p>
@@ -157,7 +160,7 @@ export default function EnderecoPage() {
                 setAddress({ ...address, street: e.target.value })
               }
               placeholder="Ex: Avenida Paulista"
-              className="h-11 w-full rounded-md border px-4 text-sm"
+              className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm focus:ring-2 focus:ring-gray-900/10"
             />
           </div>
 
@@ -169,7 +172,7 @@ export default function EnderecoPage() {
                 onChange={(e) =>
                   setAddress({ ...address, number: e.target.value })
                 }
-                className="h-11 w-full rounded-md border px-4 text-sm"
+                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
               />
             </div>
 
@@ -180,7 +183,7 @@ export default function EnderecoPage() {
                 onChange={(e) =>
                   setAddress({ ...address, complement: e.target.value })
                 }
-                className="h-11 w-full rounded-md border px-4 text-sm"
+                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
               />
             </div>
           </div>
@@ -192,7 +195,7 @@ export default function EnderecoPage() {
               onChange={(e) =>
                 setAddress({ ...address, neighborhood: e.target.value })
               }
-              className="h-11 w-full rounded-md border px-4 text-sm"
+              className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
             />
           </div>
 
@@ -204,7 +207,7 @@ export default function EnderecoPage() {
                 onChange={(e) =>
                   setAddress({ ...address, city: e.target.value })
                 }
-                className="h-11 w-full rounded-md border px-4 text-sm"
+                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
               />
             </div>
 
@@ -218,32 +221,36 @@ export default function EnderecoPage() {
                     state: e.target.value.toUpperCase().slice(0, 2),
                   })
                 }
-                className="h-11 w-full rounded-md border px-4 text-sm"
+                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium">Ponto de Referência</label>
+            <label className="text-sm font-medium">
+              Ponto de Referência
+            </label>
             <input
               value={address.reference}
               onChange={(e) =>
                 setAddress({ ...address, reference: e.target.value })
               }
               placeholder="Próximo ao mercado, em frente à praça..."
-              className="h-11 w-full rounded-md border px-4 text-sm"
+              className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
             />
           </div>
         </div>
 
         {/* MAPA */}
-        <div className="rounded-xl border bg-white p-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 transition hover:shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
               <Map className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Visualização no Mapa</p>
+              <p className="font-semibold text-gray-900">
+                Visualização no Mapa
+              </p>
               <p className="text-sm text-gray-500">
                 Preencha o endereço para visualizar no mapa
               </p>
