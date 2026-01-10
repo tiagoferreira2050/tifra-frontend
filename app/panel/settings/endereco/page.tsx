@@ -6,10 +6,12 @@ import { MapPin, Navigation, Save, Map, ArrowLeft } from "lucide-react";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
 const STORE_SUBDOMAIN = process.env.NEXT_PUBLIC_STORE_SUBDOMAIN;
+const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EnderecoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   const [address, setAddress] = useState({
     cep: "",
@@ -52,6 +54,44 @@ export default function EnderecoPage() {
   }, []);
 
   /* ===============================
+     CEP AUTO SEARCH
+  =============================== */
+  async function handleCepChange(value: string) {
+    const cleanCep = value.replace(/\D/g, "").slice(0, 8);
+    const formattedCep = cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2");
+
+    setAddress((prev) => ({
+      ...prev,
+      cep: formattedCep,
+    }));
+
+    if (cleanCep.length !== 8) return;
+
+    try {
+      setLoadingCep(true);
+
+      const res = await fetch(
+        `https://viacep.com.br/ws/${cleanCep}/json/`
+      );
+      const data = await res.json();
+
+      if (data.erro) return;
+
+      setAddress((prev) => ({
+        ...prev,
+        street: data.logradouro || "",
+        neighborhood: data.bairro || "",
+        city: data.localidade || "",
+        state: data.uf || "",
+      }));
+    } catch (err) {
+      console.error("Erro ao buscar CEP");
+    } finally {
+      setLoadingCep(false);
+    }
+  }
+
+  /* ===============================
      SAVE
   =============================== */
   async function handleSave() {
@@ -75,6 +115,21 @@ export default function EnderecoPage() {
     }
   }
 
+  /* ===============================
+     GOOGLE MAP
+  =============================== */
+  const fullAddress =
+    address.street && address.city
+      ? `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`
+      : "";
+
+  const mapUrl =
+    GOOGLE_MAPS_KEY && fullAddress
+      ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
+          fullAddress
+        )}`
+      : null;
+
   if (loading) {
     return (
       <div className="p-6 text-sm text-gray-500">
@@ -95,8 +150,7 @@ export default function EnderecoPage() {
                 onClick={() => window.history.back()}
                 className="h-9 w-9 rounded-md flex items-center justify-center
                            text-gray-500 hover:text-gray-900
-                           hover:bg-gray-100 hover:shadow-sm
-                           transition"
+                           hover:bg-gray-100 hover:shadow-sm transition"
                 aria-label="Voltar"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -140,7 +194,9 @@ export default function EnderecoPage() {
             <div>
               <p className="font-semibold text-gray-900">Buscar por CEP</p>
               <p className="text-sm text-gray-500">
-                Digite o CEP para preencher automaticamente
+                {loadingCep
+                  ? "Buscando endereço..."
+                  : "Digite o CEP para preencher automaticamente"}
               </p>
             </div>
           </div>
@@ -148,9 +204,7 @@ export default function EnderecoPage() {
           <input
             placeholder="00000-000"
             value={address.cep}
-            onChange={(e) =>
-              setAddress({ ...address, cep: e.target.value })
-            }
+            onChange={(e) => handleCepChange(e.target.value)}
             className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm
                        focus:outline-none focus:ring-2 focus:ring-gray-900/10"
           />
@@ -158,18 +212,6 @@ export default function EnderecoPage() {
 
         {/* DADOS DO ENDEREÇO */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 hover:shadow-sm transition">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <MapPin className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Dados do Endereço</p>
-              <p className="text-sm text-gray-500">
-                Preencha as informações de localização
-              </p>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium">Rua / Avenida *</label>
             <input
@@ -177,84 +219,70 @@ export default function EnderecoPage() {
               onChange={(e) =>
                 setAddress({ ...address, street: e.target.value })
               }
-              placeholder="Ex: Avenida Paulista"
               className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Número *</label>
-              <input
-                value={address.number}
-                onChange={(e) =>
-                  setAddress({ ...address, number: e.target.value })
-                }
-                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Complemento</label>
-              <input
-                value={address.complement}
-                onChange={(e) =>
-                  setAddress({ ...address, complement: e.target.value })
-                }
-                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Bairro *</label>
             <input
-              value={address.neighborhood}
+              placeholder="Número"
+              value={address.number}
               onChange={(e) =>
-                setAddress({ ...address, neighborhood: e.target.value })
+                setAddress({ ...address, number: e.target.value })
+              }
+              className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
+            />
+
+            <input
+              placeholder="Complemento"
+              value={address.complement}
+              onChange={(e) =>
+                setAddress({ ...address, complement: e.target.value })
               }
               className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
             />
           </div>
+
+          <input
+            placeholder="Bairro"
+            value={address.neighborhood}
+            onChange={(e) =>
+              setAddress({ ...address, neighborhood: e.target.value })
+            }
+            className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
+          />
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-medium">Cidade *</label>
-              <input
-                value={address.city}
-                onChange={(e) =>
-                  setAddress({ ...address, city: e.target.value })
-                }
-                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">UF *</label>
-              <input
-                value={address.state}
-                onChange={(e) =>
-                  setAddress({
-                    ...address,
-                    state: e.target.value.toUpperCase().slice(0, 2),
-                  })
-                }
-                className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Ponto de Referência</label>
             <input
-              value={address.reference}
+              className="col-span-2 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
+              placeholder="Cidade"
+              value={address.city}
               onChange={(e) =>
-                setAddress({ ...address, reference: e.target.value })
+                setAddress({ ...address, city: e.target.value })
               }
-              placeholder="Próximo ao mercado, em frente à praça..."
+            />
+
+            <input
+              placeholder="UF"
+              value={address.state}
+              onChange={(e) =>
+                setAddress({
+                  ...address,
+                  state: e.target.value.toUpperCase().slice(0, 2),
+                })
+              }
               className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
             />
           </div>
+
+          <input
+            placeholder="Ponto de referência"
+            value={address.reference}
+            onChange={(e) =>
+              setAddress({ ...address, reference: e.target.value })
+            }
+            className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm"
+          />
         </div>
 
         {/* MAPA */}
@@ -263,17 +291,23 @@ export default function EnderecoPage() {
             <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
               <Map className="h-5 w-5 text-amber-600" />
             </div>
-            <div>
-              <p className="font-semibold text-gray-900">Visualização no Mapa</p>
-              <p className="text-sm text-gray-500">
-                Preencha o endereço para visualizar no mapa
-              </p>
-            </div>
+            <p className="font-semibold text-gray-900">
+              Visualização no Mapa
+            </p>
           </div>
 
-          <div className="h-48 rounded-lg border border-dashed flex items-center justify-center text-sm text-gray-400">
-            Mapa será exibido aqui
-          </div>
+          {mapUrl ? (
+            <iframe
+              src={mapUrl}
+              className="w-full h-48 rounded-lg border"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          ) : (
+            <div className="h-48 rounded-lg border border-dashed flex items-center justify-center text-sm text-gray-400">
+              Preencha o endereço para visualizar no mapa
+            </div>
+          )}
         </div>
       </div>
     </div>
