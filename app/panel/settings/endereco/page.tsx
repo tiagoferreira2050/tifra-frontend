@@ -32,8 +32,8 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     🔁 BUSCAR STORE (PADRÃO DO SEU BACKEND)
-     👉 usa /api/store (já existente)
+     🔁 BUSCAR LOJA (GARANTE STORE ID)
+     endpoint já existente no seu backend
   =================================================== */
   useEffect(() => {
     async function loadStore() {
@@ -44,15 +44,17 @@ export default function StoreAddressPage() {
         );
 
         if (!res.ok) {
+          console.error("Erro ao buscar loja");
           setLoaded(true);
           return;
         }
 
         const data = await res.json();
 
-        // ⚠️ ajuste se o formato for outro
+        // ⚠️ se o formato mudar, ajuste aqui
         setStoreId(data.id);
-      } catch {
+      } catch (err) {
+        console.error("Erro loadStore:", err);
         setLoaded(true);
       }
     }
@@ -75,6 +77,7 @@ export default function StoreAddressPage() {
 
         if (res.ok) {
           const data = await res.json();
+
           if (data) {
             setForm({
               cep: data.cep || "",
@@ -90,6 +93,8 @@ export default function StoreAddressPage() {
             });
           }
         }
+      } catch (err) {
+        console.error("Erro loadAddress:", err);
       } finally {
         setLoaded(true);
       }
@@ -98,14 +103,28 @@ export default function StoreAddressPage() {
     loadAddress();
   }, [storeId]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  /* ===================================================
+     ✍️ HANDLE CHANGE
+  =================================================== */
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  /* ===================================================
+     💾 SALVAR ENDEREÇO (BOTÃO FUNCIONA)
+  =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!storeId) return;
+
+    console.log("SUBMIT DISPARADO", { storeId, form });
+
+    if (!storeId) {
+      alert("Loja ainda não carregou");
+      return;
+    }
 
     setLoading(true);
 
@@ -114,49 +133,99 @@ export default function StoreAddressPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/store-address`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           credentials: "include",
-          body: JSON.stringify({ storeId, ...form }),
+          body: JSON.stringify({
+            storeId,
+            ...form,
+          }),
         }
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
+        console.error("Erro backend:", data);
         alert("Erro ao salvar endereço");
         return;
       }
 
+      console.log("ENDEREÇO SALVO:", data);
       alert("Endereço salvo com sucesso ✅");
+    } catch (err) {
+      console.error("Erro submit:", err);
+      alert("Erro inesperado");
     } finally {
       setLoading(false);
     }
   }
 
+  /* ===================================================
+     ⏳ LOADING
+  =================================================== */
   if (!loaded) {
     return <p>Carregando endereço...</p>;
   }
 
+  /* ===================================================
+     🧾 UI
+  =================================================== */
   return (
     <div style={{ maxWidth: 600 }}>
       <h1>Endereço da Loja</h1>
 
       <form onSubmit={handleSubmit}>
-        <input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} />
-        <input name="street" placeholder="Rua" value={form.street} onChange={handleChange} />
-        <input name="number" placeholder="Número" value={form.number} onChange={handleChange} />
+        <input
+          name="cep"
+          placeholder="CEP"
+          value={form.cep}
+          onChange={handleChange}
+        />
+
+        <input
+          name="street"
+          placeholder="Rua"
+          value={form.street}
+          onChange={handleChange}
+        />
+
+        <input
+          name="number"
+          placeholder="Número"
+          value={form.number}
+          onChange={handleChange}
+        />
+
         <input
           name="neighborhood"
           placeholder="Bairro"
           value={form.neighborhood}
           onChange={handleChange}
         />
-        <input name="city" placeholder="Cidade" value={form.city} onChange={handleChange} />
-        <input name="state" placeholder="Estado" value={form.state} onChange={handleChange} />
+
+        <input
+          name="city"
+          placeholder="Cidade"
+          value={form.city}
+          onChange={handleChange}
+        />
+
+        <input
+          name="state"
+          placeholder="Estado"
+          value={form.state}
+          onChange={handleChange}
+        />
+
         <input
           name="complement"
           placeholder="Complemento"
           value={form.complement}
           onChange={handleChange}
         />
+
         <input
           name="reference"
           placeholder="Referência"
