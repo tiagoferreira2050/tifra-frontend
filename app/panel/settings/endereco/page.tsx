@@ -32,18 +32,29 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     🔁 BUSCAR STORE ID (PADRÃO DO SEU PROJETO)
+     🔁 BUSCAR STORE (PADRÃO DO SEU BACKEND)
+     👉 usa /api/store (já existente)
   =================================================== */
   useEffect(() => {
     async function loadStore() {
-      const res = await fetch("/api/store/me", {
-        credentials: "include",
-      });
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/store`,
+          { credentials: "include" }
+        );
 
-      if (!res.ok) return;
+        if (!res.ok) {
+          setLoaded(true);
+          return;
+        }
 
-      const data = await res.json();
-      setStoreId(data.id);
+        const data = await res.json();
+
+        // ⚠️ ajuste se o formato for outro
+        setStoreId(data.id);
+      } catch {
+        setLoaded(true);
+      }
     }
 
     loadStore();
@@ -56,69 +67,56 @@ export default function StoreAddressPage() {
     if (!storeId) return;
 
     async function loadAddress() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/store-address/${storeId}`,
-        {
-          credentials: "include",
-        }
-      );
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/store-address/${storeId}`,
+          { credentials: "include" }
+        );
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data) {
-          setForm({
-            cep: data.cep || "",
-            street: data.street || "",
-            number: data.number || "",
-            neighborhood: data.neighborhood || "",
-            city: data.city || "",
-            state: data.state || "",
-            complement: data.complement || "",
-            reference: data.reference || "",
-            lat: data.lat,
-            lng: data.lng,
-          });
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            setForm({
+              cep: data.cep || "",
+              street: data.street || "",
+              number: data.number || "",
+              neighborhood: data.neighborhood || "",
+              city: data.city || "",
+              state: data.state || "",
+              complement: data.complement || "",
+              reference: data.reference || "",
+              lat: data.lat,
+              lng: data.lng,
+            });
+          }
         }
+      } finally {
+        setLoaded(true);
       }
-
-      setLoaded(true);
     }
 
     loadAddress();
   }, [storeId]);
 
-  /* ===================================================
-     ✍️ HANDLE CHANGE
-  =================================================== */
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  /* ===================================================
-     💾 SALVAR ENDEREÇO
-  =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!storeId) return;
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/store-address`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({
-            storeId,
-            ...form,
-          }),
+          body: JSON.stringify({ storeId, ...form }),
         }
       );
 
@@ -128,9 +126,6 @@ export default function StoreAddressPage() {
       }
 
       alert("Endereço salvo com sucesso ✅");
-    } catch (err) {
-      console.error(err);
-      alert("Erro inesperado");
     } finally {
       setLoading(false);
     }
