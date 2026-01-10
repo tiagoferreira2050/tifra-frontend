@@ -95,25 +95,50 @@ export default function EnderecoPage() {
      SAVE
   =============================== */
   async function handleSave() {
-    try {
-      if (!BACKEND_URL || !STORE_ID) return;
+  try {
+    if (!BACKEND_URL || !STORE_ID) return;
 
-      setSaving(true);
+    setSaving(true);
 
-      await fetch(`${BACKEND_URL}/stores/${STORE_ID}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
-      });
+    // 🔥 Monta endereço completo para geocoding
+    const fullAddress = `${address.street} ${address.number}, ${address.neighborhood}, ${address.city} - ${address.state}, Brasil`;
 
-      alert("Endereço salvo com sucesso ✅");
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar endereço");
-    } finally {
-      setSaving(false);
+    // 🔥 Buscar latitude e longitude (Google Geocoding)
+    const geoRes = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        fullAddress
+      )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+    );
+
+    const geoData = await geoRes.json();
+
+    if (!geoData.results?.length) {
+      alert("Não foi possível localizar o endereço no mapa");
+      return;
     }
+
+    const { lat, lng } = geoData.results[0].geometry.location;
+
+    // 🔥 SALVA NO ENDPOINT CORRETO
+    await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...address,
+        lat,
+        lng,
+      }),
+    });
+
+    alert("Endereço salvo com sucesso ✅");
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao salvar endereço");
+  } finally {
+    setSaving(false);
   }
+}
+
 
   /* ===============================
      GOOGLE MAP
