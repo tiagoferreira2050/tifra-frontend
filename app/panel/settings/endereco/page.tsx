@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Navigation, Save, Map } from "lucide-react";
+import { MapPin, Navigation, Save, Map, ArrowLeft } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
@@ -87,27 +87,27 @@ export default function EnderecoPage() {
     <div className="min-h-screen bg-gray-50/40">
       {/* HEADER */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-6">
+        <div className="max-w-3xl mx-auto px-6 py-5">
           <div className="grid grid-cols-3 items-center">
             {/* VOLTAR */}
             <div className="flex justify-start">
               <button
                 onClick={() => window.history.back()}
-                className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition"
+                className="h-9 w-9 rounded-md flex items-center justify-center
+                           text-gray-500 hover:text-gray-900
+                           hover:bg-gray-100 hover:shadow-sm
+                           transition"
+                aria-label="Voltar"
               >
-                <span className="text-lg leading-none">←</span>
-                Voltar
+                <ArrowLeft className="h-5 w-5" />
               </button>
             </div>
 
             {/* TÍTULO */}
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Endereço da Loja
               </h1>
-              <p className="text-sm text-gray-500">
-                Configure a localização do seu estabelecimento
-              </p>
             </div>
 
             {/* SALVAR */}
@@ -115,7 +115,11 @@ export default function EnderecoPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition disabled:opacity-60"
+                className="inline-flex items-center gap-2
+                           rounded-md bg-gray-900 px-4 py-2
+                           text-sm font-medium text-white
+                           hover:bg-gray-800 transition
+                           disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
                 {saving ? "Salvando..." : "Salvar"}
@@ -147,7 +151,8 @@ export default function EnderecoPage() {
             onChange={(e) =>
               setAddress({ ...address, cep: e.target.value })
             }
-            className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm focus:ring-2 focus:ring-gray-900/10"
+            className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-gray-900/10"
           />
         </div>
 
