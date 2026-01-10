@@ -94,38 +94,71 @@ export default function EnderecoPage() {
   /* ===============================
      SAVE
   =============================== */
+
+async function getLatLngFromAddress(address: {
+  cep: string;
+  street: string;
+  number: string;
+  city: string;
+  state: string;
+}) {
+  const cepClean = address.cep.replace(/\D/g, "");
+
+  // 1️⃣ Tenta pelo CEP (forma correta no Google)
+  if (cepClean.length === 8) {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+    );
+
+    const data = await res.json();
+
+    if (data.results?.length) {
+      return data.results[0].geometry.location;
+    }
+  }
+
+  // 2️⃣ Fallback pelo endereço completo
+  const fullAddress = `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`;
+
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      fullAddress
+    )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+  );
+
+  const data = await res.json();
+
+  if (data.results?.length) {
+    return data.results[0].geometry.location;
+  }
+
+  return null;
+}
+
+
+
+
+
   async function handleSave() {
   try {
     if (!BACKEND_URL || !STORE_ID) return;
 
     setSaving(true);
 
-    const fullAddress = address.cep
-      ? `${address.cep}, Brasil`
-      : `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`;
+    const location = await getLatLngFromAddress(address);
 
-    const geoRes = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        fullAddress
-      )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-    );
-
-    const geoData = await geoRes.json();
-
-    if (!geoData.results?.length) {
+    if (!location) {
       alert("Não foi possível localizar o endereço no mapa");
       return;
     }
-
-    const { lat, lng } = geoData.results[0].geometry.location;
 
     await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...address,
-        lat,
-        lng,
+        lat: location.lat,
+        lng: location.lng,
       }),
     });
 
@@ -137,6 +170,7 @@ export default function EnderecoPage() {
     setSaving(false);
   }
 }
+
 
 
 
