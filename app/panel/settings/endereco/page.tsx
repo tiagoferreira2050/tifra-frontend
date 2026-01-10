@@ -145,11 +145,34 @@ async function getLatLngFromAddress(address: {
 
     setSaving(true);
 
-    const location = await getLatLngFromAddress(address);
+    const addressForGeo =
+      address.street && address.city
+        ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
+        : address.cep
+        ? `${address.cep}, Brasil`
+        : "";
 
-    if (!location) {
-      alert("Não foi possível localizar o endereço no mapa");
-      return;
+    let lat = null;
+    let lng = null;
+
+    // 🔎 tenta geocodificar, MAS NÃO BLOQUEIA
+    if (addressForGeo && GOOGLE_MAPS_KEY) {
+      try {
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            addressForGeo
+          )}&key=${GOOGLE_MAPS_KEY}`
+        );
+
+        const geoData = await geoRes.json();
+
+        if (geoData.status === "OK" && geoData.results?.length) {
+          lat = geoData.results[0].geometry.location.lat;
+          lng = geoData.results[0].geometry.location.lng;
+        }
+      } catch (e) {
+        console.warn("Geocode falhou, salvando sem coordenadas");
+      }
     }
 
     await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
@@ -157,8 +180,8 @@ async function getLatLngFromAddress(address: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...address,
-        lat: location.lat,
-        lng: location.lng,
+        lat,
+        lng,
       }),
     });
 
@@ -170,6 +193,7 @@ async function getLatLngFromAddress(address: {
     setSaving(false);
   }
 }
+
 
 
 
