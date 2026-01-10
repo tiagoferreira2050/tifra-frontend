@@ -295,9 +295,10 @@ const mapUrl =
         {/* DADOS DO ENDEREÇO */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 hover:shadow-sm transition">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Rua / Avenida *</label>
+    
             <input
-              value={address.street}
+              placeholder="Rua / Avenida"
+value={address.street}
               onChange={(e) =>
                 setAddress({ ...address, street: e.target.value })
               }
