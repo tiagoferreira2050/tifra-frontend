@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Navigation, Save, Map, ArrowLeft } from "lucide-react";
+import { MapPin, Save } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
-const STORE_SUBDOMAIN = process.env.NEXT_PUBLIC_STORE_SUBDOMAIN;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EnderecoPage() {
@@ -25,45 +24,55 @@ export default function EnderecoPage() {
   });
 
   /* ===============================
-     LOAD
+     🔄 LOAD ENDEREÇO DA LOJA
   =============================== */
   useEffect(() => {
-    async function load() {
+    async function loadAddress() {
       try {
-        if (!BACKEND_URL || !STORE_SUBDOMAIN) return;
-
         const res = await fetch(
-          `${BACKEND_URL}/store/${STORE_SUBDOMAIN}/settings`
+          `${BACKEND_URL}/api/store-address/${STORE_ID}`,
+          {
+            credentials: "include",
+          }
         );
+
+        if (!res.ok) return;
+
         const data = await res.json();
 
-        if (data?.store?.address) {
-          setAddress((prev) => ({
-            ...prev,
-            ...data.store.address,
-          }));
+        if (data) {
+          setAddress({
+            cep: data.cep || "",
+            state: data.state || "",
+            city: data.city || "",
+            neighborhood: data.neighborhood || "",
+            street: data.street || "",
+            number: data.number || "",
+            complement: data.complement || "",
+            reference: data.reference || "",
+          });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar endereço:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    load();
+    loadAddress();
   }, []);
 
   /* ===============================
-     CEP AUTO SEARCH
+     🔎 CEP AUTO SEARCH
   =============================== */
   async function handleCepChange(value: string) {
     const cleanCep = value.replace(/\D/g, "").slice(0, 8);
-    const formattedCep = cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2");
+    const formattedCep =
+      cleanCep.length > 5
+        ? cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2")
+        : cleanCep;
 
-    setAddress((prev) => ({
-      ...prev,
-      cep: formattedCep,
-    }));
+    setAddress((prev) => ({ ...prev, cep: formattedCep }));
 
     if (cleanCep.length !== 8) return;
 
@@ -92,133 +101,85 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     SAVE
+     🌍 GEOLOCALIZAÇÃO (NÃO BLOQUEANTE)
   =============================== */
+  async function getLatLng() {
+    if (!GOOGLE_MAPS_KEY) return { lat: null, lng: null };
 
-async function getLatLngFromAddress(address: {
-  cep: string;
-  street: string;
-  number: string;
-  city: string;
-  state: string;
-}) {
-  if (!GOOGLE_MAPS_KEY) return null;
+    const fullAddress = `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`;
 
-  const cepClean = address.cep.replace(/\D/g, "");
-
-  // 1️⃣ tenta pelo CEP
-  if (cepClean.length === 8) {
     try {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${GOOGLE_MAPS_KEY}`
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          fullAddress
+        )}&key=${GOOGLE_MAPS_KEY}`
       );
 
       const data = await res.json();
 
-      if (data.status === "OK" && data.results?.length) {
-        return data.results[0].geometry.location;
+      if (data.status === "OK") {
+        return {
+          lat: data.results[0].geometry.location.lat,
+          lng: data.results[0].geometry.location.lng,
+        };
       }
-    } catch {
-      // ignora e segue fallback
-    }
+    } catch {}
+
+    return { lat: null, lng: null };
   }
-
-  // 2️⃣ fallback endereço completo
-  if (!address.street || !address.city || !address.state) return null;
-
-  const fullAddress = `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`;
-
-  try {
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        fullAddress
-      )}&key=${GOOGLE_MAPS_KEY}`
-    );
-
-    const data = await res.json();
-
-    if (data.status === "OK" && data.results?.length) {
-      return data.results[0].geometry.location;
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-async function handleSave() {
-  try {
-    if (!BACKEND_URL || !STORE_ID) return;
-
-    setSaving(true);
-
-    let lat = null;
-    let lng = null;
-
-    // 🔎 tenta geocodificar, mas NÃO bloqueia
-    const geo = await getLatLngFromAddress({
-      cep: address.cep,
-      street: address.street,
-      number: address.number,
-      city: address.city,
-      state: address.state,
-    });
-
-    if (geo) {
-      lat = geo.lat;
-      lng = geo.lng;
-    }
-
-    await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
-      method: "PUT",
-      credentials: "include", // 🔥 ESSENCIAL (era o bug)
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...address,
-        lat,
-        lng,
-      }),
-    });
-
-    alert("Endereço salvo com sucesso ✅");
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao salvar endereço");
-  } finally {
-    setSaving(false);
-  }
-}
-
-
 
   /* ===============================
-     GOOGLE MAP
+     💾 SAVE (POST /api/store-address)
   =============================== */
-  // endereço mais completo possível (padrão Google)
-const fullAddress =
-  address.street && address.city
-    ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
-    : "";
+  async function handleSave() {
+    try {
+      setSaving(true);
 
-// fallback por CEP (caso rua ainda não esteja preenchida)
-const fallbackAddress =
-  address.cep && address.cep.replace(/\D/g, "").length === 8
-    ? `${address.cep}, Brasil`
-    : "";
+      const { lat, lng } = await getLatLng();
 
-// prioridade: endereço completo → CEP
-const addressForMap = fullAddress || fallbackAddress;
+      await fetch(`${BACKEND_URL}/api/store-address`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          storeId: STORE_ID,
+          ...address,
+          lat,
+          lng,
+        }),
+      });
 
-const mapUrl =
-  GOOGLE_MAPS_KEY && addressForMap
-    ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
-        addressForMap
-      )}`
-    : null;
+      alert("Endereço salvo com sucesso ✅");
+    } catch (err) {
+      console.error("Erro ao salvar endereço:", err);
+      alert("Erro ao salvar endereço");
+    } finally {
+      setSaving(false);
+    }
+  }
 
+  if (loading) {
+    return <p className="p-6">Carregando endereço...</p>;
+  }
+
+  /* ===============================
+     🗺️ MAPA
+  =============================== */
+  const mapAddress =
+    address.street && address.city
+      ? `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`
+      : address.cep
+      ? `${address.cep}, Brasil`
+      : "";
+
+  const mapUrl =
+    GOOGLE_MAPS_KEY && mapAddress
+      ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
+          mapAddress
+        )}`
+      : null;
 
   return (
     <div className="min-h-screen bg-white">
