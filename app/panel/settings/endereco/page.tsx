@@ -44,7 +44,7 @@ export default function StoreAddressPage() {
   useEffect(() => {
     async function loadStore() {
       try {
-        const res = await fetch(`${API_URL}/api/stores`, {
+        const res = await fetch(`${API_URL}/api/store`, {
           credentials: "include",
         });
 
