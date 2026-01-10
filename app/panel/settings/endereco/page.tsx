@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+type Store = {
+  id: string;
+};
+
 type StoreAddress = {
   cep: string;
   street: string;
@@ -17,12 +21,8 @@ type StoreAddress = {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-// 🔥 DEBUG TEMPORÁRIO
-// 👉 COLE AQUI O storeId DO BANCO
-const DEBUG_STORE_ID = "COLE_AQUI_O_STORE_ID";
-
 export default function StoreAddressPage() {
-  const [storeId] = useState<string>(DEBUG_STORE_ID);
+  const [storeId, setStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -38,19 +38,57 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     📄 BUSCAR ENDEREÇO DA LOJA (DIRETO DO BANCO)
+     1️⃣ BUSCAR LOJA DO USUÁRIO
+     GET /api/stores
+  =================================================== */
+  useEffect(() => {
+    async function loadStore() {
+      try {
+        const res = await fetch(`${API_URL}/api/stores`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          console.error("Erro ao buscar stores");
+          setLoaded(true);
+          return;
+        }
+
+        const stores: Store[] = await res.json();
+
+        if (!stores || stores.length === 0) {
+          alert("Nenhuma loja encontrada");
+          setLoaded(true);
+          return;
+        }
+
+        // 👉 por enquanto pega a primeira loja
+        setStoreId(stores[0].id);
+      } catch (err) {
+        console.error("Erro loadStore:", err);
+        setLoaded(true);
+      }
+    }
+
+    loadStore();
+  }, []);
+
+  /* ===================================================
+     2️⃣ BUSCAR ENDEREÇO DA LOJA
      GET /api/store-address/:storeId
   =================================================== */
   useEffect(() => {
+    if (!storeId) return;
+
     async function loadAddress() {
       try {
         const res = await fetch(
-          `${API_URL}/api/store-address/${DEBUG_STORE_ID}`,
+          `${API_URL}/api/store-address/${storeId}`,
           { credentials: "include" }
         );
 
         if (!res.ok) {
-          console.error("Erro ao buscar endereço");
+          // endereço ainda não existe → formulário vazio
           setLoaded(true);
           return;
         }
@@ -79,7 +117,7 @@ export default function StoreAddressPage() {
     }
 
     loadAddress();
-  }, []);
+  }, [storeId]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -87,12 +125,16 @@ export default function StoreAddressPage() {
   }
 
   /* ===================================================
-     💾 SALVAR (UPDATE VIA UPSERT)
+     3️⃣ SALVAR ENDEREÇO (UPSERT)
+     POST /api/store-address
   =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    console.log("SUBMIT DEBUG", { storeId, form });
+    if (!storeId) {
+      alert("Loja não carregada");
+      return;
+    }
 
     setLoading(true);
 
@@ -102,7 +144,7 @@ export default function StoreAddressPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          storeId: DEBUG_STORE_ID,
+          storeId,
           ...form,
         }),
       });
@@ -115,7 +157,7 @@ export default function StoreAddressPage() {
         return;
       }
 
-      alert("Endereço atualizado com sucesso ✅");
+      alert("Endereço salvo com sucesso ✅");
     } catch (err) {
       console.error("Erro submit:", err);
       alert("Erro inesperado");
@@ -130,7 +172,7 @@ export default function StoreAddressPage() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <h1>Endereço da Loja (DEBUG)</h1>
+      <h1>Endereço da Loja</h1>
 
       <form onSubmit={handleSubmit}>
         <input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} />
