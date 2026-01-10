@@ -41,9 +41,8 @@ export default function EnderecoPage() {
       try {
         if (!BACKEND_URL) return;
 
-        const res = await fetch(`${BACKEND_URL}/api/store-address/address`, {
-  credentials: "include",
-
+        const res = await fetch(`${BACKEND_URL}/api/store/address`, {
+          credentials: "include",
         });
 
         if (!res.ok) return;
