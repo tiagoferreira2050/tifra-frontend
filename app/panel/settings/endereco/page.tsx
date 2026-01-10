@@ -177,25 +177,28 @@ async function getLatLngFromAddress(address: {
   /* ===============================
      GOOGLE MAP
   =============================== */
-  const fullAddress =
-    address.street && address.city
-      ? `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`
-      : "";
+  // endereço mais completo possível (padrão Google)
+const fullAddress =
+  address.street && address.city
+    ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
+    : "";
 
-  const mapUrl =
-    GOOGLE_MAPS_KEY && fullAddress
-      ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
-          fullAddress
-        )}`
-      : null;
+// fallback por CEP (caso rua ainda não esteja preenchida)
+const fallbackAddress =
+  address.cep && address.cep.replace(/\D/g, "").length === 8
+    ? `${address.cep}, Brasil`
+    : "";
 
-  if (loading) {
-    return (
-      <div className="p-6 text-sm text-gray-500">
-        Carregando endereço...
-      </div>
-    );
-  }
+// prioridade: endereço completo → CEP
+const addressForMap = fullAddress || fallbackAddress;
+
+const mapUrl =
+  GOOGLE_MAPS_KEY && addressForMap
+    ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
+        addressForMap
+      )}`
+    : null;
+
 
   return (
     <div className="min-h-screen bg-white">
