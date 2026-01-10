@@ -100,10 +100,10 @@ export default function EnderecoPage() {
 
     setSaving(true);
 
-    // 🔥 Monta endereço completo para geocoding
-    const fullAddress = `${address.street} ${address.number}, ${address.neighborhood}, ${address.city} - ${address.state}, Brasil`;
+    const fullAddress = address.cep
+      ? `${address.cep}, Brasil`
+      : `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`;
 
-    // 🔥 Buscar latitude e longitude (Google Geocoding)
     const geoRes = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         fullAddress
@@ -119,7 +119,6 @@ export default function EnderecoPage() {
 
     const { lat, lng } = geoData.results[0].geometry.location;
 
-    // 🔥 SALVA NO ENDPOINT CORRETO
     await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -138,6 +137,7 @@ export default function EnderecoPage() {
     setSaving(false);
   }
 }
+
 
 
   /* ===============================
