@@ -15,6 +15,8 @@ type StoreAddress = {
   lng?: number;
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function StoreAddressPage() {
   const [storeId, setStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,16 +34,15 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     🔁 BUSCAR LOJA (CORRETO NO SEU PROJETO)
-     GET /api/stores → retorna ARRAY
+     🔁 BUSCAR LOJA (API REAL DO BACKEND)
+     GET {API_URL}/api/stores
   =================================================== */
   useEffect(() => {
     async function loadStore() {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/stores`,
-          { credentials: "include" }
-        );
+        const res = await fetch(`${API_URL}/api/stores`, {
+          credentials: "include",
+        });
 
         if (!res.ok) {
           console.error("Erro ao buscar stores");
@@ -54,7 +55,7 @@ export default function StoreAddressPage() {
         if (Array.isArray(data) && data.length > 0) {
           setStoreId(data[0].id);
         } else {
-          alert("Nenhuma loja encontrada para este usuário");
+          alert("Nenhuma loja encontrada");
           setLoaded(true);
         }
       } catch (err) {
@@ -75,13 +76,12 @@ export default function StoreAddressPage() {
     async function loadAddress() {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/store-address/${storeId}`,
+          `${API_URL}/api/store-address/${storeId}`,
           { credentials: "include" }
         );
 
         if (res.ok) {
           const data = await res.json();
-
           if (data) {
             setForm({
               cep: data.cep || "",
@@ -107,21 +107,18 @@ export default function StoreAddressPage() {
     loadAddress();
   }, [storeId]);
 
-  /* ===================================================
-     ✍️ HANDLE CHANGE
-  =================================================== */
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   /* ===================================================
-     💾 SALVAR ENDEREÇO (AGORA FUNCIONA)
+     💾 SALVAR ENDEREÇO (FUNCIONA AGORA)
   =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    console.log("SUBMIT DISPARADO", { storeId, form });
+    console.log("SUBMIT", { storeId, form });
 
     if (!storeId) {
       alert("Loja ainda não carregou");
@@ -131,20 +128,12 @@ export default function StoreAddressPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/store-address`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            storeId,
-            ...form,
-          }),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/store-address`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ storeId, ...form }),
+      });
 
       const data = await res.json();
 
@@ -154,7 +143,6 @@ export default function StoreAddressPage() {
         return;
       }
 
-      console.log("ENDEREÇO SALVO:", data);
       alert("Endereço salvo com sucesso ✅");
     } catch (err) {
       console.error("Erro submit:", err);
@@ -164,16 +152,10 @@ export default function StoreAddressPage() {
     }
   }
 
-  /* ===================================================
-     ⏳ LOADING
-  =================================================== */
   if (!loaded) {
     return <p>Carregando endereço...</p>;
   }
 
-  /* ===================================================
-     🧾 UI
-  =================================================== */
   return (
     <div style={{ maxWidth: 600 }}>
       <h1>Endereço da Loja</h1>
