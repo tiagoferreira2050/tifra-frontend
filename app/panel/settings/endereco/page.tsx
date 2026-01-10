@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-type Store = {
-  id: string;
-  name: string;
-};
-
 type StoreAddress = {
   cep: string;
   street: string;
@@ -20,10 +15,14 @@ type StoreAddress = {
   lng?: number;
 };
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL!;
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
+// 🔥 DEBUG TEMPORÁRIO
+// 👉 COLE AQUI O storeId DO BANCO
+const DEBUG_STORE_ID = "COLE_AQUI_O_STORE_ID";
 
 export default function StoreAddressPage() {
-  const [storeId, setStoreId] = useState<string | null>(null);
+  const [storeId] = useState<string>(DEBUG_STORE_ID);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -39,57 +38,19 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     1️⃣ BUSCAR LOJAS DO USUÁRIO
-     GET /api/stores
-  =================================================== */
-  useEffect(() => {
-    async function loadStores() {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/stores`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          console.error("Erro ao buscar stores");
-          setLoaded(true);
-          return;
-        }
-
-        const stores: Store[] = await res.json();
-
-        if (!Array.isArray(stores) || stores.length === 0) {
-          alert("Nenhuma loja encontrada para este usuário");
-          setLoaded(true);
-          return;
-        }
-
-        // 👉 por enquanto usa a primeira loja
-        setStoreId(stores[0].id);
-      } catch (err) {
-        console.error("Erro loadStores:", err);
-        setLoaded(true);
-      }
-    }
-
-    loadStores();
-  }, []);
-
-  /* ===================================================
-     2️⃣ BUSCAR ENDEREÇO DA LOJA
+     📄 BUSCAR ENDEREÇO DA LOJA (DIRETO DO BANCO)
      GET /api/store-address/:storeId
   =================================================== */
   useEffect(() => {
-    if (!storeId) return;
-
     async function loadAddress() {
       try {
         const res = await fetch(
-          `${BACKEND_URL}/api/store-address/${storeId}`,
+          `${API_URL}/api/store-address/${DEBUG_STORE_ID}`,
           { credentials: "include" }
         );
 
         if (!res.ok) {
-          console.warn("Endereço ainda não cadastrado");
+          console.error("Erro ao buscar endereço");
           setLoaded(true);
           return;
         }
@@ -118,7 +79,7 @@ export default function StoreAddressPage() {
     }
 
     loadAddress();
-  }, [storeId]);
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -126,26 +87,22 @@ export default function StoreAddressPage() {
   }
 
   /* ===================================================
-     3️⃣ SALVAR ENDEREÇO (UPSERT)
-     POST /api/store-address
+     💾 SALVAR (UPDATE VIA UPSERT)
   =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!storeId) {
-      alert("Loja não carregada");
-      return;
-    }
+    console.log("SUBMIT DEBUG", { storeId, form });
 
     setLoading(true);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/store-address`, {
+      const res = await fetch(`${API_URL}/api/store-address`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          storeId,
+          storeId: DEBUG_STORE_ID,
           ...form,
         }),
       });
@@ -158,7 +115,7 @@ export default function StoreAddressPage() {
         return;
       }
 
-      alert("Endereço salvo com sucesso ✅");
+      alert("Endereço atualizado com sucesso ✅");
     } catch (err) {
       console.error("Erro submit:", err);
       alert("Erro inesperado");
@@ -173,7 +130,7 @@ export default function StoreAddressPage() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <h1>Endereço da Loja</h1>
+      <h1>Endereço da Loja (DEBUG)</h1>
 
       <form onSubmit={handleSubmit}>
         <input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} />
