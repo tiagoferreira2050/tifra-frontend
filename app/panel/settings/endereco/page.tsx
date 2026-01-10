@@ -102,82 +102,80 @@ async function getLatLngFromAddress(address: {
   city: string;
   state: string;
 }) {
+  if (!GOOGLE_MAPS_KEY) return null;
+
   const cepClean = address.cep.replace(/\D/g, "");
 
-  // 1️⃣ Tenta pelo CEP (forma correta no Google)
+  // 1️⃣ tenta pelo CEP
   if (cepClean.length === 8) {
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${GOOGLE_MAPS_KEY}`
+      );
+
+      const data = await res.json();
+
+      if (data.status === "OK" && data.results?.length) {
+        return data.results[0].geometry.location;
+      }
+    } catch {
+      // ignora e segue fallback
+    }
+  }
+
+  // 2️⃣ fallback endereço completo
+  if (!address.street || !address.city || !address.state) return null;
+
+  const fullAddress = `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`;
+
+  try {
     const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        fullAddress
+      )}&key=${GOOGLE_MAPS_KEY}`
     );
 
     const data = await res.json();
 
-    if (data.results?.length) {
+    if (data.status === "OK" && data.results?.length) {
       return data.results[0].geometry.location;
     }
-  }
-
-  // 2️⃣ Fallback pelo endereço completo
-  const fullAddress = `${address.street} ${address.number}, ${address.city} - ${address.state}, Brasil`;
-
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      fullAddress
-    )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-  );
-
-  const data = await res.json();
-
-  if (data.results?.length) {
-    return data.results[0].geometry.location;
+  } catch {
+    return null;
   }
 
   return null;
 }
 
-
-
-
-
-  async function handleSave() {
+async function handleSave() {
   try {
     if (!BACKEND_URL || !STORE_ID) return;
 
     setSaving(true);
 
-    const addressForGeo =
-      address.street && address.city
-        ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
-        : address.cep
-        ? `${address.cep}, Brasil`
-        : "";
-
     let lat = null;
     let lng = null;
 
-    // 🔎 tenta geocodificar, MAS NÃO BLOQUEIA
-    if (addressForGeo && GOOGLE_MAPS_KEY) {
-      try {
-        const geoRes = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-            addressForGeo
-          )}&key=${GOOGLE_MAPS_KEY}`
-        );
+    // 🔎 tenta geocodificar, mas NÃO bloqueia
+    const geo = await getLatLngFromAddress({
+      cep: address.cep,
+      street: address.street,
+      number: address.number,
+      city: address.city,
+      state: address.state,
+    });
 
-        const geoData = await geoRes.json();
-
-        if (geoData.status === "OK" && geoData.results?.length) {
-          lat = geoData.results[0].geometry.location.lat;
-          lng = geoData.results[0].geometry.location.lng;
-        }
-      } catch (e) {
-        console.warn("Geocode falhou, salvando sem coordenadas");
-      }
+    if (geo) {
+      lat = geo.lat;
+      lng = geo.lng;
     }
 
     await fetch(`${BACKEND_URL}/api/store/${STORE_ID}/address`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      credentials: "include", // 🔥 ESSENCIAL (era o bug)
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         ...address,
         lat,
@@ -193,8 +191,6 @@ async function getLatLngFromAddress(address: {
     setSaving(false);
   }
 }
-
-
 
 
 
