@@ -1,389 +1,178 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID; // 👈 PADRÃO
 
 type StoreAddress = {
   cep: string;
-  state: string;
-  city: string;
-  neighborhood: string;
   street: string;
   number: string;
-  complement: string;
-  reference: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  complement?: string;
+  reference?: string;
+  lat?: number;
+  lng?: number;
 };
 
-export default function EnderecoPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [loadingCep, setLoadingCep] = useState(false);
+export default function StoreAddressPage() {
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  const [address, setAddress] = useState<StoreAddress>({
+  const [form, setForm] = useState<StoreAddress>({
     cep: "",
-    state: "",
-    city: "",
-    neighborhood: "",
     street: "",
     number: "",
+    neighborhood: "",
+    city: "",
+    state: "",
     complement: "",
     reference: "",
   });
 
-  /* ===============================
-     LOAD — STORE ADDRESS
-  =============================== */
+  /* ===================================================
+     🔁 BUSCAR STORE ID (PADRÃO DO SEU PROJETO)
+  =================================================== */
   useEffect(() => {
+    async function loadStore() {
+      const res = await fetch("/api/store/me", {
+        credentials: "include",
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      setStoreId(data.id);
+    }
+
+    loadStore();
+  }, []);
+
+  /* ===================================================
+     📄 BUSCAR ENDEREÇO DA LOJA
+  =================================================== */
+  useEffect(() => {
+    if (!storeId) return;
+
     async function loadAddress() {
-      try {
-        if (!BACKEND_URL || !STORE_ID) return;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/store-address/${storeId}`,
+        {
+          credentials: "include",
+        }
+      );
 
-        const res = await fetch(
-          `${BACKEND_URL}/api/store-address/${STORE_ID}`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!res.ok) return;
-
+      if (res.ok) {
         const data = await res.json();
-
         if (data) {
-          setAddress({
+          setForm({
             cep: data.cep || "",
-            state: data.state || "",
-            city: data.city || "",
-            neighborhood: data.neighborhood || "",
             street: data.street || "",
             number: data.number || "",
+            neighborhood: data.neighborhood || "",
+            city: data.city || "",
+            state: data.state || "",
             complement: data.complement || "",
             reference: data.reference || "",
+            lat: data.lat,
+            lng: data.lng,
           });
         }
-      } catch (err) {
-        console.error("Erro ao carregar endereço da loja:", err);
-      } finally {
-        setLoading(false);
       }
+
+      setLoaded(true);
     }
 
     loadAddress();
-  }, []);
+  }, [storeId]);
 
-  /* ===============================
-     CEP AUTO SEARCH
-  =============================== */
-  async function handleCepChange(value: string) {
-    const cleanCep = value.replace(/\D/g, "").slice(0, 8);
-    const formattedCep =
-      cleanCep.length === 8
-        ? cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2")
-        : cleanCep;
-
-    setAddress((prev) => ({ ...prev, cep: formattedCep }));
-
-    if (cleanCep.length !== 8) return;
-
-    try {
-      setLoadingCep(true);
-
-      const res = await fetch(
-        `https://viacep.com.br/ws/${cleanCep}/json/`
-      );
-      const data = await res.json();
-
-      if (data?.erro) return;
-
-      setAddress((prev) => ({
-        ...prev,
-        street: data.logradouro || "",
-        neighborhood: data.bairro || "",
-        city: data.localidade || "",
-        state: data.uf || "",
-      }));
-    } catch {
-      console.error("Erro ao buscar CEP");
-    } finally {
-      setLoadingCep(false);
-    }
+  /* ===================================================
+     ✍️ HANDLE CHANGE
+  =================================================== */
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  /* ===============================
-     GEOLOCATION (OPTIONAL)
-  =============================== */
-  async function getLatLngFromAddress() {
-    if (!GOOGLE_MAPS_KEY) return null;
-
-    const cepClean = address.cep.replace(/\D/g, "");
-
-    if (cepClean.length === 8) {
-      try {
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${GOOGLE_MAPS_KEY}`
-        );
-        const data = await res.json();
-
-        if (data.status === "OK" && data.results?.length) {
-          return data.results[0].geometry.location;
-        }
-      } catch {}
-    }
-
-    if (!address.street || !address.city || !address.state) return null;
-
-    const fullAddress = `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`;
+  /* ===================================================
+     💾 SALVAR ENDEREÇO
+  =================================================== */
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!storeId) return;
 
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          fullAddress
-        )}&key=${GOOGLE_MAPS_KEY}`
-      );
-      const data = await res.json();
-
-      if (data.status === "OK" && data.results?.length) {
-        return data.results[0].geometry.location;
-      }
-    } catch {}
-
-    return null;
-  }
-
-  /* ===============================
-     SAVE — STORE ADDRESS
-  =============================== */
-  async function handleSave() {
-    try {
-      if (!BACKEND_URL || !STORE_ID) return;
-
-      setSaving(true);
-
-      let lat = null;
-      let lng = null;
-
-      const geo = await getLatLngFromAddress();
-      if (geo) {
-        lat = geo.lat;
-        lng = geo.lng;
-      }
+      setLoading(true);
 
       const res = await fetch(
-        `${BACKEND_URL}/api/store-address/${STORE_ID}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/store-address`,
         {
-          method: "PUT",
-          credentials: "include",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
-            ...address,
-            lat,
-            lng,
+            storeId,
+            ...form,
           }),
         }
       );
 
       if (!res.ok) {
-        throw new Error("Falha ao salvar endereço");
+        alert("Erro ao salvar endereço");
+        return;
       }
 
       alert("Endereço salvo com sucesso ✅");
     } catch (err) {
       console.error(err);
-      alert("Erro ao salvar endereço");
+      alert("Erro inesperado");
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   }
 
-  /* ===============================
-     GOOGLE MAP
-  =============================== */
-  const fullAddress =
-    address.street && address.city
-      ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
-      : "";
-
-  const fallbackAddress =
-    address.cep && address.cep.replace(/\D/g, "").length === 8
-      ? `${address.cep}, Brasil`
-      : "";
-
-  const addressForMap = fullAddress || fallbackAddress;
-
-  const mapUrl =
-    GOOGLE_MAPS_KEY && addressForMap
-      ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
-          addressForMap
-        )}`
-      : null;
-
-  
-  /* ===============================
-     RENDER
-  =============================== */
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Carregando endereço...
-      </div>
-    );
+  if (!loaded) {
+    return <p>Carregando endereço...</p>;
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* HEADER */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5 grid grid-cols-3 items-center">
-          <button
-            onClick={() => window.history.back()}
-            className="h-9 w-9 rounded-md flex items-center justify-center
-                       text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+    <div style={{ maxWidth: 600 }}>
+      <h1>Endereço da Loja</h1>
 
-          <h1 className="text-center text-xl sm:text-2xl font-bold">
-            Endereço da Loja
-          </h1>
+      <form onSubmit={handleSubmit}>
+        <input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} />
+        <input name="street" placeholder="Rua" value={form.street} onChange={handleChange} />
+        <input name="number" placeholder="Número" value={form.number} onChange={handleChange} />
+        <input
+          name="neighborhood"
+          placeholder="Bairro"
+          value={form.neighborhood}
+          onChange={handleChange}
+        />
+        <input name="city" placeholder="Cidade" value={form.city} onChange={handleChange} />
+        <input name="state" placeholder="Estado" value={form.state} onChange={handleChange} />
+        <input
+          name="complement"
+          placeholder="Complemento"
+          value={form.complement}
+          onChange={handleChange}
+        />
+        <input
+          name="reference"
+          placeholder="Referência"
+          value={form.reference}
+          onChange={handleChange}
+        />
 
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-md bg-gray-900
-                         px-4 py-2 text-sm font-medium text-white
-                         hover:bg-gray-800 disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* FORM */}
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        {/* CEP */}
-        <div className="rounded-xl border p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Navigation className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="font-semibold">Buscar por CEP</p>
-              <p className="text-sm text-gray-500">
-                {loadingCep
-                  ? "Buscando endereço..."
-                  : "Digite o CEP para preencher automaticamente"}
-              </p>
-            </div>
-          </div>
-
-          <input
-            placeholder="00000-000"
-            value={address.cep}
-            onChange={(e) => handleCepChange(e.target.value)}
-            className="h-11 w-full rounded-lg border px-4 text-sm"
-          />
-        </div>
-
-        {/* CAMPOS */}
-        <div className="rounded-xl border p-6 space-y-4">
-          <input
-            placeholder="Rua / Avenida"
-            value={address.street}
-            onChange={(e) =>
-              setAddress({ ...address, street: e.target.value })
-            }
-            className="h-11 w-full rounded-lg border px-4 text-sm"
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              placeholder="Número"
-              value={address.number}
-              onChange={(e) =>
-                setAddress({ ...address, number: e.target.value })
-              }
-              className="h-11 w-full rounded-lg border px-4 text-sm"
-            />
-
-            <input
-              placeholder="Complemento"
-              value={address.complement}
-              onChange={(e) =>
-                setAddress({ ...address, complement: e.target.value })
-              }
-              className="h-11 w-full rounded-lg border px-4 text-sm"
-            />
-          </div>
-
-          <input
-            placeholder="Bairro"
-            value={address.neighborhood}
-            onChange={(e) =>
-              setAddress({ ...address, neighborhood: e.target.value })
-            }
-            className="h-11 w-full rounded-lg border px-4 text-sm"
-          />
-
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              className="col-span-2 h-11 w-full rounded-lg border px-4 text-sm"
-              placeholder="Cidade"
-              value={address.city}
-              onChange={(e) =>
-                setAddress({ ...address, city: e.target.value })
-              }
-            />
-
-            <input
-              placeholder="UF"
-              value={address.state}
-              onChange={(e) =>
-                setAddress({
-                  ...address,
-                  state: e.target.value.toUpperCase().slice(0, 2),
-                })
-              }
-              className="h-11 w-full rounded-lg border px-4 text-sm"
-            />
-          </div>
-
-          <input
-            placeholder="Ponto de referência"
-            value={address.reference}
-            onChange={(e) =>
-              setAddress({ ...address, reference: e.target.value })
-            }
-            className="h-11 w-full rounded-lg border px-4 text-sm"
-          />
-        </div>
-
-        {/* MAP */}
-        <div className="rounded-xl border p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Map className="h-5 w-5 text-amber-600" />
-            <p className="font-semibold">Visualização no Mapa</p>
-          </div>
-
-          {mapUrl ? (
-            <iframe
-              src={mapUrl}
-              className="w-full h-48 rounded-lg border"
-              loading="lazy"
-            />
-          ) : (
-            <div className="h-48 border border-dashed rounded-lg flex items-center justify-center text-sm text-gray-400">
-              Preencha o endereço para visualizar no mapa
-            </div>
-          )}
-        </div>
-      </div>
+        <button type="submit" disabled={loading}>
+          {loading ? "Salvando..." : "Salvar endereço"}
+        </button>
+      </form>
     </div>
   );
 }
