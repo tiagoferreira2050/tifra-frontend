@@ -32,27 +32,31 @@ export default function StoreAddressPage() {
   });
 
   /* ===================================================
-     🔁 BUSCAR LOJA (GARANTE STORE ID)
-     endpoint já existente no seu backend
+     🔁 BUSCAR LOJA (CORRETO NO SEU PROJETO)
+     GET /api/stores → retorna ARRAY
   =================================================== */
   useEffect(() => {
     async function loadStore() {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/store`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/stores`,
           { credentials: "include" }
         );
 
         if (!res.ok) {
-          console.error("Erro ao buscar loja");
+          console.error("Erro ao buscar stores");
           setLoaded(true);
           return;
         }
 
         const data = await res.json();
 
-        // ⚠️ se o formato mudar, ajuste aqui
-        setStoreId(data.id);
+        if (Array.isArray(data) && data.length > 0) {
+          setStoreId(data[0].id);
+        } else {
+          alert("Nenhuma loja encontrada para este usuário");
+          setLoaded(true);
+        }
       } catch (err) {
         console.error("Erro loadStore:", err);
         setLoaded(true);
@@ -106,15 +110,13 @@ export default function StoreAddressPage() {
   /* ===================================================
      ✍️ HANDLE CHANGE
   =================================================== */
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   /* ===================================================
-     💾 SALVAR ENDEREÇO (BOTÃO FUNCIONA)
+     💾 SALVAR ENDEREÇO (AGORA FUNCIONA)
   =================================================== */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -177,55 +179,23 @@ export default function StoreAddressPage() {
       <h1>Endereço da Loja</h1>
 
       <form onSubmit={handleSubmit}>
-        <input
-          name="cep"
-          placeholder="CEP"
-          value={form.cep}
-          onChange={handleChange}
-        />
-
-        <input
-          name="street"
-          placeholder="Rua"
-          value={form.street}
-          onChange={handleChange}
-        />
-
-        <input
-          name="number"
-          placeholder="Número"
-          value={form.number}
-          onChange={handleChange}
-        />
-
+        <input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} />
+        <input name="street" placeholder="Rua" value={form.street} onChange={handleChange} />
+        <input name="number" placeholder="Número" value={form.number} onChange={handleChange} />
         <input
           name="neighborhood"
           placeholder="Bairro"
           value={form.neighborhood}
           onChange={handleChange}
         />
-
-        <input
-          name="city"
-          placeholder="Cidade"
-          value={form.city}
-          onChange={handleChange}
-        />
-
-        <input
-          name="state"
-          placeholder="Estado"
-          value={form.state}
-          onChange={handleChange}
-        />
-
+        <input name="city" placeholder="Cidade" value={form.city} onChange={handleChange} />
+        <input name="state" placeholder="Estado" value={form.state} onChange={handleChange} />
         <input
           name="complement"
           placeholder="Complemento"
           value={form.complement}
           onChange={handleChange}
         />
-
         <input
           name="reference"
           placeholder="Referência"
