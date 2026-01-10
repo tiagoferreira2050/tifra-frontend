@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID; // 👈 PADRÃO
 
 type StoreAddress = {
   cep: string;
@@ -44,7 +44,9 @@ export default function EnderecoPage() {
 
         const res = await fetch(
           `${BACKEND_URL}/api/store-address/${STORE_ID}`,
-          { credentials: "include" }
+          {
+            credentials: "include",
+          }
         );
 
         if (!res.ok) return;
@@ -64,7 +66,7 @@ export default function EnderecoPage() {
           });
         }
       } catch (err) {
-        console.error("Erro ao carregar endereço:", err);
+        console.error("Erro ao carregar endereço da loja:", err);
       } finally {
         setLoading(false);
       }
@@ -175,12 +177,20 @@ export default function EnderecoPage() {
         {
           method: "PUT",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...address, lat, lng }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...address,
+            lat,
+            lng,
+          }),
         }
       );
 
-      if (!res.ok) throw new Error("Erro ao salvar");
+      if (!res.ok) {
+        throw new Error("Falha ao salvar endereço");
+      }
 
       alert("Endereço salvo com sucesso ✅");
     } catch (err) {
@@ -192,7 +202,7 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     MAP
+     GOOGLE MAP
   =============================== */
   const fullAddress =
     address.street && address.city
@@ -204,13 +214,19 @@ export default function EnderecoPage() {
       ? `${address.cep}, Brasil`
       : "";
 
+  const addressForMap = fullAddress || fallbackAddress;
+
   const mapUrl =
-    GOOGLE_MAPS_KEY && (fullAddress || fallbackAddress)
+    GOOGLE_MAPS_KEY && addressForMap
       ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${encodeURIComponent(
-          fullAddress || fallbackAddress
+          addressForMap
         )}`
       : null;
 
+  
+  /* ===============================
+     RENDER
+  =============================== */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -222,13 +238,17 @@ export default function EnderecoPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* HEADER */}
-      <div className="border-b bg-white">
+      <div className="border-b border-gray-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-5 grid grid-cols-3 items-center">
-          <button onClick={() => history.back()}>
-            <ArrowLeft />
+          <button
+            onClick={() => window.history.back()}
+            className="h-9 w-9 rounded-md flex items-center justify-center
+                       text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </button>
 
-          <h1 className="text-center text-xl font-bold">
+          <h1 className="text-center text-xl sm:text-2xl font-bold">
             Endereço da Loja
           </h1>
 
@@ -236,9 +256,11 @@ export default function EnderecoPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-md"
+              className="inline-flex items-center gap-2 rounded-md bg-gray-900
+                         px-4 py-2 text-sm font-medium text-white
+                         hover:bg-gray-800 disabled:opacity-60"
             >
-              <Save size={16} />
+              <Save className="h-4 w-4" />
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
@@ -247,38 +269,120 @@ export default function EnderecoPage() {
 
       {/* FORM */}
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        <input
-          placeholder="CEP"
-          value={address.cep}
-          onChange={(e) => handleCepChange(e.target.value)}
-          className="w-full border p-3 rounded"
-        />
+        {/* CEP */}
+        <div className="rounded-xl border p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Navigation className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="font-semibold">Buscar por CEP</p>
+              <p className="text-sm text-gray-500">
+                {loadingCep
+                  ? "Buscando endereço..."
+                  : "Digite o CEP para preencher automaticamente"}
+              </p>
+            </div>
+          </div>
 
-        <input
-          placeholder="Rua"
-          value={address.street}
-          onChange={(e) =>
-            setAddress({ ...address, street: e.target.value })
-          }
-          className="w-full border p-3 rounded"
-        />
-
-        <input
-          placeholder="Número"
-          value={address.number}
-          onChange={(e) =>
-            setAddress({ ...address, number: e.target.value })
-          }
-          className="w-full border p-3 rounded"
-        />
-
-        {mapUrl && (
-          <iframe
-            src={mapUrl}
-            className="w-full h-48 rounded border"
-            loading="lazy"
+          <input
+            placeholder="00000-000"
+            value={address.cep}
+            onChange={(e) => handleCepChange(e.target.value)}
+            className="h-11 w-full rounded-lg border px-4 text-sm"
           />
-        )}
+        </div>
+
+        {/* CAMPOS */}
+        <div className="rounded-xl border p-6 space-y-4">
+          <input
+            placeholder="Rua / Avenida"
+            value={address.street}
+            onChange={(e) =>
+              setAddress({ ...address, street: e.target.value })
+            }
+            className="h-11 w-full rounded-lg border px-4 text-sm"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              placeholder="Número"
+              value={address.number}
+              onChange={(e) =>
+                setAddress({ ...address, number: e.target.value })
+              }
+              className="h-11 w-full rounded-lg border px-4 text-sm"
+            />
+
+            <input
+              placeholder="Complemento"
+              value={address.complement}
+              onChange={(e) =>
+                setAddress({ ...address, complement: e.target.value })
+              }
+              className="h-11 w-full rounded-lg border px-4 text-sm"
+            />
+          </div>
+
+          <input
+            placeholder="Bairro"
+            value={address.neighborhood}
+            onChange={(e) =>
+              setAddress({ ...address, neighborhood: e.target.value })
+            }
+            className="h-11 w-full rounded-lg border px-4 text-sm"
+          />
+
+          <div className="grid grid-cols-3 gap-4">
+            <input
+              className="col-span-2 h-11 w-full rounded-lg border px-4 text-sm"
+              placeholder="Cidade"
+              value={address.city}
+              onChange={(e) =>
+                setAddress({ ...address, city: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="UF"
+              value={address.state}
+              onChange={(e) =>
+                setAddress({
+                  ...address,
+                  state: e.target.value.toUpperCase().slice(0, 2),
+                })
+              }
+              className="h-11 w-full rounded-lg border px-4 text-sm"
+            />
+          </div>
+
+          <input
+            placeholder="Ponto de referência"
+            value={address.reference}
+            onChange={(e) =>
+              setAddress({ ...address, reference: e.target.value })
+            }
+            className="h-11 w-full rounded-lg border px-4 text-sm"
+          />
+        </div>
+
+        {/* MAP */}
+        <div className="rounded-xl border p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Map className="h-5 w-5 text-amber-600" />
+            <p className="font-semibold">Visualização no Mapa</p>
+          </div>
+
+          {mapUrl ? (
+            <iframe
+              src={mapUrl}
+              className="w-full h-48 rounded-lg border"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-48 border border-dashed rounded-lg flex items-center justify-center text-sm text-gray-400">
+              Preencha o endereço para visualizar no mapa
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
