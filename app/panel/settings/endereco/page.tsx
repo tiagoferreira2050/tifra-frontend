@@ -6,22 +6,6 @@ import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-/* ===================================================
-   🔐 AUTH FETCH (JWT NO HEADER)
-=================================================== */
-function authFetch(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("tifra_token");
-
-  return fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
 export default function EnderecoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,10 +28,11 @@ export default function EnderecoPage() {
   useEffect(() => {
     async function load() {
       try {
-        if (!BACKEND_URL) return;
-
-        const res = await authFetch(
-          `${BACKEND_URL}/api/store-address`
+        const res = await fetch(
+          `${BACKEND_URL}/api/store-address`,
+          {
+            credentials: "include",
+          }
         );
 
         if (!res.ok) return;
@@ -106,7 +91,7 @@ export default function EnderecoPage() {
         city: data.localidade || "",
         state: data.uf || "",
       }));
-    } catch (err) {
+    } catch {
       console.error("Erro ao buscar CEP");
     } finally {
       setLoadingCep(false);
@@ -161,14 +146,16 @@ export default function EnderecoPage() {
   =============================== */
   async function handleSave() {
     try {
-      if (!BACKEND_URL) return;
-
       setSaving(true);
 
       const { lat, lng } = await getLatLngFromAddress();
 
-      await authFetch(`${BACKEND_URL}/api/store-address`, {
+      await fetch(`${BACKEND_URL}/api/store-address`, {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           ...address,
           lat,
@@ -212,7 +199,6 @@ export default function EnderecoPage() {
   }
 
  
-
 
   return (
     <div className="min-h-screen bg-white">
