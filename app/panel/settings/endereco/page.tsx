@@ -1,10 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Navigation, Save, Map, ArrowLeft } from "lucide-react";
+import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+/* ===================================================
+   🔐 AUTH FETCH (JWT NO HEADER)
+=================================================== */
+function authFetch(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem("tifra_token");
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
 
 export default function EnderecoPage() {
   const [loading, setLoading] = useState(true);
@@ -24,16 +40,15 @@ export default function EnderecoPage() {
 
   /* ===============================
      LOAD — GET /api/store-address
-     (loja vem do usuário logado)
   =============================== */
   useEffect(() => {
     async function load() {
       try {
         if (!BACKEND_URL) return;
 
-        const res = await fetch(`${BACKEND_URL}/api/store-address`, {
-          credentials: "include",
-        });
+        const res = await authFetch(
+          `${BACKEND_URL}/api/store-address`
+        );
 
         if (!res.ok) return;
 
@@ -70,17 +85,16 @@ export default function EnderecoPage() {
         ? cleanCep.replace(/(\d{5})(\d{3})/, "$1-$2")
         : cleanCep;
 
-    setAddress((prev) => ({
-      ...prev,
-      cep: formattedCep,
-    }));
+    setAddress((prev) => ({ ...prev, cep: formattedCep }));
 
     if (cleanCep.length !== 8) return;
 
     try {
       setLoadingCep(true);
 
-      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const res = await fetch(
+        `https://viacep.com.br/ws/${cleanCep}/json/`
+      );
       const data = await res.json();
 
       if (data.erro) return;
@@ -100,28 +114,26 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     GEOLOCALIZAÇÃO (NÃO BLOQUEANTE)
+     GEOLOCALIZAÇÃO
   =============================== */
   async function getLatLngFromAddress() {
     if (!GOOGLE_MAPS_KEY) return { lat: null, lng: null };
 
     const cepClean = address.cep.replace(/\D/g, "");
 
-    // 1️⃣ tenta pelo CEP
     if (cepClean.length === 8) {
       try {
         const res = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${GOOGLE_MAPS_KEY}`
         );
-
         const data = await res.json();
+
         if (data.status === "OK" && data.results?.length) {
           return data.results[0].geometry.location;
         }
       } catch {}
     }
 
-    // 2️⃣ fallback endereço completo
     if (!address.street || !address.city || !address.state) {
       return { lat: null, lng: null };
     }
@@ -134,8 +146,8 @@ export default function EnderecoPage() {
           fullAddress
         )}&key=${GOOGLE_MAPS_KEY}`
       );
-
       const data = await res.json();
+
       if (data.status === "OK" && data.results?.length) {
         return data.results[0].geometry.location;
       }
@@ -146,7 +158,6 @@ export default function EnderecoPage() {
 
   /* ===============================
      SAVE — POST /api/store-address
-     (SEM storeId)
   =============================== */
   async function handleSave() {
     try {
@@ -156,12 +167,8 @@ export default function EnderecoPage() {
 
       const { lat, lng } = await getLatLngFromAddress();
 
-      await fetch(`${BACKEND_URL}/api/store-address`, {
+      await authFetch(`${BACKEND_URL}/api/store-address`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           ...address,
           lat,
@@ -179,7 +186,7 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     GOOGLE MAP
+     MAPA
   =============================== */
   const fullAddress =
     address.street && address.city
@@ -204,6 +211,7 @@ export default function EnderecoPage() {
     return <p className="p-6">Carregando endereço...</p>;
   }
 
+ 
 
 
   return (
