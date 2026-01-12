@@ -89,6 +89,42 @@ export default function HorariosPage() {
     pauses: scheduledPauses,
   });
 
+  /* ================= HELPERS ================= */
+  const toggleDay = (day: DayKey) => {
+    setSchedule((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        isOpen: !prev[day].isOpen,
+      },
+    }));
+  };
+
+  const copyToAllDays = (sourceDay: DayKey) => {
+    const base = schedule[sourceDay];
+    const updated: any = {};
+    daysOfWeek.forEach((d) => {
+      updated[d.key] = { ...base };
+    });
+    setSchedule(updated);
+  };
+
+  const addPause = () => {
+    if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
+
+    setScheduledPauses((prev) => [
+      ...prev,
+      { id: Date.now().toString(), ...newPause },
+    ]);
+
+    setNewPause({ name: "", startDate: "", endDate: "" });
+  };
+
+  const removePause = (id: string) => {
+    setScheduledPauses((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  /* ================= RENDER ================= */
   return (
     <div className="min-h-screen bg-white px-6 py-6">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -183,9 +219,7 @@ export default function HorariosPage() {
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-blue-500" />
             <div>
-              <h2 className="font-medium text-sm">
-                Horário de Funcionamento
-              </h2>
+              <h2 className="font-medium text-sm">Horário de Funcionamento</h2>
               <p className="text-sm text-gray-500">
                 Configure os horários de cada dia da semana
               </p>
@@ -249,14 +283,7 @@ export default function HorariosPage() {
                         className="border border-gray-200 rounded-md px-2 py-1 text-sm"
                       />
                       <button
-                        onClick={() => {
-                          const base = schedule[day.key];
-                          const updated: any = {};
-                          daysOfWeek.forEach((d) => {
-                            updated[d.key] = { ...base };
-                          });
-                          setSchedule(updated);
-                        }}
+                        onClick={() => copyToAllDays(day.key)}
                         className="p-1 rounded hover:bg-gray-100"
                       >
                         <Copy className="w-4 h-4" />
@@ -265,15 +292,7 @@ export default function HorariosPage() {
                   )}
 
                   <button
-                    onClick={() =>
-                      setSchedule((prev) => ({
-                        ...prev,
-                        [day.key]: {
-                          ...prev[day.key],
-                          isOpen: !prev[day.key].isOpen,
-                        },
-                      }))
-                    }
+                    onClick={() => toggleDay(day.key)}
                     className={`w-9 h-5 rounded-full relative transition ${
                       d.isOpen ? "bg-black" : "bg-gray-300"
                     }`}
@@ -288,6 +307,72 @@ export default function HorariosPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* PAUSAS */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+          <div className="flex items-center gap-3">
+            <CalendarX className="w-5 h-5 text-orange-500" />
+            <div>
+              <h2 className="font-medium text-sm">Pausas Programadas</h2>
+              <p className="text-sm text-gray-500">
+                Feriados, férias ou fechamentos especiais
+              </p>
+            </div>
+          </div>
+
+          {scheduledPauses.map((pause) => (
+            <div
+              key={pause.id}
+              className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
+            >
+              <div>
+                <p className="text-sm font-medium">{pause.name}</p>
+                <p className="text-xs text-gray-500">
+                  {pause.startDate} até {pause.endDate}
+                </p>
+              </div>
+              <button onClick={() => removePause(pause.id)}>
+                <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+              </button>
+            </div>
+          ))}
+
+          <div className="border border-dashed rounded-lg p-4 space-y-3">
+            <input
+              placeholder="Nome (ex: Férias, Feriado)"
+              value={newPause.name}
+              onChange={(e) =>
+                setNewPause({ ...newPause, name: e.target.value })
+              }
+              className="w-full border rounded-md px-3 py-2 text-sm"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="date"
+                value={newPause.startDate}
+                onChange={(e) =>
+                  setNewPause({ ...newPause, startDate: e.target.value })
+                }
+                className="border rounded-md px-3 py-2 text-sm"
+              />
+              <input
+                type="date"
+                value={newPause.endDate}
+                onChange={(e) =>
+                  setNewPause({ ...newPause, endDate: e.target.value })
+                }
+                className="border rounded-md px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              onClick={addPause}
+              className="w-full py-2 rounded-lg bg-black text-white text-sm flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar Pausa
+            </button>
+          </div>
         </div>
       </div>
     </div>
