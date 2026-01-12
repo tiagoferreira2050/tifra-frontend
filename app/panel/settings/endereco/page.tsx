@@ -11,6 +11,9 @@ export default function EnderecoPage() {
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
 
+  /* ===============================
+     STATE
+  =============================== */
   const [address, setAddress] = useState({
     cep: "",
     state: "",
@@ -24,6 +27,7 @@ export default function EnderecoPage() {
 
   /* ===============================
      LOAD — GET /api/store/address
+     (PADRÃO IGUAL STORE SETTINGS)
   =============================== */
   useEffect(() => {
     async function load() {
@@ -75,7 +79,7 @@ export default function EnderecoPage() {
       );
       const data = await res.json();
 
-      if (data.erro) return;
+      if (data?.erro) return;
 
       setAddress((prev) => ({
         ...prev,
@@ -84,46 +88,33 @@ export default function EnderecoPage() {
         city: data.localidade || "",
         state: data.uf || "",
       }));
-    } catch {
-      console.error("Erro ao buscar CEP");
+    } catch (err) {
+      console.error("Erro ao buscar CEP:", err);
     } finally {
       setLoadingCep(false);
     }
   }
 
   /* ===============================
-     GEOLOCALIZAÇÃO
+     GEOLOCALIZAÇÃO (LAT / LNG)
   =============================== */
   async function getLatLngFromAddress() {
     if (!GOOGLE_MAPS_KEY) return { lat: null, lng: null };
 
     const cepClean = address.cep.replace(/\D/g, "");
 
-    if (cepClean.length === 8) {
-      try {
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${cepClean}|country:BR&key=${GOOGLE_MAPS_KEY}`
-        );
-        const data = await res.json();
-
-        if (data.status === "OK" && data.results?.length) {
-          return data.results[0].geometry.location;
-        }
-      } catch {}
-    }
-
-    if (!address.street || !address.city || !address.state) {
-      return { lat: null, lng: null };
-    }
-
-    const fullAddress = `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`;
-
     try {
+      const query =
+        cepClean.length === 8
+          ? `components=postal_code:${cepClean}|country:BR`
+          : `address=${encodeURIComponent(
+              `${address.street} ${address.number || ""}, ${address.city} - ${address.state}, Brasil`
+            )}`;
+
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          fullAddress
-        )}&key=${GOOGLE_MAPS_KEY}`
+        `https://maps.googleapis.com/maps/api/geocode/json?${query}&key=${GOOGLE_MAPS_KEY}`
       );
+
       const data = await res.json();
 
       if (data.status === "OK" && data.results?.length) {
@@ -136,6 +127,7 @@ export default function EnderecoPage() {
 
   /* ===============================
      SAVE — PUT /api/store/address
+     (PADRÃO IGUAL STORE SETTINGS)
   =============================== */
   async function handleSave() {
     if (saving) return;
@@ -156,7 +148,7 @@ export default function EnderecoPage() {
 
       alert("Endereço salvo com sucesso ✅");
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao salvar endereço:", err);
       alert("Erro ao salvar endereço");
     } finally {
       setSaving(false);
@@ -166,17 +158,12 @@ export default function EnderecoPage() {
   /* ===============================
      MAPA
   =============================== */
-  const fullAddress =
+  const addressForMap =
     address.street && address.city
       ? `${address.street} ${address.number || ""}, ${address.neighborhood || ""}, ${address.city} - ${address.state}, Brasil`
-      : "";
-
-  const fallbackAddress =
-    address.cep && address.cep.replace(/\D/g, "").length === 8
+      : address.cep
       ? `${address.cep}, Brasil`
       : "";
-
-  const addressForMap = fullAddress || fallbackAddress;
 
   const mapUrl =
     GOOGLE_MAPS_KEY && addressForMap
@@ -188,6 +175,7 @@ export default function EnderecoPage() {
   if (loading) {
     return <p className="p-6">Carregando endereço...</p>;
   }
+
 
   return (
     <div className="min-h-screen bg-white">
