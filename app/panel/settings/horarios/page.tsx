@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -42,7 +42,7 @@ interface ScheduledPause {
 }
 
 /* ================= CONSTANTS ================= */
-const daysOfWeek = [
+const daysOfWeek: { key: DayKey; label: string; short: string }[] = [
   { key: "monday", label: "Segunda-feira", short: "Seg" },
   { key: "tuesday", label: "Terça-feira", short: "Ter" },
   { key: "wednesday", label: "Quarta-feira", short: "Qua" },
@@ -52,11 +52,14 @@ const daysOfWeek = [
   { key: "sunday", label: "Domingo", short: "Dom" },
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 /* ================= PAGE ================= */
 export default function HorariosPage() {
   const router = useRouter();
 
   const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [schedule, setSchedule] = useState<Record<DayKey, DaySchedule>>({
     monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
@@ -68,61 +71,87 @@ export default function HorariosPage() {
     sunday: { isOpen: false, openTime: "09:00", closeTime: "18:00" },
   });
 
-  const [scheduledPauses, setScheduledPauses] = useState<ScheduledPause[]>([
-    {
-      id: "1",
-      name: "Natal e Ano Novo",
-      startDate: "2025-12-24",
-      endDate: "2025-12-26",
-    },
-  ]);
+  const [scheduledPauses, setScheduledPauses] = useState<ScheduledPause[]>([]);
+  const [newPause, setNewPause] = useState({ name: "", startDate: "", endDate: "" });
 
-  const [newPause, setNewPause] = useState({
-    name: "",
-    startDate: "",
-    endDate: "",
-  });
+  /* ================= LOAD ================= */
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/store/hours`, {
+          credentials: "include",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
 
-  const storeStatus = getStoreStatus({
-    isStoreOpen,
-    schedule,
-    pauses: scheduledPauses,
-  });
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        setIsStoreOpen(data.isOpenManual);
+        setSchedule(data.schedule);
+        setScheduledPauses(data.pauses || []);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    load();
+  }, []);
+
+  /* ================= SAVE ================= */
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API_URL}/api/store/hours`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          isOpenManual: isStoreOpen,
+          schedule,
+          pauses: scheduledPauses,
+        }),
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ================= HELPERS ================= */
   const toggleDay = (day: DayKey) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        isOpen: !prev[day].isOpen,
-      },
+      [day]: { ...prev[day], isOpen: !prev[day].isOpen },
     }));
   };
 
   const copyToAllDays = (sourceDay: DayKey) => {
     const base = schedule[sourceDay];
     const updated: any = {};
-    daysOfWeek.forEach((d) => {
-      updated[d.key] = { ...base };
-    });
+    daysOfWeek.forEach((d) => (updated[d.key] = { ...base }));
     setSchedule(updated);
   };
 
   const addPause = () => {
     if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
-
-    setScheduledPauses((prev) => [
-      ...prev,
-      { id: Date.now().toString(), ...newPause },
-    ]);
-
+    setScheduledPauses((p) => [...p, { id: Date.now().toString(), ...newPause }]);
     setNewPause({ name: "", startDate: "", endDate: "" });
   };
 
   const removePause = (id: string) => {
-    setScheduledPauses((prev) => prev.filter((p) => p.id !== id));
+    setScheduledPauses((p) => p.filter((x) => x.id !== id));
   };
+
+  const storeStatus = getStoreStatus({
+    isStoreOpen,
+    schedule,
+    pauses: scheduledPauses,
+  });
 
   /* ================= RENDER ================= */
   return (
