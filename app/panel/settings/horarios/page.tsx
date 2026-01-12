@@ -2,12 +2,9 @@
 
 export const dynamic = "force-dynamic";
 
-
-
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
-  Clock,
   Save,
   Store,
   Sun,
@@ -32,7 +29,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -104,9 +100,7 @@ export default function HorariosPage() {
     endDate: "",
   });
 
-  /* =======================
-     LOAD
-  ======================= */
+  /* LOAD */
   useEffect(() => {
     async function load() {
       const data = await apiFetch("/api/store/hours");
@@ -119,9 +113,6 @@ export default function HorariosPage() {
     load();
   }, []);
 
-  /* =======================
-     HELPERS
-  ======================= */
   function updateDaySchedule(
     day: string,
     field: keyof DaySchedule,
@@ -155,10 +146,7 @@ export default function HorariosPage() {
   }
 
   function addPause() {
-    if (!newPause.name || !newPause.startDate || !newPause.endDate) {
-      alert("Preencha todos os campos da pausa");
-      return;
-    }
+    if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
 
     setScheduledPauses((prev) => [
       ...prev,
@@ -189,13 +177,10 @@ export default function HorariosPage() {
 
   const activePause = getActivePause();
 
-  /* =======================
-     RENDER
-  ======================= */
   return (
     <div className="min-h-screen bg-background">
       {/* HEADER */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+      <div className="sticky top-0 z-10 bg-background border-b">
         <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <Button
@@ -219,31 +204,27 @@ export default function HorariosPage() {
         </div>
       </div>
 
-      <div className="p-4 max-w-2xl mx-auto space-y-6 pb-8">
+      <div className="p-4 max-w-2xl mx-auto space-y-6">
         {/* STATUS */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-3 items-center">
                 <div
                   className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     isStoreOpen ? "bg-green-100" : "bg-red-100"
                   }`}
                 >
                   <Store
-                    className={isStoreOpen ? "text-green-600" : "text-red-600"}
+                    className={
+                      isStoreOpen ? "text-green-600" : "text-red-600"
+                    }
                   />
                 </div>
                 <div>
                   <CardTitle>Status da Loja</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Badge
-                      className={
-                        isStoreOpen
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }
-                    >
+                  <CardDescription className="flex gap-2 items-center">
+                    <Badge>
                       {isStoreOpen ? "Aberto" : "Fechado"}
                     </Badge>
                     {activePause && (
@@ -254,7 +235,6 @@ export default function HorariosPage() {
                   </CardDescription>
                 </div>
               </div>
-
               <Switch checked={isStoreOpen} onCheckedChange={setIsStoreOpen} />
             </div>
           </CardHeader>
@@ -272,8 +252,8 @@ export default function HorariosPage() {
               const d = schedule[day.key];
               return (
                 <div key={day.key} className="p-4 rounded-xl border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-3 items-center">
                       <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-medium">
                         {day.short}
                       </div>
@@ -285,7 +265,7 @@ export default function HorariosPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex gap-2 items-center">
                       {d.isOpen && (
                         <>
                           <Sun className="w-4 h-4" />
@@ -296,7 +276,7 @@ export default function HorariosPage() {
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
-                              <SelectValue />
+                              <span>{d.openTime}</span>
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
@@ -315,7 +295,7 @@ export default function HorariosPage() {
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
-                              <SelectValue />
+                              <span>{d.closeTime}</span>
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
@@ -353,16 +333,14 @@ export default function HorariosPage() {
         <Card>
           <CardHeader>
             <CardTitle>Pausas Programadas</CardTitle>
-            <CardDescription>
-              Feriados, férias ou fechamentos
-            </CardDescription>
+            <CardDescription>Feriados ou fechamentos</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-3">
             {scheduledPauses.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between p-3 rounded-xl border"
+                className="flex justify-between items-center p-3 border rounded-xl"
               >
                 <div>
                   <p className="font-medium">{p.name}</p>
