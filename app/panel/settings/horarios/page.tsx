@@ -5,21 +5,42 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import {
   ArrowLeft,
+  Clock,
   Save,
   Store,
-  Clock,
-  CalendarX,
-  Trash2,
   Sun,
   Moon,
   Copy,
+  CalendarOff,
   Plus,
+  Trash2,
+  Calendar,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+
 import { getStoreStatus } from "@/lib/store-status";
 
-/* ============================ TYPES ============================ */
+/* ================= TYPES ================= */
 type DayKey =
   | "monday"
   | "tuesday"
@@ -42,7 +63,7 @@ interface ScheduledPause {
   endDate: string;
 }
 
-/* ============================ CONSTANTS ============================ */
+/* ================= CONSTANTS ================= */
 const daysOfWeek = [
   { key: "monday", label: "Segunda-feira", short: "Seg" },
   { key: "tuesday", label: "Terça-feira", short: "Ter" },
@@ -53,7 +74,16 @@ const daysOfWeek = [
   { key: "sunday", label: "Domingo", short: "Dom" },
 ] as const;
 
-/* ============================ PAGE ============================ */
+const timeOptions = [
+  "00:00","00:30","01:00","01:30","02:00","02:30","03:00","03:30",
+  "04:00","04:30","05:00","05:30","06:00","06:30","07:00","07:30",
+  "08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30",
+  "12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30",
+  "16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30",
+  "20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30",
+];
+
+/* ================= PAGE ================= */
 export default function HorariosPage() {
   const router = useRouter();
 
@@ -78,216 +108,203 @@ export default function HorariosPage() {
     },
   ]);
 
-  const [newPause, setNewPause] = useState({
-    name: "",
-    startDate: "",
-    endDate: "",
-  });
-
   const storeStatus = getStoreStatus({
     isStoreOpen,
     schedule,
     pauses: scheduledPauses,
   });
 
-  const toggleDay = (day: DayKey) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], isOpen: !prev[day].isOpen },
-    }));
-  };
-
   return (
-    <div className="min-h-screen bg-white px-6 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* HEADER */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      {/* HEADER */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+        <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <div>
-              <h1 className="text-xl font-semibold">Horários</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-xl font-bold">Horários</h1>
+              <p className="text-sm text-muted-foreground">
                 Configure o funcionamento
               </p>
             </div>
           </div>
-
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm">
+          <Button className="gap-2">
             <Save className="w-4 h-4" />
             Salvar
-          </button>
+          </Button>
         </div>
+      </div>
 
-        {/* STATUS DA LOJA */}
-        <div className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-4 max-w-2xl mx-auto space-y-6 pb-8">
+        {/* STATUS */}
+        <Card className="overflow-hidden">
           <div
-            className={`h-1 ${
+            className={`h-1.5 ${
               storeStatus.status === "open"
                 ? "bg-green-500"
                 : "bg-red-500"
             }`}
           />
-
-          <div className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  storeStatus.status === "open"
-                    ? "bg-green-100"
-                    : "bg-red-100"
-                }`}
-              >
-                <Store
-                  className={`w-6 h-6 ${
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     storeStatus.status === "open"
-                      ? "text-green-600"
-                      : "text-red-600"
+                      ? "bg-green-100"
+                      : "bg-red-100"
                   }`}
-                />
+                >
+                  <Store className="w-6 h-6" />
+                </div>
+                <div>
+                  <CardTitle>Status da Loja</CardTitle>
+                  <CardDescription className="flex items-center gap-2">
+                    <Badge
+                      className={
+                        storeStatus.status === "open"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    >
+                      {storeStatus.status === "open" ? "Aberto" : "Fechado"}
+                    </Badge>
+                    <span>{storeStatus.message}</span>
+                  </CardDescription>
+                </div>
               </div>
-
-              <div>
-                <p className="font-medium text-sm flex items-center gap-2">
-                  Status da Loja
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      storeStatus.status === "open"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {storeStatus.status === "open" ? "Aberto" : "Fechado"}
-                  </span>
-                </p>
-                <p className="text-sm text-gray-500">
-                  {storeStatus.message}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setIsStoreOpen(!isStoreOpen)}
-              className={`w-11 h-6 rounded-full relative transition ${
-                isStoreOpen ? "bg-green-500" : "bg-gray-300"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${
-                  isStoreOpen ? "left-5" : "left-1"
-                }`}
+              <Switch
+                checked={isStoreOpen}
+                onCheckedChange={setIsStoreOpen}
+                className="data-[state=checked]:bg-green-500"
               />
-            </button>
-          </div>
-
-          <p className="px-5 pb-5 text-sm text-gray-500">
-            {storeStatus.status === "open"
-              ? "A loja está aceitando pedidos conforme os horários configurados abaixo."
-              : "A loja está fechada e não aceita pedidos no momento."}
-          </p>
-        </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {storeStatus.status === "open"
+                ? "A loja está aceitando pedidos conforme os horários configurados abaixo."
+                : "A loja está fechada e não aceita pedidos no momento."}
+            </p>
+          </CardContent>
+        </Card>
 
         {/* HORÁRIOS */}
-        <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-5 space-y-4">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-500" />
-            <div>
-              <h2 className="font-medium text-sm">
-                Horário de Funcionamento
-              </h2>
-              <p className="text-sm text-gray-500">
-                Configure os horários de cada dia da semana
-              </p>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle>Horário de Funcionamento</CardTitle>
+                <CardDescription>
+                  Configure os horários de cada dia da semana
+                </CardDescription>
+              </div>
             </div>
-          </div>
+          </CardHeader>
 
-          <div className="space-y-2">
+          <CardContent className="space-y-3">
             {daysOfWeek.map((day) => {
               const d = schedule[day.key];
 
               return (
                 <div
                   key={day.key}
-                  className={`flex items-center justify-between rounded-lg px-4 py-3 transition ${
+                  className={`p-4 rounded-xl border transition-all ${
                     d.isOpen
-                      ? "hover:bg-gray-50"
-                      : "bg-gray-50 opacity-60"
+                      ? "bg-background hover:border-primary/30"
+                      : "bg-muted/30 border-transparent"
                   }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-sm font-medium">
-                      {day.short}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium">{day.label}</p>
-                      <p className="text-xs text-gray-500">
-                        {d.isOpen ? "Aberto" : "Fechado"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {d.isOpen && (
-                      <>
-                        <Sun className="w-4 h-4 text-orange-400" />
-                        <input
-                          type="time"
-                          value={d.openTime}
-                          onChange={(e) =>
-                            setSchedule((prev) => ({
-                              ...prev,
-                              [day.key]: {
-                                ...prev[day.key],
-                                openTime: e.target.value,
-                              },
-                            }))
-                          }
-                          className="border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
-                        />
-                        <span className="text-xs text-gray-500">às</span>
-                        <Moon className="w-4 h-4 text-blue-400" />
-                        <input
-                          type="time"
-                          value={d.closeTime}
-                          onChange={(e) =>
-                            setSchedule((prev) => ({
-                              ...prev,
-                              [day.key]: {
-                                ...prev[day.key],
-                                closeTime: e.target.value,
-                              },
-                            }))
-                          }
-                          className="border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
-                        />
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-
-                    <button
-                      onClick={() => toggleDay(day.key)}
-                      className={`w-9 h-5 rounded-full relative transition ${
-                        d.isOpen ? "bg-black" : "bg-gray-300"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${
-                          d.isOpen ? "left-4.5" : "left-1"
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-[140px]">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium ${
+                          d.isOpen
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
                         }`}
+                      >
+                        {day.short}
+                      </div>
+                      <div>
+                        <Label className="font-medium">{day.label}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {d.isOpen ? "Aberto" : "Fechado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {d.isOpen && (
+                        <>
+                          <Sun className="w-4 h-4 text-amber-500" />
+                          <Select
+                            value={d.openTime}
+                            onValueChange={(v) =>
+                              setSchedule((prev) => ({
+                                ...prev,
+                                [day.key]: { ...prev[day.key], openTime: v },
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-24 h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <span className="text-muted-foreground">às</span>
+
+                          <Moon className="w-4 h-4 text-indigo-500" />
+                          <Select
+                            value={d.closeTime}
+                            onValueChange={(v) =>
+                              setSchedule((prev) => ({
+                                ...prev,
+                                [day.key]: { ...prev[day.key], closeTime: v },
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-24 h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
+                      <Switch
+                        checked={d.isOpen}
+                        onCheckedChange={(checked) =>
+                          setSchedule((prev) => ({
+                            ...prev,
+                            [day.key]: { ...prev[day.key], isOpen: checked },
+                          }))
+                        }
                       />
-                    </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
