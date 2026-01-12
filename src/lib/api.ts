@@ -10,11 +10,7 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("tifra_token")
-      : null;
-
+  // 🔥 fallback (não obrigatório, mas mantém compatibilidade)
   const userId =
     typeof window !== "undefined"
       ? localStorage.getItem("tifra_user_id")
@@ -26,10 +22,9 @@ export async function apiFetch(
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    credentials: "include",
+    credentials: "include", // 🔥 PADRÃO DEFINITIVO (cookie httpOnly)
     headers: {
       ...(isBodyMethod ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(userId ? { "x-user-id": userId } : {}),
       ...(options.headers || {}),
     },

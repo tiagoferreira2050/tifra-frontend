@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Store, Loader2 } from "lucide-react";
+import { getMyStore } from "@/lib/store";
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -27,10 +28,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      /* ===============================
+         LOGIN
+      =============================== */
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        credentials: "include", // 🔥 cookie httpOnly
         body: JSON.stringify({
           email: email.trim(),
           password,
@@ -44,7 +48,18 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ LOGIN OK → backend já setou cookie
+      /* ===============================
+         🔥 PASSO MAIS IMPORTANTE
+         👉 inicializa/cria a loja
+      =============================== */
+      const store = await getMyStore();
+
+      // opcional (mas útil pra debug/local)
+      localStorage.setItem("tifra_store", JSON.stringify(store));
+
+      /* ===============================
+         REDIRECT FINAL
+      =============================== */
       router.replace("/panel");
     } catch (err) {
       console.error("Erro no login:", err);
