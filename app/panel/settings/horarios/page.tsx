@@ -174,7 +174,7 @@ export default function HorariosPage() {
     schedule,
     pauses: scheduledPauses,
   });
-  
+
   /* ================= RENDER ================= */
   return (
     <div className="min-h-screen bg-white px-6 py-6">
@@ -197,10 +197,16 @@ export default function HorariosPage() {
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm">
-            <Save className="w-4 h-4" />
-            Salvar
-          </button>
+          <button
+  type="button"
+  onClick={handleSave}
+  disabled={loading}
+  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm disabled:opacity-50"
+>
+  <Save className="w-4 h-4" />
+  {loading ? "Salvando..." : "Salvar"}
+</button>
+
         </div>
 
         {/* STATUS */}
