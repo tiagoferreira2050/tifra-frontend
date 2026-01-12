@@ -9,11 +9,8 @@ import {
   Sun,
   Moon,
   Copy,
-  Check,
-  CalendarOff,
   Plus,
   Trash2,
-  Calendar,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -197,7 +194,10 @@ export default function HorariosPage() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button
+              onClick={() => router.back()}
+              className="h-9 w-9 p-0 hover:bg-muted"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -217,18 +217,29 @@ export default function HorariosPage() {
 
       <div className="p-4 max-w-2xl mx-auto space-y-6 pb-8">
         {/* STATUS */}
-        <Card className="overflow-hidden">
-          <div className={`h-1.5 ${isStoreOpen ? "bg-green-500" : "bg-red-500"}`} />
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isStoreOpen ? "bg-green-100" : "bg-red-100"}`}>
-                  <Store className={isStoreOpen ? "text-green-600" : "text-red-600"} />
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    isStoreOpen ? "bg-green-100" : "bg-red-100"
+                  }`}
+                >
+                  <Store
+                    className={isStoreOpen ? "text-green-600" : "text-red-600"}
+                  />
                 </div>
                 <div>
                   <CardTitle>Status da Loja</CardTitle>
                   <CardDescription className="flex items-center gap-2">
-                    <Badge className={isStoreOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                    <Badge
+                      className={
+                        isStoreOpen
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    >
                       {isStoreOpen ? "Aberto" : "Fechado"}
                     </Badge>
                     {activePause && (
@@ -239,6 +250,7 @@ export default function HorariosPage() {
                   </CardDescription>
                 </div>
               </div>
+
               <Switch checked={isStoreOpen} onCheckedChange={setIsStoreOpen} />
             </div>
           </CardHeader>
@@ -250,13 +262,14 @@ export default function HorariosPage() {
             <CardTitle>Horário de Funcionamento</CardTitle>
             <CardDescription>Configure os horários da semana</CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-3">
             {daysOfWeek.map((day) => {
               const d = schedule[day.key];
               return (
                 <div key={day.key} className="p-4 rounded-xl border">
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-3 items-center">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-medium">
                         {day.short}
                       </div>
@@ -268,40 +281,62 @@ export default function HorariosPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 items-center">
+                    <div className="flex items-center gap-2">
                       {d.isOpen && (
                         <>
                           <Sun className="w-4 h-4" />
-                          <Select value={d.openTime} onValueChange={(v) => updateDaySchedule(day.key, "openTime", v)}>
+                          <Select
+                            value={d.openTime}
+                            onValueChange={(v) =>
+                              updateDaySchedule(day.key, "openTime", v)
+                            }
+                          >
                             <SelectTrigger className="w-24 h-9">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
-                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
 
                           <Moon className="w-4 h-4" />
-                          <Select value={d.closeTime} onValueChange={(v) => updateDaySchedule(day.key, "closeTime", v)}>
+                          <Select
+                            value={d.closeTime}
+                            onValueChange={(v) =>
+                              updateDaySchedule(day.key, "closeTime", v)
+                            }
+                          >
                             <SelectTrigger className="w-24 h-9">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
-                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
 
-                          <Button variant="ghost" size="icon" onClick={() => copyToAllDays(day.key)}>
+                          <Button
+                            onClick={() => copyToAllDays(day.key)}
+                            className="h-9 w-9 p-0 hover:bg-muted"
+                          >
                             <Copy className="w-4 h-4" />
                           </Button>
                         </>
                       )}
 
-                      <Switch checked={d.isOpen} onCheckedChange={(v) => updateDaySchedule(day.key, "isOpen", v)} />
+                      <Switch
+                        checked={d.isOpen}
+                        onCheckedChange={(v) =>
+                          updateDaySchedule(day.key, "isOpen", v)
+                        }
+                      />
                     </div>
                   </div>
                 </div>
@@ -314,19 +349,27 @@ export default function HorariosPage() {
         <Card>
           <CardHeader>
             <CardTitle>Pausas Programadas</CardTitle>
-            <CardDescription>Feriados, férias ou fechamentos</CardDescription>
+            <CardDescription>
+              Feriados, férias ou fechamentos
+            </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-3">
             {scheduledPauses.map((p) => (
-              <div key={p.id} className="flex justify-between items-center p-3 rounded-xl border">
+              <div
+                key={p.id}
+                className="flex items-center justify-between p-3 rounded-xl border"
+              >
                 <div>
                   <p className="font-medium">{p.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(p.startDate)} até {formatDate(p.endDate)}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => removePause(p.id)}>
+                <Button
+                  onClick={() => removePause(p.id)}
+                  className="h-9 w-9 p-0 hover:bg-muted"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -336,14 +379,29 @@ export default function HorariosPage() {
               <Input
                 placeholder="Nome da pausa"
                 value={newPause.name}
-                onChange={(e) => setNewPause({ ...newPause, name: e.target.value })}
+                onChange={(e) =>
+                  setNewPause({ ...newPause, name: e.target.value })
+                }
               />
               <div className="grid grid-cols-2 gap-3">
-                <Input type="date" value={newPause.startDate} onChange={(e) => setNewPause({ ...newPause, startDate: e.target.value })} />
-                <Input type="date" value={newPause.endDate} onChange={(e) => setNewPause({ ...newPause, endDate: e.target.value })} />
+                <Input
+                  type="date"
+                  value={newPause.startDate}
+                  onChange={(e) =>
+                    setNewPause({ ...newPause, startDate: e.target.value })
+                  }
+                />
+                <Input
+                  type="date"
+                  value={newPause.endDate}
+                  onChange={(e) =>
+                    setNewPause({ ...newPause, endDate: e.target.value })
+                  }
+                />
               </div>
               <Button onClick={addPause} className="w-full gap-2">
-                <Plus className="w-4 h-4" /> Adicionar pausa
+                <Plus className="w-4 h-4" />
+                Adicionar pausa
               </Button>
             </div>
           </CardContent>
@@ -352,5 +410,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
-
