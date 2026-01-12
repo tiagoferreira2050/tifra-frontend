@@ -270,7 +270,7 @@ export default function HorariosPage() {
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
-                              <SelectValue />
+<SelectValue>{d.openTime}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
@@ -297,7 +297,7 @@ export default function HorariosPage() {
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
-                              <SelectValue />
+                              <SelectValue>{d.closeTime}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
