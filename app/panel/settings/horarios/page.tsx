@@ -72,15 +72,23 @@ export default function HorariosPage() {
   });
 
   const [scheduledPauses, setScheduledPauses] = useState<ScheduledPause[]>([]);
-  const [newPause, setNewPause] = useState({ name: "", startDate: "", endDate: "" });
+  const [newPause, setNewPause] = useState({
+    name: "",
+    startDate: "",
+    endDate: "",
+  });
 
   /* ================= LOAD ================= */
   useEffect(() => {
+    if (!API_URL) return;
+
     const load = async () => {
       try {
         const res = await fetch(`${API_URL}/api/store/hours`, {
           credentials: "include",
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
 
         if (!res.ok) return;
@@ -100,6 +108,8 @@ export default function HorariosPage() {
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
+    if (!API_URL) return;
+
     setLoading(true);
     try {
       await fetch(`${API_URL}/api/store/hours`, {
@@ -139,7 +149,12 @@ export default function HorariosPage() {
 
   const addPause = () => {
     if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
-    setScheduledPauses((p) => [...p, { id: Date.now().toString(), ...newPause }]);
+
+    setScheduledPauses((p) => [
+      ...p,
+      { id: Date.now().toString(), ...newPause },
+    ]);
+
     setNewPause({ name: "", startDate: "", endDate: "" });
   };
 
@@ -152,6 +167,7 @@ export default function HorariosPage() {
     schedule,
     pauses: scheduledPauses,
   });
+
 
   /* ================= RENDER ================= */
   return (
