@@ -83,11 +83,7 @@ export default function HorariosPage() {
     const load = async () => {
       try {
         const res = await fetch(`${API_URL}/api/store/hours`, {
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "x-user-id": localStorage.getItem("userId") || "",
-          },
+          credentials: "include", // 🔥 PADRÃO DO PROJETO
         });
 
         if (!res.ok) return;
@@ -98,7 +94,7 @@ export default function HorariosPage() {
         if (data.pauses) setScheduledPauses(data.pauses);
         setIsStoreOpen(data.isOpenManual ?? true);
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar horários:", err);
       }
     };
 
@@ -111,11 +107,9 @@ export default function HorariosPage() {
     try {
       const res = await fetch(`${API_URL}/api/store/hours`, {
         method: "PUT",
-        credentials: "include",
+        credentials: "include", // 🔥 PADRÃO DO ENDEREÇO
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "x-user-id": localStorage.getItem("userId") || "",
         },
         body: JSON.stringify({
           isOpenManual: isStoreOpen,
@@ -128,7 +122,7 @@ export default function HorariosPage() {
         console.error("Erro ao salvar horários");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao salvar horários:", err);
     } finally {
       setLoading(false);
     }
