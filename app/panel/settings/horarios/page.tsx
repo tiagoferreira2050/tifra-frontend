@@ -58,8 +58,8 @@ const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 export default function HorariosPage() {
   const router = useRouter();
 
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   const [schedule, setSchedule] = useState<Record<DayKey, DaySchedule>>({
     monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
@@ -80,14 +80,13 @@ export default function HorariosPage() {
 
   /* ================= LOAD ================= */
   useEffect(() => {
-    if (!API_URL) return;
-
     const load = async () => {
       try {
         const res = await fetch(`${API_URL}/api/store/hours`, {
           credentials: "include",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "x-user-id": localStorage.getItem("userId") || "",
           },
         });
 
@@ -95,11 +94,11 @@ export default function HorariosPage() {
 
         const data = await res.json();
 
-        setIsStoreOpen(data.isOpenManual);
-        setSchedule(data.schedule);
-        setScheduledPauses(data.pauses || []);
-      } catch (e) {
-        console.error(e);
+        if (data.schedule) setSchedule(data.schedule);
+        if (data.pauses) setScheduledPauses(data.pauses);
+        setIsStoreOpen(data.isOpenManual ?? true);
+      } catch (err) {
+        console.error(err);
       }
     };
 
@@ -108,16 +107,15 @@ export default function HorariosPage() {
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (!API_URL) return;
-
     setLoading(true);
     try {
-      await fetch(`${API_URL}/api/store/hours`, {
+      const res = await fetch(`${API_URL}/api/store/hours`, {
         method: "PUT",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "x-user-id": localStorage.getItem("userId") || "",
         },
         body: JSON.stringify({
           isOpenManual: isStoreOpen,
@@ -125,8 +123,12 @@ export default function HorariosPage() {
           pauses: scheduledPauses,
         }),
       });
-    } catch (e) {
-      console.error(e);
+
+      if (!res.ok) {
+        console.error("Erro ao salvar horários");
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -150,8 +152,8 @@ export default function HorariosPage() {
   const addPause = () => {
     if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
 
-    setScheduledPauses((p) => [
-      ...p,
+    setScheduledPauses((prev) => [
+      ...prev,
       { id: Date.now().toString(), ...newPause },
     ]);
 
@@ -159,7 +161,7 @@ export default function HorariosPage() {
   };
 
   const removePause = (id: string) => {
-    setScheduledPauses((p) => p.filter((x) => x.id !== id));
+    setScheduledPauses((prev) => prev.filter((p) => p.id !== id));
   };
 
   const storeStatus = getStoreStatus({
@@ -167,7 +169,6 @@ export default function HorariosPage() {
     schedule,
     pauses: scheduledPauses,
   });
-
 
   /* ================= RENDER ================= */
   return (
