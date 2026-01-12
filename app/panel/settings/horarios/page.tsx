@@ -83,7 +83,7 @@ export default function HorariosPage() {
     const load = async () => {
       try {
         const res = await fetch(`${API_URL}/api/store/hours`, {
-          credentials: "include", // 🔥 PADRÃO DO PROJETO
+          credentials: "include", // ✅ PADRÃO DO PROJETO
         });
 
         if (!res.ok) return;
@@ -103,11 +103,13 @@ export default function HorariosPage() {
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
+    if (loading) return;
+
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/store/hours`, {
         method: "PUT",
-        credentials: "include", // 🔥 PADRÃO DO ENDEREÇO
+        credentials: "include", // ✅ MESMO PADRÃO DO ENDEREÇO
         headers: {
           "Content-Type": "application/json",
         },
@@ -120,9 +122,14 @@ export default function HorariosPage() {
 
       if (!res.ok) {
         console.error("Erro ao salvar horários");
+        alert("Erro ao salvar horários");
+        return;
       }
+
+      alert("Horários salvos com sucesso ✅");
     } catch (err) {
       console.error("Erro ao salvar horários:", err);
+      alert("Erro ao salvar horários");
     } finally {
       setLoading(false);
     }
@@ -138,8 +145,12 @@ export default function HorariosPage() {
 
   const copyToAllDays = (sourceDay: DayKey) => {
     const base = schedule[sourceDay];
-    const updated: any = {};
-    daysOfWeek.forEach((d) => (updated[d.key] = { ...base }));
+    const updated: Record<DayKey, DaySchedule> = {} as any;
+
+    daysOfWeek.forEach((d) => {
+      updated[d.key] = { ...base };
+    });
+
     setSchedule(updated);
   };
 
@@ -163,7 +174,7 @@ export default function HorariosPage() {
     schedule,
     pauses: scheduledPauses,
   });
-
+  
   /* ================= RENDER ================= */
   return (
     <div className="min-h-screen bg-white px-6 py-6">
