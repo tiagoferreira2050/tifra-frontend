@@ -7,6 +7,8 @@ import {
   Sun,
   Moon,
   Copy,
+  Store,
+  Clock,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -19,11 +21,11 @@ type DaySchedule = {
 type WeekSchedule = Record<string, DaySchedule>;
 
 const daysOfWeek = [
-  { key: "monday", label: "Segunda", short: "Seg" },
-  { key: "tuesday", label: "Terça", short: "Ter" },
-  { key: "wednesday", label: "Quarta", short: "Qua" },
-  { key: "thursday", label: "Quinta", short: "Qui" },
-  { key: "friday", label: "Sexta", short: "Sex" },
+  { key: "monday", label: "Segunda-feira", short: "Seg" },
+  { key: "tuesday", label: "Terça-feira", short: "Ter" },
+  { key: "wednesday", label: "Quarta-feira", short: "Qua" },
+  { key: "thursday", label: "Quinta-feira", short: "Qui" },
+  { key: "friday", label: "Sexta-feira", short: "Sex" },
   { key: "saturday", label: "Sábado", short: "Sáb" },
   { key: "sunday", label: "Domingo", short: "Dom" },
 ];
@@ -51,27 +53,24 @@ export default function HorariosPage() {
   });
 
   /* ===============================
-     LOAD — /api/store/hours
+     LOAD
   =============================== */
   useEffect(() => {
     async function load() {
       try {
         const data = await apiFetch("/api/store/hours");
-
         if (data) {
           setIsStoreOpen(data.isOpen ?? true);
           if (data.schedule?.week) {
             setSchedule(data.schedule.week);
           }
         }
-      } catch (err) {
-        console.error("Erro ao carregar horários", err);
+      } catch {
         alert("Erro ao carregar horários");
       } finally {
         setLoading(false);
       }
     }
-
     load();
   }, []);
 
@@ -92,21 +91,14 @@ export default function HorariosPage() {
   function copyToAllDays(day: string) {
     const base = schedule[day];
     const copy: WeekSchedule = {};
-
-    daysOfWeek.forEach((d) => {
-      copy[d.key] = { ...base };
-    });
-
+    daysOfWeek.forEach((d) => (copy[d.key] = { ...base }));
     setSchedule(copy);
-    alert("Horário copiado para todos os dias");
   }
 
   async function handleSave() {
     if (saving) return;
-
     try {
       setSaving(true);
-
       await apiFetch("/api/store/hours", {
         method: "PUT",
         body: JSON.stringify({
@@ -114,10 +106,8 @@ export default function HorariosPage() {
           schedule: { week: schedule },
         }),
       });
-
       alert("Horários salvos com sucesso ✅");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Erro ao salvar horários");
     } finally {
       setSaving(false);
@@ -129,45 +119,55 @@ export default function HorariosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* HEADER */}
-      <div className="border-b bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5 grid grid-cols-3 items-center">
-          <button
-            onClick={() => window.history.back()}
-            className="text-gray-500 hover:text-gray-900"
-          >
-            <ArrowLeft />
-          </button>
-
-          <h1 className="text-center text-xl font-bold">
-            Horários
-          </h1>
-
-          <div className="flex justify-end">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
+        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+              onClick={() => window.history.back()}
+              className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-gray-100"
             >
-              <Save size={16} />
-              {saving ? "Salvando..." : "Salvar"}
+              <ArrowLeft size={18} />
             </button>
+            <div>
+              <h1 className="text-xl font-bold">Horários</h1>
+              <p className="text-sm text-gray-500">
+                Configure o funcionamento da loja
+              </p>
+            </div>
           </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-md disabled:opacity-50"
+          >
+            <Save size={16} />
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
         </div>
       </div>
 
-      {/* CONTENT */}
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         {/* STATUS */}
-        <div className="border rounded-xl p-6 flex items-center justify-between">
-          <div>
-            <p className="font-semibold">Status da loja</p>
-            <p className="text-sm text-gray-500">
-              {isStoreOpen
-                ? "Aceitando pedidos"
-                : "Loja fechada"}
-            </p>
+        <div className="bg-white rounded-xl border p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                isStoreOpen ? "bg-green-100" : "bg-red-100"
+              }`}
+            >
+              <Store
+                className={isStoreOpen ? "text-green-600" : "text-red-600"}
+              />
+            </div>
+            <div>
+              <p className="font-semibold">Status da loja</p>
+              <p className="text-sm text-gray-500">
+                {isStoreOpen ? "Aceitando pedidos" : "Loja fechada"}
+              </p>
+            </div>
           </div>
 
           <input
@@ -178,79 +178,101 @@ export default function HorariosPage() {
           />
         </div>
 
-        {/* DIAS */}
-        {daysOfWeek.map((day) => (
-          <div
-            key={day.key}
-            className="border rounded-xl p-4 space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center font-medium">
-                  {day.short}
-                </div>
-                <div>
-                  <p className="font-medium">{day.label}</p>
-                  <p className="text-xs text-gray-500">
-                    {schedule[day.key].isOpen ? "Aberto" : "Fechado"}
-                  </p>
-                </div>
-              </div>
-
-              <input
-                type="checkbox"
-                checked={schedule[day.key].isOpen}
-                onChange={(e) =>
-                  updateDay(day.key, "isOpen", e.target.checked)
-                }
-              />
+        {/* HORÁRIOS */}
+        <div className="bg-white rounded-xl border">
+          <div className="p-6 border-b flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <Clock className="text-blue-600" />
             </div>
-
-            {schedule[day.key].isOpen && (
-              <div className="flex items-center gap-3">
-                <Sun size={16} />
-                <select
-                  value={schedule[day.key].openTime}
-                  onChange={(e) =>
-                    updateDay(day.key, "openTime", e.target.value)
-                  }
-                  className="border rounded px-2 py-1"
-                >
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-
-                <span>às</span>
-
-                <Moon size={16} />
-                <select
-                  value={schedule[day.key].closeTime}
-                  onChange={(e) =>
-                    updateDay(day.key, "closeTime", e.target.value)
-                  }
-                  className="border rounded px-2 py-1"
-                >
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => copyToAllDays(day.key)}
-                  className="ml-auto text-gray-500 hover:text-black"
-                  title="Copiar para todos"
-                >
-                  <Copy size={16} />
-                </button>
-              </div>
-            )}
+            <div>
+              <p className="font-semibold">Horário de funcionamento</p>
+              <p className="text-sm text-gray-500">
+                Configure os dias e horários da semana
+              </p>
+            </div>
           </div>
-        ))}
+
+          <div className="p-4 space-y-3">
+            {daysOfWeek.map((day) => (
+              <div
+                key={day.key}
+                className={`rounded-xl border p-4 ${
+                  schedule[day.key].isOpen
+                    ? "bg-white"
+                    : "bg-gray-50 opacity-70"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center font-medium">
+                      {day.short}
+                    </div>
+                    <div>
+                      <p className="font-medium">{day.label}</p>
+                      <p className="text-xs text-gray-500">
+                        {schedule[day.key].isOpen ? "Aberto" : "Fechado"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {schedule[day.key].isOpen && (
+                      <>
+                        <Sun size={14} />
+                        <select
+                          value={schedule[day.key].openTime}
+                          onChange={(e) =>
+                            updateDay(day.key, "openTime", e.target.value)
+                          }
+                          className="border rounded px-2 py-1 text-sm"
+                        >
+                          {timeOptions.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+
+                        <span className="text-gray-400">às</span>
+
+                        <Moon size={14} />
+                        <select
+                          value={schedule[day.key].closeTime}
+                          onChange={(e) =>
+                            updateDay(day.key, "closeTime", e.target.value)
+                          }
+                          className="border rounded px-2 py-1 text-sm"
+                        >
+                          {timeOptions.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={() => copyToAllDays(day.key)}
+                          className="text-gray-400 hover:text-black"
+                          title="Copiar para todos"
+                        >
+                          <Copy size={16} />
+                        </button>
+                      </>
+                    )}
+
+                    <input
+                      type="checkbox"
+                      checked={schedule[day.key].isOpen}
+                      onChange={(e) =>
+                        updateDay(day.key, "isOpen", e.target.checked)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
