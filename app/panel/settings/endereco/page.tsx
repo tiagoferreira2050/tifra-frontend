@@ -2,25 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-/* ===================================================
-   🔐 AUTH FETCH (JWT VIA HEADER)
-=================================================== */
-function authFetch(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("tifra_token");
-
-  return fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
 
 export default function EnderecoPage() {
   const [loading, setLoading] = useState(true);
@@ -44,27 +28,23 @@ export default function EnderecoPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await authFetch(
-          `${BACKEND_URL}/api/store/address`
-        );
+        const data = await apiFetch("/api/store/address");
 
-        if (!res.ok) return;
-
-        const data = await res.json();
-        if (!data) return;
-
-        setAddress({
-          cep: data.cep || "",
-          state: data.state || "",
-          city: data.city || "",
-          neighborhood: data.neighborhood || "",
-          street: data.street || "",
-          number: data.number || "",
-          complement: data.complement || "",
-          reference: data.reference || "",
-        });
+        if (data) {
+          setAddress({
+            cep: data.cep ?? "",
+            state: data.state ?? "",
+            city: data.city ?? "",
+            neighborhood: data.neighborhood ?? "",
+            street: data.street ?? "",
+            number: data.number ?? "",
+            complement: data.complement ?? "",
+            reference: data.reference ?? "",
+          });
+        }
       } catch (err) {
-        console.error("Erro ao carregar endereço", err);
+        console.error("Erro ao carregar endereço:", err);
+        alert("Erro ao carregar endereço da loja");
       } finally {
         setLoading(false);
       }
@@ -155,16 +135,18 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     SAVE — POST /api/store/address
+     SAVE — PUT /api/store/address
   =============================== */
   async function handleSave() {
+    if (saving) return;
+
     try {
       setSaving(true);
 
       const { lat, lng } = await getLatLngFromAddress();
 
-      await authFetch(`${BACKEND_URL}/api/store/address`, {
-        method: "POST",
+      await apiFetch("/api/store/address", {
+        method: "PUT",
         body: JSON.stringify({
           ...address,
           lat,
@@ -206,8 +188,6 @@ export default function EnderecoPage() {
   if (loading) {
     return <p className="p-6">Carregando endereço...</p>;
   }
-
-
 
   return (
     <div className="min-h-screen bg-white">
