@@ -6,6 +6,22 @@ import { Navigation, Save, Map, ArrowLeft } from "lucide-react";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+/* ===================================================
+   🔐 AUTH FETCH (JWT VIA HEADER)
+=================================================== */
+function authFetch(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem("tifra_token");
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 export default function EnderecoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,16 +39,13 @@ export default function EnderecoPage() {
   });
 
   /* ===============================
-     LOAD — GET /api/store-address
+     LOAD — GET /api/store/address
   =============================== */
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
-          `${BACKEND_URL}/api/store-address`,
-          {
-            credentials: "include",
-          }
+        const res = await authFetch(
+          `${BACKEND_URL}/api/store/address`
         );
 
         if (!res.ok) return;
@@ -142,7 +155,7 @@ export default function EnderecoPage() {
   }
 
   /* ===============================
-     SAVE — POST /api/store-address
+     SAVE — POST /api/store/address
   =============================== */
   async function handleSave() {
     try {
@@ -150,12 +163,8 @@ export default function EnderecoPage() {
 
       const { lat, lng } = await getLatLngFromAddress();
 
-      await fetch(`${BACKEND_URL}/api/store-address`, {
+      await authFetch(`${BACKEND_URL}/api/store/address`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           ...address,
           lat,
@@ -198,7 +207,7 @@ export default function EnderecoPage() {
     return <p className="p-6">Carregando endereço...</p>;
   }
 
- 
+
 
   return (
     <div className="min-h-screen bg-white">
