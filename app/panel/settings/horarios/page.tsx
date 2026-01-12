@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -9,7 +11,6 @@ import {
   Sun,
   Moon,
   Copy,
-  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -262,15 +263,11 @@ export default function HorariosPage() {
                           <Select
                             value={d.openTime}
                             onValueChange={(v) =>
-                              updateDaySchedule(
-                                day.key,
-                                "openTime",
-                                v
-                              )
+                              updateDaySchedule(day.key, "openTime", v)
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
-<SelectValue>{d.openTime}</SelectValue>
+                              <SelectValue>{d.openTime}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {timeOptions.map((t) => (
@@ -281,19 +278,13 @@ export default function HorariosPage() {
                             </SelectContent>
                           </Select>
 
-                          <span className="text-muted-foreground">
-                            às
-                          </span>
+                          <span className="text-muted-foreground">às</span>
 
                           <Moon className="w-4 h-4 text-indigo-500" />
                           <Select
                             value={d.closeTime}
                             onValueChange={(v) =>
-                              updateDaySchedule(
-                                day.key,
-                                "closeTime",
-                                v
-                              )
+                              updateDaySchedule(day.key, "closeTime", v)
                             }
                           >
                             <SelectTrigger className="w-24 h-9">
@@ -311,9 +302,7 @@ export default function HorariosPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() =>
-                              copyToAllDays(day.key)
-                            }
+                            onClick={() => copyToAllDays(day.key)}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -323,11 +312,7 @@ export default function HorariosPage() {
                       <Switch
                         checked={d.isOpen}
                         onCheckedChange={(v) =>
-                          updateDaySchedule(
-                            day.key,
-                            "isOpen",
-                            v
-                          )
+                          updateDaySchedule(day.key, "isOpen", v)
                         }
                       />
                     </div>
