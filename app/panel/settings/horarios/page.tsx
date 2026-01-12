@@ -3,14 +3,36 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  Clock,
   Save,
+  Store,
   Sun,
   Moon,
   Copy,
-  Store,
-  Clock,
+  Check,
 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 type DaySchedule = {
   isOpen: boolean;
@@ -37,10 +59,9 @@ const timeOptions = Array.from({ length: 48 }).map((_, i) => {
 });
 
 export default function HorariosPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const router = useRouter();
 
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [schedule, setSchedule] = useState<WeekSchedule>({
     monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
     tuesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
@@ -51,73 +72,76 @@ export default function HorariosPage() {
     sunday: { isOpen: false, openTime: "09:00", closeTime: "18:00" },
   });
 
+  /* ===============================
+     LOAD
+  =============================== */
   useEffect(() => {
     async function load() {
-      try {
-        const data = await apiFetch("/api/store/hours");
-        if (data) {
-          setIsStoreOpen(data.isOpen ?? true);
-          if (data.schedule?.week) setSchedule(data.schedule.week);
+      const data = await apiFetch("/api/store/hours");
+      if (data) {
+        setIsStoreOpen(data.isOpen ?? true);
+        if (data.schedule?.week) {
+          setSchedule(data.schedule.week);
         }
-      } finally {
-        setLoading(false);
       }
     }
     load();
   }, []);
 
-  function updateDay(day: string, field: keyof DaySchedule, value: any) {
+  function updateDaySchedule(
+    day: string,
+    field: keyof DaySchedule,
+    value: string | boolean
+  ) {
     setSchedule((prev) => ({
       ...prev,
-      [day]: { ...prev[day], [field]: value },
+      [day]: {
+        ...prev[day],
+        [field]: value,
+      },
     }));
   }
 
-  function copyToAllDays(day: string) {
-    const base = schedule[day];
+  function copyToAllDays(sourceDay: string) {
+    const base = schedule[sourceDay];
     const copy: WeekSchedule = {};
     daysOfWeek.forEach((d) => (copy[d.key] = { ...base }));
     setSchedule(copy);
   }
 
   async function handleSave() {
-    if (saving) return;
-    try {
-      setSaving(true);
-      await apiFetch("/api/store/hours", {
-        method: "PUT",
-        body: JSON.stringify({
-          isOpen: isStoreOpen,
-          schedule: { week: schedule },
-        }),
-      });
-      alert("Horários salvos com sucesso ✅");
-    } finally {
-      setSaving(false);
-    }
-  }
+    await apiFetch("/api/store/hours", {
+      method: "PUT",
+      body: JSON.stringify({
+        isOpen: isStoreOpen,
+        schedule: { week: schedule },
+      }),
+    });
 
-  if (loading) return <p className="p-6">Carregando horários...</p>;
+    alert("Horários salvos com sucesso!");
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* HEADER */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/configuracoes')}
-              className="shrink-0"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
               <h1 className="text-xl font-bold">Horários</h1>
-              <p className="text-sm text-muted-foreground">Configure o funcionamento</p>
+              <p className="text-sm text-muted-foreground">
+                Configure o funcionamento
+              </p>
             </div>
           </div>
+
           <Button onClick={handleSave} className="gap-2">
             <Save className="w-4 h-4" />
             Salvar
@@ -126,33 +150,47 @@ export default function HorariosPage() {
       </div>
 
       <div className="p-4 max-w-2xl mx-auto space-y-6 pb-8">
-        {/* Store Status Card */}
+        {/* STATUS DA LOJA */}
         <Card className="overflow-hidden">
-          <div className={`h-1.5 ${isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div
+            className={`h-1.5 ${
+              isStoreOpen ? "bg-green-500" : "bg-red-500"
+            }`}
+          />
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  isStoreOpen ? 'bg-green-100' : 'bg-red-100'
-                }`}>
-                  <Store className={`w-6 h-6 ${isStoreOpen ? 'text-green-600' : 'text-red-600'}`} />
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    isStoreOpen ? "bg-green-100" : "bg-red-100"
+                  }`}
+                >
+                  <Store
+                    className={`w-6 h-6 ${
+                      isStoreOpen
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Status da Loja</CardTitle>
+                  <CardTitle className="text-lg">
+                    Status da Loja
+                  </CardTitle>
                   <CardDescription className="flex items-center gap-2 mt-1">
-                    <Badge 
-                      variant={storeStatus.status === 'open' ? 'default' : 'secondary'}
-                      className={storeStatus.status === 'open' 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                        : 'bg-red-100 text-red-700 hover:bg-red-100'
+                    <Badge
+                      className={
+                        isStoreOpen
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
                       }
                     >
-                      {storeStatus.status === 'open' ? 'Aberto' : 'Fechado'}
+                      {isStoreOpen ? "Aberto" : "Fechado"}
                     </Badge>
-                    <span className="text-xs">{storeStatus.message}</span>
                   </CardDescription>
                 </div>
               </div>
+
               <Switch
                 checked={isStoreOpen}
                 onCheckedChange={setIsStoreOpen}
@@ -160,16 +198,9 @@ export default function HorariosPage() {
               />
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {isStoreOpen 
-                ? 'A loja está aceitando pedidos conforme os horários configurados abaixo.'
-                : 'A loja está fechada e não aceita pedidos no momento.'}
-            </p>
-          </CardContent>
         </Card>
 
-        {/* Weekly Schedule */}
+        {/* HORÁRIOS */}
         <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
@@ -177,152 +208,133 @@ export default function HorariosPage() {
                 <Clock className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-lg">Horário de Funcionamento</CardTitle>
-                <CardDescription>Configure os horários de cada dia da semana</CardDescription>
+                <CardTitle className="text-lg">
+                  Horário de Funcionamento
+                </CardTitle>
+                <CardDescription>
+                  Configure os horários da semana
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {daysOfWeek.map((day, index) => (
-              <div 
-                key={day.key}
-                className={`p-4 rounded-xl border transition-all ${
-                  schedule[day.key].isOpen 
-                    ? 'bg-background border-border hover:border-primary/30' 
-                    : 'bg-muted/30 border-transparent'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  {/* Day name and toggle */}
-                  <div className="flex items-center gap-3 min-w-[140px]">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium ${
-                      schedule[day.key].isOpen 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {day.short}
-                    </div>
-                    <div>
-                      <Label className={`font-medium ${!schedule[day.key].isOpen && 'text-muted-foreground'}`}>
-                        {day.label}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        {schedule[day.key].isOpen ? 'Aberto' : 'Fechado'}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Time selectors */}
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    {schedule[day.key].isOpen && (
-                      <>
-                        <div className="flex items-center gap-2">
+          <CardContent className="space-y-3">
+            {daysOfWeek.map((day) => {
+              const d = schedule[day.key];
+              return (
+                <div
+                  key={day.key}
+                  className={`p-4 rounded-xl border transition-all ${
+                    d.isOpen
+                      ? "bg-background hover:border-primary/30"
+                      : "bg-muted/30 border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-[140px]">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium ${
+                          d.isOpen
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {day.short}
+                      </div>
+                      <div>
+                        <Label
+                          className={`font-medium ${
+                            !d.isOpen && "text-muted-foreground"
+                          }`}
+                        >
+                          {day.label}
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {d.isOpen ? "Aberto" : "Fechado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-1 justify-end">
+                      {d.isOpen && (
+                        <>
                           <Sun className="w-4 h-4 text-amber-500" />
                           <Select
-                            value={schedule[day.key].openTime}
-                            onValueChange={(value) => updateDaySchedule(day.key, 'openTime', value)}
+                            value={d.openTime}
+                            onValueChange={(v) =>
+                              updateDaySchedule(
+                                day.key,
+                                "openTime",
+                                v
+                              )
+                            }
                           >
                             <SelectTrigger className="w-24 h-9">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {timeOptions.map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
-                        <span className="text-muted-foreground">às</span>
-                        <div className="flex items-center gap-2">
+
+                          <span className="text-muted-foreground">
+                            às
+                          </span>
+
                           <Moon className="w-4 h-4 text-indigo-500" />
                           <Select
-                            value={schedule[day.key].closeTime}
-                            onValueChange={(value) => updateDaySchedule(day.key, 'closeTime', value)}
+                            value={d.closeTime}
+                            onValueChange={(v) =>
+                              updateDaySchedule(
+                                day.key,
+                                "closeTime",
+                                v
+                              )
+                            }
                           >
                             <SelectTrigger className="w-24 h-9">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {timeOptions.map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              {timeOptions.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 shrink-0"
-                          onClick={() => copyToAllDays(day.key)}
-                          title="Copiar para todos os dias"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Switch
-                      checked={schedule[day.key].isOpen}
-                      onCheckedChange={(checked) => updateDaySchedule(day.key, 'isOpen', checked)}
-                    />
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              copyToAllDays(day.key)
+                            }
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      <Switch
+                        checked={d.isOpen}
+                        onCheckedChange={(v) =>
+                          updateDaySchedule(
+                            day.key,
+                            "isOpen",
+                            v
+                          )
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="bg-muted/30 border-dashed">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  const allOpen: WeekSchedule = {};
-                  daysOfWeek.forEach(day => {
-                    allOpen[day.key] = { isOpen: true, openTime: '08:00', closeTime: '22:00' };
-                  });
-                  setSchedule(allOpen);
-                  toast.success('Todos os dias abertos');
-                }}
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Abrir todos os dias
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  const weekends: WeekSchedule = { ...schedule };
-                  weekends.saturday = { ...weekends.saturday, isOpen: false };
-                  weekends.sunday = { ...weekends.sunday, isOpen: false };
-                  setSchedule(weekends);
-                  toast.success('Fins de semana fechados');
-                }}
-              >
-                Fechar fins de semana
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  const commercial: WeekSchedule = {};
-                  daysOfWeek.forEach(day => {
-                    const isWeekend = day.key === 'saturday' || day.key === 'sunday';
-                    commercial[day.key] = { 
-                      isOpen: !isWeekend, 
-                      openTime: '09:00', 
-                      closeTime: '18:00' 
-                    };
-                  });
-                  setSchedule(commercial);
-                  toast.success('Horário comercial aplicado');
-                }}
-              >
-                Horário comercial
-              </Button>
-            </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
