@@ -82,7 +82,7 @@ export default function HorariosPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/store/hours`, {
+        const res = await fetch(`${API_URL}/api/store/schedule`, {
           credentials: "include", // ✅ PADRÃO DO PROJETO
         });
 
@@ -107,7 +107,7 @@ export default function HorariosPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/store/hours`, {
+      const res = await fetch(`${API_URL}/api/store/schedule`, {
         method: "PUT",
         credentials: "include", // ✅ MESMO PADRÃO DO ENDEREÇO
         headers: {
