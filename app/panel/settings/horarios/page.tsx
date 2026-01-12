@@ -19,9 +19,7 @@ import { useRouter } from "next/navigation";
 
 import { getStoreStatus } from "@/lib/store-status";
 
-/* ============================
-   TYPES
-============================ */
+/* ============================ TYPES ============================ */
 type DayKey =
   | "monday"
   | "tuesday"
@@ -44,14 +42,8 @@ interface ScheduledPause {
   endDate: string;
 }
 
-/* ============================
-   CONSTANTS
-============================ */
-const daysOfWeek: {
-  key: DayKey;
-  label: string;
-  short: string;
-}[] = [
+/* ============================ CONSTANTS ============================ */
+const daysOfWeek = [
   { key: "monday", label: "Segunda-feira", short: "Seg" },
   { key: "tuesday", label: "Terça-feira", short: "Ter" },
   { key: "wednesday", label: "Quarta-feira", short: "Qua" },
@@ -59,15 +51,12 @@ const daysOfWeek: {
   { key: "friday", label: "Sexta-feira", short: "Sex" },
   { key: "saturday", label: "Sábado", short: "Sáb" },
   { key: "sunday", label: "Domingo", short: "Dom" },
-];
+] as const;
 
-/* ============================
-   PAGE
-============================ */
+/* ============================ PAGE ============================ */
 export default function HorariosPage() {
   const router = useRouter();
 
-  /* ---------- STATES ---------- */
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   const [schedule, setSchedule] = useState<Record<DayKey, DaySchedule>>({
@@ -95,94 +84,57 @@ export default function HorariosPage() {
     endDate: "",
   });
 
-  /* ---------- CORE STATUS ---------- */
   const storeStatus = getStoreStatus({
     isStoreOpen,
     schedule,
     pauses: scheduledPauses,
   });
 
-  /* ---------- HELPERS ---------- */
   const toggleDay = (day: DayKey) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        isOpen: !prev[day].isOpen,
-      },
+      [day]: { ...prev[day], isOpen: !prev[day].isOpen },
     }));
   };
 
-  const copyToAllDays = (sourceDay: DayKey) => {
-    const base = schedule[sourceDay];
-    const updated: Record<DayKey, DaySchedule> = {} as any;
-
-    daysOfWeek.forEach((d) => {
-      updated[d.key] = { ...base };
-    });
-
-    setSchedule(updated);
-  };
-
-  const addPause = () => {
-    if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
-
-    setScheduledPauses((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        ...newPause,
-      },
-    ]);
-
-    setNewPause({ name: "", startDate: "", endDate: "" });
-  };
-
-  const removePause = (id: string) => {
-    setScheduledPauses((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  /* ============================
-     RENDER
-  ============================ */
   return (
-    <div className="min-h-screen bg-muted/30 p-6">
+    <div className="min-h-screen bg-white px-6 py-6">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 rounded-lg border bg-white hover:bg-muted"
+              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
               <h1 className="text-xl font-semibold">Horários</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 Configure o funcionamento
               </p>
             </div>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm">
             <Save className="w-4 h-4" />
             Salvar
           </button>
         </div>
 
         {/* STATUS DA LOJA */}
-        <div className="rounded-xl border bg-white overflow-hidden">
+        <div className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
           <div
-            className={`h-1.5 ${
+            className={`h-1 ${
               storeStatus.status === "open"
                 ? "bg-green-500"
                 : "bg-red-500"
             }`}
           />
 
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   storeStatus.status === "open"
@@ -200,7 +152,7 @@ export default function HorariosPage() {
               </div>
 
               <div>
-                <p className="font-medium flex items-center gap-2">
+                <p className="font-medium text-sm flex items-center gap-2">
                   Status da Loja
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${
@@ -212,7 +164,7 @@ export default function HorariosPage() {
                     {storeStatus.status === "open" ? "Aberto" : "Fechado"}
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-500">
                   {storeStatus.message}
                 </p>
               </div>
@@ -232,20 +184,22 @@ export default function HorariosPage() {
             </button>
           </div>
 
-          <p className="px-4 pb-4 text-sm text-muted-foreground">
+          <p className="px-5 pb-5 text-sm text-gray-500">
             {storeStatus.status === "open"
               ? "A loja está aceitando pedidos conforme os horários configurados abaixo."
               : "A loja está fechada e não aceita pedidos no momento."}
           </p>
         </div>
 
-        {/* HORÁRIOS DA SEMANA */}
-        <div className="rounded-xl border bg-white p-4 space-y-4">
-          <div className="flex items-center gap-2">
+        {/* HORÁRIOS */}
+        <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-5 space-y-4">
+          <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-blue-500" />
             <div>
-              <h2 className="font-medium">Horário de Funcionamento</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="font-medium text-sm">
+                Horário de Funcionamento
+              </h2>
+              <p className="text-sm text-gray-500">
                 Configure os horários de cada dia da semana
               </p>
             </div>
@@ -258,42 +212,59 @@ export default function HorariosPage() {
               return (
                 <div
                   key={day.key}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                    d.isOpen ? "bg-muted/30" : "bg-muted/10 opacity-60"
+                  className={`flex items-center justify-between rounded-lg px-4 py-3 transition ${
+                    d.isOpen
+                      ? "hover:bg-gray-50"
+                      : "bg-gray-50 opacity-60"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="px-2 py-1 text-xs rounded-md bg-muted font-medium">
+                  <div className="flex items-center gap-4">
+                    <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-sm font-medium">
                       {day.short}
                     </span>
                     <div>
                       <p className="text-sm font-medium">{day.label}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-500">
                         {d.isOpen ? "Aberto" : "Fechado"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {d.isOpen && (
                       <>
                         <Sun className="w-4 h-4 text-orange-400" />
                         <input
                           type="time"
                           value={d.openTime}
-                          className="border rounded-md px-2 py-1 text-sm bg-white"
+                          onChange={(e) =>
+                            setSchedule((prev) => ({
+                              ...prev,
+                              [day.key]: {
+                                ...prev[day.key],
+                                openTime: e.target.value,
+                              },
+                            }))
+                          }
+                          className="border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
                         />
-                        <span className="text-xs text-muted-foreground">às</span>
+                        <span className="text-xs text-gray-500">às</span>
                         <Moon className="w-4 h-4 text-blue-400" />
                         <input
                           type="time"
                           value={d.closeTime}
-                          className="border rounded-md px-2 py-1 text-sm bg-white"
+                          onChange={(e) =>
+                            setSchedule((prev) => ({
+                              ...prev,
+                              [day.key]: {
+                                ...prev[day.key],
+                                closeTime: e.target.value,
+                              },
+                            }))
+                          }
+                          className="border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
                         />
-                        <button
-                          onClick={() => copyToAllDays(day.key)}
-                          className="p-1 hover:bg-muted rounded"
-                        >
+                        <button className="p-1 hover:bg-gray-100 rounded">
                           <Copy className="w-4 h-4" />
                         </button>
                       </>
@@ -315,72 +286,6 @@ export default function HorariosPage() {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* PAUSAS */}
-        <div className="rounded-xl border bg-white p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <CalendarX className="w-5 h-5 text-orange-500" />
-            <div>
-              <h2 className="font-medium">Pausas Programadas</h2>
-              <p className="text-sm text-muted-foreground">
-                Feriados, férias ou fechamentos especiais
-              </p>
-            </div>
-          </div>
-
-          {scheduledPauses.map((pause) => (
-            <div
-              key={pause.id}
-              className="flex items-center justify-between bg-muted/40 rounded-lg p-3"
-            >
-              <div>
-                <p className="text-sm font-medium">{pause.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pause.startDate} até {pause.endDate}
-                </p>
-              </div>
-              <button onClick={() => removePause(pause.id)}>
-                <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-500" />
-              </button>
-            </div>
-          ))}
-
-          <div className="border border-dashed rounded-lg p-4 space-y-3">
-            <input
-              placeholder="Nome (ex: Férias, Feriado)"
-              value={newPause.name}
-              onChange={(e) =>
-                setNewPause({ ...newPause, name: e.target.value })
-              }
-              className="w-full border rounded-md px-3 py-2 text-sm"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                value={newPause.startDate}
-                onChange={(e) =>
-                  setNewPause({ ...newPause, startDate: e.target.value })
-                }
-                className="border rounded-md px-3 py-2 text-sm"
-              />
-              <input
-                type="date"
-                value={newPause.endDate}
-                onChange={(e) =>
-                  setNewPause({ ...newPause, endDate: e.target.value })
-                }
-                className="border rounded-md px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              onClick={addPause}
-              className="w-full py-2 rounded-lg bg-black text-white text-sm flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar Pausa
-            </button>
           </div>
         </div>
       </div>
