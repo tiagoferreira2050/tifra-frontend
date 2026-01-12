@@ -2,193 +2,60 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  Save,
-  Store,
-  Sun,
-  Moon,
-  Copy,
-  Plus,
-  Trash2,
-} from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-
-import { apiFetch } from "@/lib/api";
+import { useState } from "react";
+import { ArrowLeft, Save, Store, Clock, CalendarX, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { format, isWithinInterval, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
-/* =======================
-   TYPES
-======================= */
-type DaySchedule = {
-  isOpen: boolean;
-  openTime: string;
-  closeTime: string;
-};
+type DayKey =
+  | "seg"
+  | "ter"
+  | "qua"
+  | "qui"
+  | "sex"
+  | "sab"
+  | "dom";
 
-type WeekSchedule = Record<string, DaySchedule>;
+interface DayConfig {
+  label: string;
+  open: string;
+  close: string;
+  enabled: boolean;
+}
 
-type ScheduledPause = {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-};
-
-/* =======================
-   CONSTANTS
-======================= */
-const daysOfWeek = [
-  { key: "monday", label: "Segunda-feira", short: "Seg" },
-  { key: "tuesday", label: "Terça-feira", short: "Ter" },
-  { key: "wednesday", label: "Quarta-feira", short: "Qua" },
-  { key: "thursday", label: "Quinta-feira", short: "Qui" },
-  { key: "friday", label: "Sexta-feira", short: "Sex" },
-  { key: "saturday", label: "Sábado", short: "Sáb" },
-  { key: "sunday", label: "Domingo", short: "Dom" },
-];
-
-const timeOptions = Array.from({ length: 48 }).map((_, i) => {
-  const h = String(Math.floor(i / 2)).padStart(2, "0");
-  const m = i % 2 === 0 ? "00" : "30";
-  return `${h}:${m}`;
-});
-
-/* =======================
-   PAGE
-======================= */
 export default function HorariosPage() {
   const router = useRouter();
 
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [storeOpen, setStoreOpen] = useState(true);
 
-  const [schedule, setSchedule] = useState<WeekSchedule>({
-    monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    tuesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    wednesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    thursday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    friday: { isOpen: true, openTime: "08:00", closeTime: "23:00" },
-    saturday: { isOpen: true, openTime: "09:00", closeTime: "23:00" },
-    sunday: { isOpen: false, openTime: "09:00", closeTime: "18:00" },
+  const [days, setDays] = useState<Record<DayKey, DayConfig>>({
+    seg: { label: "Segunda-feira", open: "08:00", close: "22:00", enabled: true },
+    ter: { label: "Terça-feira", open: "08:00", close: "22:00", enabled: true },
+    qua: { label: "Quarta-feira", open: "08:00", close: "22:00", enabled: true },
+    qui: { label: "Quinta-feira", open: "08:00", close: "22:00", enabled: true },
+    sex: { label: "Sexta-feira", open: "08:00", close: "23:00", enabled: true },
+    sab: { label: "Sábado", open: "09:00", close: "23:00", enabled: true },
+    dom: { label: "Domingo", open: "09:00", close: "18:00", enabled: false },
   });
 
-  const [scheduledPauses, setScheduledPauses] = useState<ScheduledPause[]>([]);
-  const [newPause, setNewPause] = useState<Omit<ScheduledPause, "id">>({
-    name: "",
-    startDate: "",
-    endDate: "",
-  });
-
-  /* LOAD */
-  useEffect(() => {
-    async function load() {
-      const data = await apiFetch("/api/store/hours");
-      if (!data) return;
-
-      setIsStoreOpen(data.isOpen ?? true);
-      if (data.schedule?.week) setSchedule(data.schedule.week);
-      if (data.schedule?.pauses) setScheduledPauses(data.schedule.pauses);
-    }
-    load();
-  }, []);
-
-  function updateDaySchedule(
-    day: string,
-    field: keyof DaySchedule,
-    value: string | boolean
-  ) {
-    setSchedule((prev) => ({
+  const toggleDay = (key: DayKey) => {
+    setDays((prev) => ({
       ...prev,
-      [day]: { ...prev[day], [field]: value },
+      [key]: { ...prev[key], enabled: !prev[key].enabled },
     }));
-  }
-
-  function copyToAllDays(sourceDay: string) {
-    const base = schedule[sourceDay];
-    const copy: WeekSchedule = {};
-    daysOfWeek.forEach((d) => (copy[d.key] = { ...base }));
-    setSchedule(copy);
-  }
-
-  function getActivePause() {
-    const now = new Date();
-    return scheduledPauses.find((p) =>
-      isWithinInterval(now, {
-        start: parseISO(p.startDate),
-        end: parseISO(p.endDate),
-      })
-    );
-  }
-
-  function formatDate(date: string) {
-    return format(parseISO(date), "dd 'de' MMM", { locale: ptBR });
-  }
-
-  function addPause() {
-    if (!newPause.name || !newPause.startDate || !newPause.endDate) return;
-
-    setScheduledPauses((prev) => [
-      ...prev,
-      { ...newPause, id: Date.now().toString() },
-    ]);
-
-    setNewPause({ name: "", startDate: "", endDate: "" });
-  }
-
-  function removePause(id: string) {
-    setScheduledPauses((prev) => prev.filter((p) => p.id !== id));
-  }
-
-  async function handleSave() {
-    await apiFetch("/api/store/hours", {
-      method: "PUT",
-      body: JSON.stringify({
-        isOpen: isStoreOpen,
-        schedule: {
-          week: schedule,
-          pauses: scheduledPauses,
-        },
-      }),
-    });
-
-    alert("Horários salvos com sucesso!");
-  }
-
-  const activePause = getActivePause();
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* HEADER */}
-      <div className="sticky top-0 z-10 bg-background border-b">
-        <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button
+            <button
               onClick={() => router.back()}
-              className="h-9 w-9 p-0 hover:bg-muted"
+              className="p-2 rounded-lg border hover:bg-muted"
             >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
             <div>
               <h1 className="text-xl font-bold">Horários</h1>
               <p className="text-sm text-muted-foreground">
@@ -197,197 +64,153 @@ export default function HorariosPage() {
             </div>
           </div>
 
-          <Button onClick={handleSave} className="gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white">
             <Save className="w-4 h-4" />
             Salvar
-          </Button>
+          </button>
         </div>
-      </div>
 
-      <div className="p-4 max-w-2xl mx-auto space-y-6">
-        {/* STATUS */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div className="flex gap-3 items-center">
-                <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isStoreOpen ? "bg-green-100" : "bg-red-100"
-                  }`}
-                >
-                  <Store
-                    className={
-                      isStoreOpen ? "text-green-600" : "text-red-600"
-                    }
-                  />
-                </div>
-                <div>
-                  <CardTitle>Status da Loja</CardTitle>
-                  <CardDescription className="flex gap-2 items-center">
-                    <Badge>
-                      {isStoreOpen ? "Aberto" : "Fechado"}
-                    </Badge>
-                    {activePause && (
-                      <span className="text-xs text-muted-foreground">
-                        Pausa: {activePause.name}
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
-              </div>
-              <Switch checked={isStoreOpen} onCheckedChange={setIsStoreOpen} />
+        {/* STATUS DA LOJA */}
+        <div className="border rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <Store className="w-5 h-5 text-green-600" />
             </div>
-          </CardHeader>
-        </Card>
+            <div>
+              <p className="font-semibold">
+                Status da Loja{" "}
+                <span className="ml-2 text-green-600 text-sm">
+                  {storeOpen ? "Aberto" : "Fechado"}
+                </span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                A loja está aceitando pedidos conforme os horários configurados
+                abaixo.
+              </p>
+            </div>
+          </div>
 
-        {/* SEMANA */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Horário de Funcionamento</CardTitle>
-            <CardDescription>Configure os horários da semana</CardDescription>
-          </CardHeader>
+          <button
+            onClick={() => setStoreOpen(!storeOpen)}
+            className={`w-12 h-6 rounded-full relative transition ${
+              storeOpen ? "bg-green-500" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${
+                storeOpen ? "left-6" : "left-1"
+              }`}
+            />
+          </button>
+        </div>
 
-          <CardContent className="space-y-3">
-            {daysOfWeek.map((day) => {
-              const d = schedule[day.key];
-              return (
-                <div key={day.key} className="p-4 rounded-xl border">
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-3 items-center">
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-medium">
-                        {day.short}
-                      </div>
-                      <div>
-                        <Label>{day.label}</Label>
-                        <p className="text-xs text-muted-foreground">
-                          {d.isOpen ? "Aberto" : "Fechado"}
-                        </p>
-                      </div>
-                    </div>
+        {/* HORÁRIOS DE FUNCIONAMENTO */}
+        <div className="border rounded-xl p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-500" />
+            <div>
+              <h2 className="font-semibold">Horário de Funcionamento</h2>
+              <p className="text-sm text-muted-foreground">
+                Configure os horários de cada dia da semana
+              </p>
+            </div>
+          </div>
 
-                    <div className="flex gap-2 items-center">
-                      {d.isOpen && (
-                        <>
-                          <Sun className="w-4 h-4" />
-                          <Select
-                            value={d.openTime}
-                            onValueChange={(v) =>
-                              updateDaySchedule(day.key, "openTime", v)
-                            }
-                          >
-                            <SelectTrigger className="w-24 h-9">
-                              <span>{d.openTime}</span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {timeOptions.map((t) => (
-                                <SelectItem key={t} value={t}>
-                                  {t}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Moon className="w-4 h-4" />
-                          <Select
-                            value={d.closeTime}
-                            onValueChange={(v) =>
-                              updateDaySchedule(day.key, "closeTime", v)
-                            }
-                          >
-                            <SelectTrigger className="w-24 h-9">
-                              <span>{d.closeTime}</span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {timeOptions.map((t) => (
-                                <SelectItem key={t} value={t}>
-                                  {t}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Button
-                            onClick={() => copyToAllDays(day.key)}
-                            className="h-9 w-9 p-0 hover:bg-muted"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-
-                      <Switch
-                        checked={d.isOpen}
-                        onCheckedChange={(v) =>
-                          updateDaySchedule(day.key, "isOpen", v)
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* PAUSAS */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pausas Programadas</CardTitle>
-            <CardDescription>Feriados ou fechamentos</CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            {scheduledPauses.map((p) => (
+          <div className="space-y-3">
+            {Object.entries(days).map(([key, day]) => (
               <div
-                key={p.id}
-                className="flex justify-between items-center p-3 border rounded-xl"
+                key={key}
+                className="flex items-center justify-between border rounded-lg p-3"
               >
                 <div>
-                  <p className="font-medium">{p.name}</p>
+                  <p className="font-medium">{day.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDate(p.startDate)} até {formatDate(p.endDate)}
+                    {day.enabled ? "Aberto" : "Fechado"}
                   </p>
                 </div>
-                <Button
-                  onClick={() => removePause(p.id)}
-                  className="h-9 w-9 p-0 hover:bg-muted"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={day.open}
+                    disabled={!day.enabled}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">às</span>
+                  <input
+                    type="time"
+                    value={day.close}
+                    disabled={!day.enabled}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
+
+                  <button
+                    onClick={() => toggleDay(key as DayKey)}
+                    className={`w-10 h-5 rounded-full relative transition ${
+                      day.enabled ? "bg-black" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${
+                        day.enabled ? "left-5" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             ))}
+          </div>
+        </div>
 
-            <div className="p-4 border rounded-xl space-y-3">
-              <Input
-                placeholder="Nome da pausa"
-                value={newPause.name}
-                onChange={(e) =>
-                  setNewPause({ ...newPause, name: e.target.value })
-                }
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="date"
-                  value={newPause.startDate}
-                  onChange={(e) =>
-                    setNewPause({ ...newPause, startDate: e.target.value })
-                  }
-                />
-                <Input
-                  type="date"
-                  value={newPause.endDate}
-                  onChange={(e) =>
-                    setNewPause({ ...newPause, endDate: e.target.value })
-                  }
-                />
-              </div>
-              <Button onClick={addPause} className="w-full gap-2">
-                <Plus className="w-4 h-4" />
-                Adicionar pausa
-              </Button>
+        {/* PAUSAS PROGRAMADAS */}
+        <div className="border rounded-xl p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <CalendarX className="w-5 h-5 text-orange-500" />
+            <div>
+              <h2 className="font-semibold">Pausas Programadas</h2>
+              <p className="text-sm text-muted-foreground">
+                Feriados, férias ou fechamentos especiais
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* EXEMPLO DE PAUSA */}
+          <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+            <div>
+              <p className="font-medium">Natal e Ano Novo</p>
+              <p className="text-sm text-muted-foreground">
+                24 de dez até 26 de dez
+              </p>
+            </div>
+            <button className="p-2 hover:text-red-500">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* ADICIONAR PAUSA */}
+          <div className="border border-dashed rounded-lg p-4 space-y-3">
+            <input
+              type="text"
+              placeholder="Nome (ex: Férias, Feriado)"
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="date"
+                className="border rounded px-3 py-2 text-sm"
+              />
+              <input
+                type="date"
+                className="border rounded px-3 py-2 text-sm"
+              />
+            </div>
+
+            <button className="w-full py-2 rounded-lg bg-black text-white flex items-center justify-center gap-2">
+              + Adicionar Pausa
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
