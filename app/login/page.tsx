@@ -1,105 +1,119 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "../../src/lib/api";
+import { signInOrSignUp } from "@/lib/auth";
+import { getStoreByUser } from "@/lib/store";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [debug, setDebug] = useState<any>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin() {
     setLoading(true);
-    setError(null);
-    setDebug(null);
 
     try {
-      const response = await api.post("/api/auth/login", {
-        email,
-        password,
-      });
+      if (!email || !password) {
+        alert("Preencha o e-mail e a senha.");
+        return;
+      }
 
-      console.log("LOGIN SUCCESS:", response.data);
+      let user: any;
 
-      localStorage.setItem("token", response.data.token);
-      router.push("/panel");
+      try {
+        user = await signInOrSignUp(email, password);
+
+        console.log("🧩 Usuário logado →", user);
+        console.log("🧩 user.id →", user?.id);
+
+      } catch (err: any) {
+        const msg = err.message?.toLowerCase() || "";
+
+        if (msg.includes("invalid login credentials")) {
+          alert("Senha incorreta ❌");
+        } else if (
+          msg.includes("user not found") ||
+          msg.includes("invalid email")
+        ) {
+          alert("E-mail não encontrado ❌");
+        } else {
+          alert("Erro ao entrar: " + err.message);
+        }
+        return;
+      }
+
+      if (!user?.id) {
+        alert("Erro inesperado: usuário inválido.");
+        return;
+      }
+
+      // ✅ BUSCA A LOJA DO USUÁRIO
+      const store = await getStoreByUser(user.id);
+
+      if (!store?.id) {
+        alert("Erro: loja não encontrada para este usuário.");
+        return;
+      }
+
+      // ✅ DADOS LOCAIS (MANTIDOS)
+      localStorage.setItem("tifra_user", JSON.stringify(user));
+      localStorage.setItem("tifra_store", JSON.stringify(store));
+
+      // 🔥🔥🔥 ESSENCIAL PARA TODO O SISTEMA
+      localStorage.setItem("storeId", store.id);
+// 🔥🔥🔥 ESSENCIAL PARA TODA A API
+localStorage.setItem("tifra_user_id", user.id);
+
+      // 🔥 REDIRECT CORRETO (SEM RELOAD DURO)
+      router.replace("/panel");
+
     } catch (err: any) {
-      console.error("LOGIN ERROR FULL:", err);
-
-      // Mensagem amigável
-      setError(
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Erro desconhecido no login"
-      );
-
-      // DEBUG COMPLETO (visível na tela)
-      setDebug({
-        status: err?.response?.status,
-        data: err?.response?.data,
-        message: err?.message,
-        stack: err?.stack,
-      });
+      alert("Erro ao entrar: " + err.message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: "80px auto", fontFamily: "sans-serif" }}>
-      <h1>Login (DEBUG)</h1>
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="p-6 bg-white border rounded-lg w-80 space-y-3 shadow">
+        <h2 className="text-xl font-bold text-center">Login do Lojista</h2>
 
-      <form onSubmit={handleSubmit}>
         <input
+          className="w-full border px-2 py-1 rounded"
+          placeholder="E-mail"
           type="email"
-          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: 8 }}
         />
 
         <input
-          type="password"
+          className="w-full border px-2 py-1 rounded"
           placeholder="Senha"
+          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: 8 }}
         />
 
-        <button type="submit" disabled={loading}>
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-green-600 text-white py-2 rounded disabled:bg-gray-400"
+        >
           {loading ? "Entrando..." : "Entrar"}
         </button>
-      </form>
 
-      {error && (
-        <div style={{ marginTop: 16, color: "red" }}>
-          <strong>Erro:</strong> {error}
-        </div>
-      )}
-
-      {debug && (
-        <pre
-          style={{
-            marginTop: 16,
-            background: "#111",
-            color: "#0f0",
-            padding: 12,
-            fontSize: 12,
-            overflow: "auto",
-          }}
+        <button
+          onClick={() => router.push("/signup")}
+          className="w-full text-center text-blue-600 mt-2 underline"
         >
-{JSON.stringify(debug, null, 2)}
-        </pre>
-      )}
+          Criar conta
+        </button>
+      </div>
     </div>
   );
 }
