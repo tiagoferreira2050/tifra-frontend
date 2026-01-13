@@ -1,3 +1,5 @@
+// lib/api.ts
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_URL) {
@@ -8,27 +10,25 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("tifra_token")
-      : null;
-
-  const method = options.method?.toUpperCase() || "GET";
-
-  const isBodyMethod = ["POST", "PUT", "PATCH"].includes(method);
+  const isBodyMethod =
+    options.method &&
+    ["POST", "PUT", "PATCH"].includes(options.method);
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    method,
-    credentials: "include",
+    credentials: "include", // 🔐 cookie httpOnly (JWT)
     headers: {
       ...(isBodyMethod ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
 
-  const data = await res.json().catch(() => null);
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
 
   if (!res.ok) {
     console.error("❌ API ERROR:", {
@@ -36,6 +36,7 @@ export async function apiFetch(
       status: res.status,
       data,
     });
+
     throw new Error(data?.error || "Erro na requisição");
   }
 

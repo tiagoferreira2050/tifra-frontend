@@ -23,23 +23,22 @@ export default function LoginPage() {
       }
 
       // ===================================================
-      // 🔐 LOGIN (SÓ AUTENTICA)
+      // 🔐 LOGIN (gera cookie JWT)
       // ===================================================
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        alert("Erro inesperado ao autenticar.");
-        return;
+        throw new Error("Falha ao autenticar usuário");
       }
 
       // ===================================================
-      // 🏪 BOOTSTRAP DO SISTEMA (GARANTE LOJA)
+      // 🏪 BOOTSTRAP DO SISTEMA
+      // 🔥 cria loja se não existir
       // ===================================================
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        alert("Erro ao carregar loja.");
-        return;
+        throw new Error("Erro ao carregar loja");
       }
 
       // ===================================================
