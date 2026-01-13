@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInOrSignUp } from "@/lib/auth";
-import { getStoreByUser } from "@/lib/store";
+import { apiFetch } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,57 +22,39 @@ export default function LoginPage() {
         return;
       }
 
-      let user: any;
-
-      try {
-        user = await signInOrSignUp(email, password);
-
-        console.log("🧩 Usuário logado →", user);
-        console.log("🧩 user.id →", user?.id);
-
-      } catch (err: any) {
-        const msg = err.message?.toLowerCase() || "";
-
-        if (msg.includes("invalid login credentials")) {
-          alert("Senha incorreta ❌");
-        } else if (
-          msg.includes("user not found") ||
-          msg.includes("invalid email")
-        ) {
-          alert("E-mail não encontrado ❌");
-        } else {
-          alert("Erro ao entrar: " + err.message);
-        }
-        return;
-      }
+      // ===================================================
+      // 🔐 LOGIN (SÓ AUTENTICA)
+      // ===================================================
+      const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        alert("Erro inesperado: usuário inválido.");
+        alert("Erro inesperado ao autenticar.");
         return;
       }
 
-      // ✅ BUSCA A LOJA DO USUÁRIO
-      const store = await getStoreByUser(user.id);
+      // ===================================================
+      // 🏪 BOOTSTRAP DO SISTEMA (GARANTE LOJA)
+      // ===================================================
+      const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        alert("Erro: loja não encontrada para este usuário.");
+        alert("Erro ao carregar loja.");
         return;
       }
 
-      // ✅ DADOS LOCAIS (MANTIDOS)
+      // ===================================================
+      // 💾 CACHE LOCAL (SÓ PARA UI)
+      // ===================================================
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
-      // 🔥🔥🔥 ESSENCIAL PARA TODO O SISTEMA
-      localStorage.setItem("storeId", store.id);
-// 🔥🔥🔥 ESSENCIAL PARA TODA A API
-localStorage.setItem("tifra_user_id", user.id);
-
-      // 🔥 REDIRECT CORRETO (SEM RELOAD DURO)
+      // ===================================================
+      // 🚀 REDIRECT
+      // ===================================================
       router.replace("/panel");
 
     } catch (err: any) {
-      alert("Erro ao entrar: " + err.message);
+      alert(err.message || "Erro ao entrar");
     } finally {
       setLoading(false);
     }
