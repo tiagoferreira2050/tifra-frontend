@@ -22,25 +22,40 @@ export default function LoginPage() {
         return;
       }
 
-      // 🔐 LOGIN (gera token + cookie)
+      /* ===================================================
+         🔐 LOGIN (APENAS AUTENTICA E SETA COOKIE)
+      =================================================== */
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        throw new Error("Falha ao autenticar");
+        alert("Erro ao autenticar usuário.");
+        return;
       }
 
-      // 🏪 BOOTSTRAP ÚNICO DO SISTEMA
+      /* ===================================================
+         🏪 BOOTSTRAP DO SISTEMA
+         → GARANTE LOJA
+         → CRIA SE NÃO EXISTIR
+      =================================================== */
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        throw new Error("Falha ao carregar loja");
+        alert("Erro ao carregar loja.");
+        return;
       }
 
-      // 💾 Cache local (apenas UI)
+      /* ===================================================
+         💾 CACHE LOCAL (SOMENTE PARA UI)
+         ⚠️ NÃO É SEGURANÇA
+      =================================================== */
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
+      /* ===================================================
+         🚀 REDIRECT FINAL
+      =================================================== */
       router.replace("/panel");
+
     } catch (err: any) {
       alert(err.message || "Erro ao entrar");
     } finally {
@@ -51,7 +66,9 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <div className="p-6 bg-white border rounded-lg w-80 space-y-3 shadow">
-        <h2 className="text-xl font-bold text-center">Login do Lojista</h2>
+        <h2 className="text-xl font-bold text-center">
+          Login do Lojista
+        </h2>
 
         <input
           className="w-full border px-2 py-1 rounded"
