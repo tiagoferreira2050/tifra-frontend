@@ -5,13 +5,13 @@ export async function signInOrSignUp(email: string, password: string) {
     throw new Error("NEXT_PUBLIC_API_URL não configurada");
   }
 
-  // 🔐 LOGIN (cookie httpOnly é setado pelo backend)
+  // 🔐 LOGIN
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
+    credentials: "include", // 🔥 ESSENCIAL
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include", // 🔥 ESSENCIAL
     body: JSON.stringify({ email, password }),
   });
 
@@ -21,7 +21,9 @@ export async function signInOrSignUp(email: string, password: string) {
     throw new Error(data?.error || "Erro ao fazer login");
   }
 
-  // 🔥 BUSCA USUÁRIO JÁ AUTENTICADO (cookie)
+  // 🔥 AGORA O COOKIE HTTPONLY JÁ ESTÁ VÁLIDO
+
+  // 👤 BUSCA USUÁRIO (COM COOKIE)
   const userRes = await fetch(`${API_URL}/user`, {
     credentials: "include", // 🔥 ESSENCIAL
   });

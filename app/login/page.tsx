@@ -22,26 +22,27 @@ export default function LoginPage() {
         return;
       }
 
-      // 🔐 LOGIN
+      // 🔐 LOGIN (SET COOKIE)
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        throw new Error("Usuário inválido");
+        alert("Erro ao autenticar usuário.");
+        return;
       }
 
       // 🏪 BOOTSTRAP DEFINITIVO
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        throw new Error("Erro ao carregar loja");
+        alert("Erro ao carregar loja.");
+        return;
       }
 
-      // 💾 CACHE LOCAL (SÓ UI)
+      // 💾 CACHE (SÓ UI)
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
       router.replace("/panel");
-
     } catch (err: any) {
       alert(err.message || "Erro ao entrar");
     } finally {
