@@ -1,101 +1,57 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInOrSignUp } from "@/lib/auth";
-import { apiFetch } from "@/lib/api";
+import { login } from "@/src/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  async function handleLogin() {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
+    setError("");
 
     try {
-      if (!email || !password) {
-        alert("Preencha e-mail e senha");
-        return;
-      }
-
-      /* ===================================================
-         1️⃣ LOGIN → cria cookie httpOnly (tifra_token)
-      =================================================== */
-      const user = await signInOrSignUp(email, password);
-
-      if (!user?.id) {
-        throw new Error("Falha ao autenticar usuário");
-      }
-
-      /* ===================================================
-         2️⃣ BOOTSTRAP DO SISTEMA
-         - valida cookie
-         - cria loja se não existir
-      =================================================== */
-      const { store } = await apiFetch("/api/store/me");
-
-      if (!store?.id) {
-        throw new Error("Erro ao carregar loja");
-      }
-
-      /* ===================================================
-         3️⃣ CACHE LOCAL (APENAS UI)
-      =================================================== */
-      localStorage.setItem("tifra_user", JSON.stringify(user));
-      localStorage.setItem("tifra_store", JSON.stringify(store));
-
-      /* ===================================================
-         4️⃣ REDIRECT
-      =================================================== */
-      router.replace("/panel");
-
+      await login({ email, password });
+      router.push("/panel");
     } catch (err: any) {
-      alert(err.message || "Erro ao entrar");
+      setError(
+        err?.response?.data?.message || "Erro ao fazer login"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="p-6 bg-white border rounded-lg w-80 space-y-3 shadow">
-        <h2 className="text-xl font-bold text-center">Login do Lojista</h2>
+    <div style={{ maxWidth: 400, margin: "100px auto" }}>
+      <h1>Login</h1>
 
+      <form onSubmit={handleLogin}>
         <input
-          className="w-full border px-2 py-1 rounded"
-          placeholder="E-mail"
-          type="email"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
-          className="w-full border px-2 py-1 rounded"
-          placeholder="Senha"
           type="password"
+          placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-green-600 text-white py-2 rounded disabled:bg-gray-400"
-        >
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        <button type="submit" disabled={loading}>
           {loading ? "Entrando..." : "Entrar"}
         </button>
-
-        <button
-          onClick={() => router.push("/signup")}
-          className="w-full text-blue-600 underline"
-        >
-          Criar conta
-        </button>
-      </div>
+      </form>
     </div>
   );
 }

@@ -1,23 +1,40 @@
-export default function Home() {
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { checkAuth } from "@/src/lib/auth-check";
+import { getMyStore } from "@/src/lib/store";
+
+export default function PanelPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [store, setStore] = useState<any>(null);
+
+  useEffect(() => {
+    async function init() {
+      const ok = await checkAuth();
+
+      if (!ok) {
+        router.replace("/login");
+        return;
+      }
+
+      const storeData = await getMyStore();
+      setStore(storeData);
+      setLoading(false);
+    }
+
+    init();
+  }, [router]);
+
+  if (loading) {
+    return <p>Carregando...</p>;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold">Bem-vindo ao TIFRA</h1>
-
-      <div className="mt-6 flex gap-4">
-        <a
-          href="/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Login
-        </a>
-
-        <a
-          href="/panel/users"
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          Ir para painel (API)
-        </a>
-      </div>
-    </main>
+    <div>
+      <h1>Painel</h1>
+      <p>Loja: {store?.name}</p>
+    </div>
   );
 }
