@@ -18,31 +18,34 @@ export default function LoginPage() {
 
     try {
       if (!email || !password) {
-        alert("Preencha o e-mail e a senha.");
+        alert("Preencha e-mail e senha");
         return;
       }
 
-      // 🔐 LOGIN (SET COOKIE)
+      // 🔐 1️⃣ LOGIN (gera cookie httpOnly)
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        alert("Erro ao autenticar usuário.");
-        return;
+        throw new Error("Usuário inválido");
       }
 
-      // 🏪 BOOTSTRAP DEFINITIVO
+      // 🏪 2️⃣ BOOTSTRAP DO SISTEMA
+      // ESSA CHAMADA:
+      // - valida o cookie
+      // - cria loja se não existir
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        alert("Erro ao carregar loja.");
-        return;
+        throw new Error("Erro ao carregar loja");
       }
 
-      // 💾 CACHE (SÓ UI)
+      // 💾 3️⃣ Cache local (só UI)
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
+      // 🚀 4️⃣ Redirect
       router.replace("/panel");
+
     } catch (err: any) {
       alert(err.message || "Erro ao entrar");
     } finally {
@@ -81,7 +84,7 @@ export default function LoginPage() {
 
         <button
           onClick={() => router.push("/signup")}
-          className="w-full text-center text-blue-600 mt-2 underline"
+          className="w-full text-blue-600 underline"
         >
           Criar conta
         </button>
