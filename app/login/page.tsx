@@ -2,22 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/src/lib/auth";
+import api from "@/src/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      await login({ email, password });
+      const response = await api.post("/api/auth/login", {
+        email,
+        password,
+      });
+
+      const { token } = response.data;
+
+      localStorage.setItem("token", token);
+
       router.push("/panel");
     } catch (err: any) {
       setError(
@@ -32,11 +41,13 @@ export default function LoginPage() {
     <div style={{ maxWidth: 400, margin: "100px auto" }}>
       <h1>Login</h1>
 
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <input
+          type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <input
@@ -44,6 +55,7 @@ export default function LoginPage() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
         {error && <p style={{ color: "red" }}>{error}</p>}
