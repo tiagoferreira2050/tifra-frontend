@@ -10,10 +10,9 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  // 🔥 fallback (não obrigatório, mas mantém compatibilidade)
-  const userId =
+  const token =
     typeof window !== "undefined"
-      ? localStorage.getItem("tifra_user_id")
+      ? localStorage.getItem("tifra_token")
       : null;
 
   const isBodyMethod =
@@ -22,10 +21,10 @@ export async function apiFetch(
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    credentials: "include", // 🔥 PADRÃO DEFINITIVO (cookie httpOnly)
+    credentials: "include", // cookie httpOnly (se existir)
     headers: {
       ...(isBodyMethod ? { "Content-Type": "application/json" } : {}),
-      ...(userId ? { "x-user-id": userId } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
