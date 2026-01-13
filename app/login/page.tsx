@@ -22,28 +22,35 @@ export default function LoginPage() {
         return;
       }
 
-      // 🔐 1️⃣ LOGIN (gera cookie httpOnly)
+      /* ===================================================
+         1️⃣ LOGIN → cria cookie httpOnly (tifra_token)
+      =================================================== */
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        throw new Error("Usuário inválido");
+        throw new Error("Falha ao autenticar usuário");
       }
 
-      // 🏪 2️⃣ BOOTSTRAP DO SISTEMA
-      // ESSA CHAMADA:
-      // - valida o cookie
-      // - cria loja se não existir
+      /* ===================================================
+         2️⃣ BOOTSTRAP DO SISTEMA
+         - valida cookie
+         - cria loja se não existir
+      =================================================== */
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
         throw new Error("Erro ao carregar loja");
       }
 
-      // 💾 3️⃣ Cache local (só UI)
+      /* ===================================================
+         3️⃣ CACHE LOCAL (APENAS UI)
+      =================================================== */
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
-      // 🚀 4️⃣ Redirect
+      /* ===================================================
+         4️⃣ REDIRECT
+      =================================================== */
       router.replace("/panel");
 
     } catch (err: any) {
