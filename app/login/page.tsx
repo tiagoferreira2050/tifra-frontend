@@ -28,31 +28,28 @@ export default function LoginPage() {
       const user = await signInOrSignUp(email, password);
 
       if (!user?.id) {
-        alert("Erro ao autenticar usuário.");
-        return;
+        throw new Error("Usuário inválido após login");
       }
 
       /* ===================================================
          🏪 BOOTSTRAP DO SISTEMA
-         → GARANTE LOJA
-         → CRIA SE NÃO EXISTIR
+         🔥 GARANTE LOJA + SETTINGS + ADDRESS
       =================================================== */
       const { store } = await apiFetch("/api/store/me");
 
       if (!store?.id) {
-        alert("Erro ao carregar loja.");
-        return;
+        throw new Error("Erro ao carregar loja do usuário");
       }
 
       /* ===================================================
          💾 CACHE LOCAL (SOMENTE PARA UI)
-         ⚠️ NÃO É SEGURANÇA
+         🔥 NÃO É SEGURANÇA
       =================================================== */
       localStorage.setItem("tifra_user", JSON.stringify(user));
       localStorage.setItem("tifra_store", JSON.stringify(store));
 
       /* ===================================================
-         🚀 REDIRECT FINAL
+         🚀 REDIRECT
       =================================================== */
       router.replace("/panel");
 
